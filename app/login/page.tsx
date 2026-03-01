@@ -4,7 +4,7 @@ import { useActionState } from 'react'
 import { login } from '@/app/actions/auth'
 import Link from 'next/link'
 
-const initialState = { error: null }
+const initialState = { error: '' }
 
 export default function LoginPage() {
   const [state, formAction] = useActionState(login, initialState)

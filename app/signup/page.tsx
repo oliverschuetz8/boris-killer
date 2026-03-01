@@ -4,7 +4,7 @@ import { useActionState } from 'react'
 import { signup } from '@/app/actions/auth'
 import Link from 'next/link'
 
-const initialState = { error: null }
+const initialState = { error: '' }
 
 export default function SignupPage() {
   const [state, formAction] = useActionState(signup, initialState)

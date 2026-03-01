@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-export async function signup(prevState: { error: string | null }, formData: FormData) {
+export async function signup(prevState: { error: string }, formData: FormData) {
   const supabase = await createClient()
 
   const email = formData.get('email') as string
@@ -38,7 +38,7 @@ export async function signup(prevState: { error: string | null }, formData: Form
   redirect('/onboarding')
 }
 
-export async function login(prevState: { error: string | null }, formData: FormData) {
+export async function login(prevState: { error: string }, formData: FormData) {
   const supabase = await createClient()
 
   const email = formData.get('email') as string
