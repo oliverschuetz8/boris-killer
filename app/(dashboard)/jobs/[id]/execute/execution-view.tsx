@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { startJob, completeJob } from '@/lib/services/jobs'
+import PhotoUpload from './photo-upload'
+import PhotoGallery from './photo-gallery'
 import {
   ArrowLeft,
   Play,
@@ -12,7 +13,6 @@ import {
   MapPin,
   User,
   AlertTriangle,
-  Camera,
   ClipboardList,
 } from 'lucide-react'
 
@@ -37,11 +37,11 @@ interface ExecutionViewProps {
 }
 
 export default function ExecutionView({ job, userId, userName }: ExecutionViewProps) {
-  const router = useRouter()
   const [loading, setLoading] = useState<'start' | 'complete' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [localStatus, setLocalStatus] = useState(job.status)
   const [startedAt, setStartedAt] = useState<string | null>(job.started_at)
+  const [photoRefresh, setPhotoRefresh] = useState(0)
 
   const isNotStarted = localStatus === 'scheduled' || localStatus === 'draft'
   const isInProgress = localStatus === 'in_progress'
@@ -146,7 +146,7 @@ export default function ExecutionView({ job, userId, userName }: ExecutionViewPr
 
       {/* Execution Steps — only visible once started */}
       {(isInProgress || isCompleted) && (
-        <div className="space-y-3 mb-4">
+        <div className="space-y-4 mb-4">
           {/* Checklist placeholder */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 opacity-60">
             <div className="flex items-center gap-3">
@@ -160,17 +160,15 @@ export default function ExecutionView({ job, userId, userName }: ExecutionViewPr
             </div>
           </div>
 
-          {/* Photos placeholder */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 opacity-60">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center">
-                <Camera className="w-5 h-5 text-slate-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-700">Photos</p>
-                <p className="text-xs text-slate-500">Coming soon</p>
-              </div>
-            </div>
+          {/* Photo upload */}
+          <PhotoUpload
+            jobId={job.id}
+            onPhotoUploaded={() => setPhotoRefresh(n => n + 1)}
+          />
+
+          {/* Photo gallery */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <PhotoGallery jobId={job.id} refreshTrigger={photoRefresh} />
           </div>
         </div>
       )}
@@ -191,7 +189,7 @@ export default function ExecutionView({ job, userId, userName }: ExecutionViewPr
         </div>
       )}
 
-      {/* Action Buttons — fixed to bottom on mobile */}
+      {/* Action Buttons */}
       {!isCompleted && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 max-w-lg mx-auto">
           {isNotStarted && (
@@ -216,7 +214,6 @@ export default function ExecutionView({ job, userId, userName }: ExecutionViewPr
           )}
         </div>
       )}
-
     </div>
   )
 }
