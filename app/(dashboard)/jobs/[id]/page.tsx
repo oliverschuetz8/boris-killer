@@ -21,12 +21,22 @@ export default async function JobDetailPage({
           <h1 className="text-3xl font-bold">{job.title}</h1>
           <p className="text-gray-500">{job.job_number}</p>
         </div>
-        <Link 
-          href={`/jobs/${id}/edit`}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          Edit Job
-        </Link>
+        <div className="flex items-center gap-2">
+          {(job.status === 'scheduled' || job.status === 'in_progress') && (
+            <Link
+              href={`/jobs/${id}/execute`}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm font-medium"
+            >
+              {job.status === 'in_progress' ? '▶ Continue Job' : '▶ Start Job'}
+            </Link>
+          )}
+          <Link 
+            href={`/jobs/${id}/edit`}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+          >
+            Edit Job
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6 space-y-6">
