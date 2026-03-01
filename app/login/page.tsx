@@ -1,7 +1,14 @@
+'use client'
+
+import { useActionState } from 'react'
 import { login } from '@/app/actions/auth'
 import Link from 'next/link'
 
+const initialState = { error: null }
+
 export default function LoginPage() {
+  const [state, formAction] = useActionState(login, initialState)
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full space-y-8">
@@ -11,9 +18,8 @@ export default function LoginPage() {
           </h2>
         </div>
 
-        <form action={login} className="mt-8 space-y-6">
+        <form action={formAction} className="mt-8 space-y-6">
           <div className="space-y-4 rounded-md">
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -29,7 +35,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -45,6 +50,12 @@ export default function LoginPage() {
               />
             </div>
           </div>
+
+          {state?.error && (
+            <div className="bg-red-50 border border-red-200 rounded-md px-4 py-3 text-sm text-red-700">
+              {state.error}
+            </div>
+          )}
 
           <div>
             <button

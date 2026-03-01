@@ -1,7 +1,14 @@
+'use client'
+
+import { useActionState } from 'react'
 import { signup } from '@/app/actions/auth'
 import Link from 'next/link'
 
+const initialState = { error: null }
+
 export default function SignupPage() {
+  const [state, formAction] = useActionState(signup, initialState)
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full space-y-8">
@@ -14,9 +21,8 @@ export default function SignupPage() {
           </p>
         </div>
 
-        <form action={signup} className="mt-8 space-y-6">
+        <form action={formAction} className="mt-8 space-y-6">
           <div className="space-y-4 rounded-md">
-            {/* Full Name */}
             <div>
               <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
                 Full Name
@@ -31,7 +37,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -47,7 +52,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -65,7 +69,6 @@ export default function SignupPage() {
               <p className="mt-1 text-xs text-gray-500">At least 6 characters</p>
             </div>
 
-            {/* Company Name */}
             <div>
               <label htmlFor="company_name" className="block text-sm font-medium text-gray-700">
                 Company Name
@@ -80,7 +83,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Company Slug - NO PATTERN ATTRIBUTE */}
             <div>
               <label htmlFor="company_slug" className="block text-sm font-medium text-gray-700">
                 Company URL
@@ -101,6 +103,12 @@ export default function SignupPage() {
               <p className="mt-1 text-xs text-gray-500">Lowercase letters, numbers, and hyphens only</p>
             </div>
           </div>
+
+          {state?.error && (
+            <div className="bg-red-50 border border-red-200 rounded-md px-4 py-3 text-sm text-red-700">
+              {state.error}
+            </div>
+          )}
 
           <div>
             <button

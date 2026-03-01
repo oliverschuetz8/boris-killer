@@ -4,22 +4,19 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-export async function signup(formData: FormData) {
+export async function signup(prevState: { error: string | null }, formData: FormData) {
   const supabase = await createClient()
 
-  // Get form data
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const fullName = formData.get('full_name') as string
   const companyName = formData.get('company_name') as string
   const companySlug = formData.get('company_slug') as string
 
-  // Validate
   if (!email || !password || !fullName || !companyName || !companySlug) {
     return { error: 'All fields are required' }
   }
 
-  // Sign up the user first (this creates auth.users + triggers user profile creation)
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
@@ -41,7 +38,7 @@ export async function signup(formData: FormData) {
   redirect('/onboarding')
 }
 
-export async function login(formData: FormData) {
+export async function login(prevState: { error: string | null }, formData: FormData) {
   const supabase = await createClient()
 
   const email = formData.get('email') as string
@@ -51,10 +48,7 @@ export async function login(formData: FormData) {
     return { error: 'Email and password are required' }
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
     console.error('Login error:', error)
