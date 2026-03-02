@@ -25,8 +25,10 @@ export interface Database {
           actual_end: string | null
           status: string
           priority: string | null
+          started_at: string | null
           completed_at: string | null
           completed_by: string | null
+          job_settings: Record<string, any> | null
           customer_approval: boolean | null
           customer_signature_url: string | null
           customer_signed_at: string | null
