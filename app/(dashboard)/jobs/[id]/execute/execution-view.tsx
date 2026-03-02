@@ -21,7 +21,7 @@ interface Job {
   title: string
   job_number: string
   status: string
-  priority: string
+  priority: string | null
   description: string | null
   notes: string | null
   started_at: string | null
