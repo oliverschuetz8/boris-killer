@@ -1,5 +1,6 @@
 'use client'
 
+import MaterialLog from './material-log'
 import { useState } from 'react'
 import Link from 'next/link'
 import { startJob, completeJob } from '@/lib/services/jobs'
@@ -172,6 +173,11 @@ export default function ExecutionView({ job, userId, userName }: ExecutionViewPr
           </div>
         </div>
       )}
+
+          {/* Materials */}
+          {(job.status === 'in_progress' || job.status === 'completed') && (
+            <MaterialLog jobId={job.id} userRole="worker" />
+          )}
 
       {/* Error */}
       {error && (

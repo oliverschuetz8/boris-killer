@@ -112,9 +112,6 @@ export default function PhotoGallery({
         if (url) urlMap[p.id] = url
       }))
       setUrls(urlMap)
-      const exp: Record<string, boolean> = {}
-      data.forEach(p => { if (p.level) exp[p.level] = true })
-      setExpandedLevels(exp)
     } catch (err) {
       console.error('Failed to load photos:', err)
     } finally {
