@@ -32,6 +32,7 @@ const navLinks = [
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/schedule', label: 'Schedule', icon: Calendar },
   { href: '/invoices', label: 'Invoices', icon: FileText },
+  { href: '/settings/materials', label: 'Settings', icon: Settings },
 ]
 
 interface TopNavProps {
