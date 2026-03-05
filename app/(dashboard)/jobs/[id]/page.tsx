@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getJob } from '@/app/actions/jobs'
+import JobCostSummary from './job-cost-summary'
 
 export default async function JobDetailPage({
   params,
@@ -43,13 +44,13 @@ export default async function JobDetailPage({
         {/* Status & Priority */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <span className="inline-block pl-0 pr-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 capitalize pl-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1 pl-2">Status</label>
+            <span className={`inline-block px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 capitalize`}>
               {job.status.replace('_', ' ')}
             </span>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1 pl-2">Priority</label>
             <span className="inline-block px-2 py-1 rounded-full text-sm font-medium capitalize bg-slate-100 text-slate-700">
               {job.priority}
             </span>
@@ -131,6 +132,14 @@ export default async function JobDetailPage({
           </div>
         )}
       </div>
+
+      {/* Cost Summary */}
+      <div className="mt-6">
+        <JobCostSummary jobId={id} />
+      </div>
+
+      {/* Back button */}
+      <div className="mt-6"></div>
 
       {/* Back button */}
       <div className="mt-6">

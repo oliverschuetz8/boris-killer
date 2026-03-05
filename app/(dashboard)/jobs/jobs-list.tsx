@@ -28,13 +28,12 @@ export function JobsList({ initialJobs }: JobsListProps) {
   const [jobs, setJobs] = useState(initialJobs)
   const [filter, setFilter] = useState<string>('all')
 
-  const filteredJobs = filter === 'all' 
-    ? jobs 
+  const filteredJobs = filter === 'all'
+    ? jobs
     : jobs.filter(job => job.status === filter)
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this job?')) return
-    
     try {
       await deleteJob(id)
       setJobs(jobs.filter(job => job.id !== id))
@@ -46,7 +45,7 @@ export function JobsList({ initialJobs }: JobsListProps) {
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       await updateJobStatus(id, newStatus)
-      setJobs(jobs.map(job => 
+      setJobs(jobs.map(job =>
         job.id === id ? { ...job, status: newStatus } : job
       ))
     } catch (error) {
@@ -63,8 +62,8 @@ export function JobsList({ initialJobs }: JobsListProps) {
             key={status}
             onClick={() => setFilter(status)}
             className={`px-4 py-2 rounded-lg capitalize transition ${
-              filter === status 
-                ? 'bg-blue-600 text-white' 
+              filter === status
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 hover:bg-gray-200'
             }`}
           >
@@ -87,13 +86,13 @@ export function JobsList({ initialJobs }: JobsListProps) {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Scheduled
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="pl-8 pr-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Priority
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -121,7 +120,7 @@ export function JobsList({ initialJobs }: JobsListProps) {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {job.scheduled_start 
+                    {job.scheduled_start
                       ? new Date(job.scheduled_start).toLocaleDateString()
                       : 'Not scheduled'
                     }
@@ -148,14 +147,14 @@ export function JobsList({ initialJobs }: JobsListProps) {
                       {job.priority}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right text-sm space-x-2">
-                    <Link 
+                  <td className="px-6 py-4 text-left text-sm space-x-2">
+                    <Link
                       href={`/jobs/${job.id}`}
                       className="text-blue-600 hover:text-blue-900"
                     >
                       View
                     </Link>
-                    <Link 
+                    <Link
                       href={`/jobs/${job.id}/edit`}
                       className="text-blue-600 hover:text-blue-900"
                     >
