@@ -163,3 +163,30 @@ export async function getJobCostSummary(jobId: string) {
     materials: materials || [],
   }
 }
+
+export async function seedMaterialsFromPack(companyId: string, packId: string) {
+  const supabase = await createClient()
+
+  const { data: pack } = await supabase
+    .from('work_type_packs')
+    .select('default_materials')
+    .eq('id', packId)
+    .single()
+
+  if (!pack?.default_materials || !Array.isArray(pack.default_materials)) return
+
+  const rows = (pack.default_materials as Array<{
+    name: string
+    unit: string
+    unit_price: number
+  }>).map(m => ({
+    company_id: companyId,
+    name: m.name,
+    unit: m.unit,
+    unit_price: m.unit_price,
+  }))
+
+  if (rows.length === 0) return
+
+  await supabase.from('materials').insert(rows)
+}

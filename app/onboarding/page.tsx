@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { seedMaterialsFromPack } from '@/lib/services/materials'
 
 interface Pack {
   id: string
@@ -121,6 +122,7 @@ export default function OnboardingPage() {
           .update({ work_type_pack_id: selectedPackId })
           .eq('id', data.company_id)
       }
+      await seedMaterialsFromPack(data?.company_id, selectedPackId)
 
       router.push('/dashboard')
     } catch (err: any) {
