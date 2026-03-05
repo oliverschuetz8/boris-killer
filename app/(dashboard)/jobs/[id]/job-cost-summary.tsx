@@ -18,9 +18,11 @@ interface CostSummary {
 export default function JobCostSummary({
   jobId,
   labourRate = 85,
+  compact = false,
 }: {
   jobId: string
   labourRate?: number
+  compact?: boolean
 }) {
   const [summary, setSummary] = useState<CostSummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -34,6 +36,30 @@ export default function JobCostSummary({
 
   if (loading) return null
   if (!summary) return null
+  if (compact) {
+    if (summary.materialTotal === 0 && summary.labourHours === 0) return null
+    const labourTotal = summary.labourHours * labourRate
+    const grandTotal = summary.materialTotal + labourTotal
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Cost Summary</p>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Materials</span>
+            <span className="font-medium">A${summary.materialTotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-slate-500">Labour ({summary.labourHours}h)</span>
+            <span className="font-medium">A${labourTotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm font-semibold pt-2 border-t border-slate-100">
+            <span className="text-slate-700">Total</span>
+            <span className="text-green-700">A${grandTotal.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Don't show if no materials and no time recorded
   if (summary.materialTotal === 0 && summary.labourHours === 0) return null
@@ -90,8 +116,8 @@ export default function JobCostSummary({
         </div>
       </div>
 
-      {/* Materials breakdown */}
-      {summary.materials.length > 0 && (
+      {/* Materials breakdown - omly in full mode */}
+      {!compact && summary.materials.length > 0 && (
         <div>
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
             Materials Breakdown
