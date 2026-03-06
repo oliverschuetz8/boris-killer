@@ -14,17 +14,23 @@ export default async function JobExecutePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
+    const { data: profile } = await supabase
     .from('users')
-    .select('id, full_name, role')
+    .select('id, full_name, role, company_id')
     .eq('id', user.id)
     .single()
 
   const job = await getJob(id)
   if (!job) notFound()
 
-  // Don't allow execution of cancelled or already-completed jobs
   if (job.status === 'cancelled') redirect(`/jobs/${id}`)
 
-  return <ExecutionView job={job} userId={user.id} userName={profile?.full_name ?? 'Tech'} />
+  return (
+    <ExecutionView
+      job={job}
+      userId={user.id}
+      userName={profile?.full_name ?? 'Tech'}
+      companyId={profile?.company_id ?? ''}
+    />
+  )
 }

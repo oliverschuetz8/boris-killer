@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { UserPlus, Mail, Phone, Shield, User, Trash2, X, Check } from 'lucide-react'
+import { UserPlus, Mail, Phone, Shield, User, X, Check, Pencil } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface TeamMember {
   id: string
@@ -9,6 +10,8 @@ interface TeamMember {
   email: string
   role: string
   phone: string | null
+  trade: string | null
+  hourly_rate: number | null
 }
 
 const ROLE_STYLES: Record<string, string> = {
@@ -16,6 +19,19 @@ const ROLE_STYLES: Record<string, string> = {
   manager: 'bg-blue-100 text-blue-800',
   worker: 'bg-slate-100 text-slate-700',
 }
+
+const TRADES = [
+  'Passive Fire Protection',
+  'Fire Services Active',
+  'Electrical',
+  'Plumbing',
+  'HVAC',
+  'Carpentry',
+  'General Construction',
+  'Site Manager',
+  'Project Manager',
+  'Other',
+]
 
 export default function TeamManager({
   teamMembers: initial,
@@ -29,12 +45,17 @@ export default function TeamManager({
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<Partial<TeamMember>>({})
+  const [editSaving, setEditSaving] = useState(false)
 
   const [form, setForm] = useState({
     email: '',
     full_name: '',
     phone: '',
     role: 'worker',
+    trade: '',
+    hourly_rate: '',
   })
 
   async function handleInvite() {
@@ -42,7 +63,6 @@ export default function TeamManager({
       setError('Email and full name are required')
       return
     }
-
     setLoading(true)
     setError(null)
 
@@ -61,11 +81,39 @@ export default function TeamManager({
     }
 
     setSuccess(true)
-    setForm({ email: '', full_name: '', phone: '', role: 'worker' })
+    setForm({ email: '', full_name: '', phone: '', role: 'worker', trade: '', hourly_rate: '' })
     setTimeout(() => {
       setSuccess(false)
       setShowInvite(false)
     }, 2000)
+  }
+
+  function startEdit(member: TeamMember) {
+    setEditingId(member.id)
+    setEditForm({
+      trade: member.trade || '',
+      hourly_rate: member.hourly_rate ?? undefined,
+    })
+  }
+
+  async function handleSaveEdit(memberId: string) {
+    setEditSaving(true)
+    const supabase = createClient()
+    await supabase
+      .from('users')
+      .update({
+        trade: editForm.trade || null,
+        hourly_rate: editForm.hourly_rate ? Number(editForm.hourly_rate) : null,
+      })
+      .eq('id', memberId)
+
+    setTeamMembers(prev => prev.map(m =>
+      m.id === memberId
+        ? { ...m, trade: editForm.trade || null, hourly_rate: editForm.hourly_rate ? Number(editForm.hourly_rate) : null }
+        : m
+    ))
+    setEditingId(null)
+    setEditSaving(false)
   }
 
   return (
@@ -92,66 +140,83 @@ export default function TeamManager({
         <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-slate-800">Invite Team Member</h2>
-            <button
-              onClick={() => { setShowInvite(false); setError(null) }}
-              className="text-slate-400 hover:text-slate-600"
-            >
+            <button onClick={() => { setShowInvite(false); setError(null) }} className="text-slate-400 hover:text-slate-600">
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <div className="space-y-3">
-            {/* Full name */}
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Jane Smith"
-                value={form.full_name}
-                onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Full Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  placeholder="Jane Smith"
+                  value={form.full_name}
+                  onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Email <span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  placeholder="jane@company.com.au"
+                  value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                placeholder="jane@company.com.au"
-                value={form.email}
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  placeholder="0412 345 678"
+                  value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
+                <select
+                  value={form.role}
+                  onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="worker">Worker</option>
+                  <option value="manager">Manager</option>
+                </select>
+              </div>
             </div>
 
-            {/* Phone */}
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
-              <input
-                type="tel"
-                placeholder="0412 345 678"
-                value={form.phone}
-                onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Role */}
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
-              <select
-                value={form.role}
-                onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="worker">Worker</option>
-                <option value="manager">Manager</option>
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Trade / Category</label>
+                <select
+                  value={form.trade}
+                  onChange={e => setForm(f => ({ ...f, trade: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select trade…</option>
+                  {TRADES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Hourly Rate (A$)</label>
+                <input
+                  type="number"
+                  placeholder="85"
+                  min={0}
+                  step={0.01}
+                  value={form.hourly_rate}
+                  onChange={e => setForm(f => ({ ...f, hourly_rate: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
 
             {error && (
@@ -163,18 +228,10 @@ export default function TeamManager({
                 onClick={handleInvite}
                 disabled={loading || success}
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  success
-                    ? 'bg-green-600 text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
+                  success ? 'bg-green-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
                 }`}
               >
-                {success ? (
-                  <><Check className="w-4 h-4" /> Invite sent!</>
-                ) : loading ? (
-                  'Sending...'
-                ) : (
-                  <><Mail className="w-4 h-4" /> Send Invite</>
-                )}
+                {success ? <><Check className="w-4 h-4" /> Invite sent!</> : loading ? 'Sending…' : <><Mail className="w-4 h-4" /> Send Invite</>}
               </button>
               <button
                 onClick={() => { setShowInvite(false); setError(null) }}
@@ -203,31 +260,99 @@ export default function TeamManager({
           </div>
         ) : (
           teamMembers.map(member => (
-            <div key={member.id} className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-semibold text-slate-600">
-                    {member.full_name?.charAt(0) || '?'}
-                  </span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-slate-800">{member.full_name}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${ROLE_STYLES[member.role] || ROLE_STYLES.worker}`}>
-                      {member.role}
-                    </span>
-                    {member.id === currentUserId && (
-                      <span className="text-xs text-slate-400">(you)</span>
-                    )}
+            <div key={member.id} className="px-4 py-3">
+              {editingId === member.id ? (
+                /* Edit mode */
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-slate-600">{member.full_name?.charAt(0) || '?'}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">{member.full_name}</p>
+                      <p className="text-xs text-slate-500">{member.email}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <p className="text-xs text-slate-500">{member.email}</p>
-                    {member.phone && (
-                      <p className="text-xs text-slate-400">{member.phone}</p>
-                    )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Trade</label>
+                      <select
+                        value={editForm.trade || ''}
+                        onChange={e => setEditForm(f => ({ ...f, trade: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select trade…</option>
+                        {TRADES.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Hourly Rate (A$)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={editForm.hourly_rate || ''}
+                        onChange={e => setEditForm(f => ({ ...f, hourly_rate: Number(e.target.value) }))}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleSaveEdit(member.id)}
+                      disabled={editSaving}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      {editSaving ? 'Saving…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="px-3 py-1.5 text-slate-500 text-xs border border-slate-200 rounded-lg hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* View mode */
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-slate-600">{member.full_name?.charAt(0) || '?'}</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-slate-800">{member.full_name}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${ROLE_STYLES[member.role] || ROLE_STYLES.worker}`}>
+                          {member.role}
+                        </span>
+                        {member.trade && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">
+                            {member.trade}
+                          </span>
+                        )}
+                        {member.id === currentUserId && (
+                          <span className="text-xs text-slate-400">(you)</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <p className="text-xs text-slate-500">{member.email}</p>
+                        {member.phone && <p className="text-xs text-slate-400">{member.phone}</p>}
+                        {member.hourly_rate && (
+                          <p className="text-xs font-medium text-slate-600">A${member.hourly_rate}/hr</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => startEdit(member)}
+                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}

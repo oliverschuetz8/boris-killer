@@ -75,6 +75,20 @@ const customerData = {
     throw new Error('Failed to create customer')
   }
 
+  // Create site if address provided
+  const siteAddress = formData.get('site_address_line1') as string
+  if (siteAddress && data) {
+    await supabase.from('customer_sites').insert({
+      customer_id: data.id,
+      company_id: userProfile.company_id,
+      site_name: formData.get('site_name') as string || null,
+      address_line1: siteAddress,
+      city: formData.get('site_city') as string || null,
+      state: formData.get('site_state') as string || null,
+      postcode: formData.get('site_postcode') as string || null,
+    })
+  }
+
   revalidatePath('/customers')
   return data
 }
@@ -115,4 +129,77 @@ export async function deleteCustomer(id: string) {
   if (error) throw new Error('Failed to delete customer')
 
   revalidatePath('/customers')
+}
+
+export async function createSite(customerId: string, formData: {
+  site_name: string
+  address_line1: string
+  city: string
+  state: string
+  postcode: string
+}) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data: userProfile } = await supabase
+    .from('users')
+    .select('company_id')
+    .eq('id', user.id)
+    .single()
+
+  const { data, error } = await supabase
+    .from('customer_sites')
+    .insert({
+      customer_id: customerId,
+      company_id: userProfile?.company_id,
+      site_name: formData.site_name || null,
+      address_line1: formData.address_line1,
+      city: formData.city || null,
+      state: formData.state || null,
+      postcode: formData.postcode || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw new Error('Failed to create site')
+  revalidatePath('/customers')
+  return data
+}
+
+export async function updateSite(siteId: string, customerId: string, formData: {
+  site_name: string
+  address_line1: string
+  city: string
+  state: string
+  postcode: string
+}) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('customer_sites')
+    .update({
+      site_name: formData.site_name || null,
+      address_line1: formData.address_line1,
+      city: formData.city || null,
+      state: formData.state || null,
+      postcode: formData.postcode || null,
+    })
+    .eq('id', siteId)
+
+  if (error) throw new Error('Failed to update site')
+  revalidatePath(`/customers/${customerId}`)
+}
+
+export async function deleteSite(siteId: string, customerId: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('customer_sites')
+    .delete()
+    .eq('id', siteId)
+
+  if (error) throw new Error('Failed to delete site')
+  revalidatePath(`/customers/${customerId}`)
 }

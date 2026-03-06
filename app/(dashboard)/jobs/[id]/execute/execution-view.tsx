@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { startJob, completeJob } from '@/lib/services/jobs'
 import PhotoUpload from './photo-upload'
 import PhotoGallery from './photo-gallery'
+import { startTimeEntry, completeTimeEntry } from '@/lib/services/time-entries'
 import {
   ArrowLeft,
   Play,
@@ -35,9 +36,10 @@ interface ExecutionViewProps {
   job: Job
   userId: string
   userName: string
+  companyId: string
 }
 
-export default function ExecutionView({ job, userId, userName }: ExecutionViewProps) {
+export default function ExecutionView({ job, userId, userName, companyId }: ExecutionViewProps) {
   const [loading, setLoading] = useState<'start' | 'complete' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [localStatus, setLocalStatus] = useState(job.status)
@@ -53,6 +55,7 @@ export default function ExecutionView({ job, userId, userName }: ExecutionViewPr
     setError(null)
     try {
       await startJob(job.id, userId)
+      await startTimeEntry(job.id, userId, companyId)
       setLocalStatus('in_progress')
       setStartedAt(new Date().toISOString())
     } catch {
@@ -66,6 +69,7 @@ export default function ExecutionView({ job, userId, userName }: ExecutionViewPr
     setLoading('complete')
     setError(null)
     try {
+      await completeTimeEntry(job.id, userId)
       await completeJob(job.id, userId)
       setLocalStatus('completed')
     } catch {

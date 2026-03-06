@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { MapPin, User, Calendar, Users, FileText, Camera, Package } from 'lucide-react'
+import { MapPin, User, Calendar, Users, FileText, Camera, Package, Building2 } from 'lucide-react'
 import PhotoGallery from './execute/photo-gallery'
 import MaterialLog from './execute/material-log'
 import JobCostSummary from './job-cost-summary'
+import BuildingStructure from './building-structure'
 
-type Tab = 'overview' | 'evidence' | 'materials'
+type Tab = 'overview' | 'evidence' | 'materials' | 'structure'
 
 const STATUS_STYLES: Record<string, string> = {
   scheduled: 'bg-blue-100 text-blue-800',
@@ -41,8 +42,8 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
     { id: 'overview' as Tab, label: 'Overview', icon: FileText },
     { id: 'evidence' as Tab, label: 'Evidence', icon: Camera },
     { id: 'materials' as Tab, label: 'Materials', icon: Package },
+    { id: 'structure' as Tab, label: 'Structure', icon: Building2 },
   ]
-
   return (
     <div className="min-h-screen bg-slate-50">
 
@@ -318,6 +319,25 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
             <JobCostSummary jobId={job.id} />
           </div>
         )}
+
+        {/* Structure Tab */}
+        {activeTab === 'structure' && (
+          <div className="mt-4">
+            {job.site ? (
+              <BuildingStructure
+                siteId={job.site.id}
+                companyId={job.company_id}
+                userRole={userRole}
+              />
+            ) : (
+              <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
+                <Building2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-500">No site assigned to this job.</p>
+                <p className="text-xs text-slate-400 mt-1">Assign a site to the job to set up building structure.</p>
+              </div>
+            )}
+          </div>
+        )} 
 
       </div>
     </div>
