@@ -26,19 +26,26 @@ import {
   Building2,
 } from 'lucide-react'
 
-const navLinks = [
+const adminNavLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/jobs', label: 'Jobs', icon: Briefcase },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/schedule', label: 'Schedule', icon: Calendar },
   { href: '/invoices', label: 'Invoices', icon: FileText },
+  { href: '/settings/team', label: 'Team', icon: Users },
   { href: '/settings/materials', label: 'Settings', icon: Settings },
+]
+
+const workerNavLinks = [
+  { href: '/today', label: 'Today', icon: Calendar },
+  { href: '/jobs', label: 'Jobs', icon: Briefcase },
 ]
 
 interface TopNavProps {
   user: {
     full_name: string
     email: string
+    role: string
     companies: {
       name: string
     } | null
@@ -49,6 +56,8 @@ export default function TopNav({ user }: TopNavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const isWorker = user?.role === 'worker'
+  const navLinks = isWorker ? workerNavLinks : adminNavLinks
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -67,7 +76,7 @@ export default function TopNav({ user }: TopNavProps) {
 
           {/* Left: Logo + Company */}
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href={isWorker ? '/today' : '/dashboard'} className="flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Building2 className="w-4 h-4 text-white" />
               </div>
@@ -77,7 +86,7 @@ export default function TopNav({ user }: TopNavProps) {
             </Link>
 
             {/* Nav Links */}
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className={`hidden ${isWorker ? '!hidden' : 'md:flex'} items-center gap-1`}>
               {navLinks.map(({ href, label, icon: Icon }) => {
                 const isActive = pathname === href || pathname.startsWith(href + '/')
                 return (

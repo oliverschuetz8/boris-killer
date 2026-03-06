@@ -15,7 +15,15 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.company_id) redirect('/onboarding')
+    if (!profile?.company_id) redirect('/onboarding')
+
+    const { data: roleData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+      
+    if (roleData?.role === 'worker') redirect('/today')
 
   const stats = await getDashboardStats(profile.company_id)
 
