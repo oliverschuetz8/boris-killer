@@ -61,29 +61,7 @@ export default async function CustomerDetailPage({
           )}
         </div>
 
-        {/* Sites */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Sites</h2>
-          </div>
-          {customer.customer_sites && customer.customer_sites.length > 0 ? (
-            <div className="space-y-3">
-              {customer.customer_sites.map((site: any) => (
-                <div key={site.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">{site.site_name || 'Unnamed Site'}</p>
-                    <p className="text-xs text-slate-500">
-                      {[site.address_line1, site.city, site.state].filter(Boolean).join(', ')}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">No sites added yet.</p>
-          )}
-        </div>
-
+       
         {/* Notes */}
         {customer.notes && (
           <div className="bg-white rounded-xl border border-slate-200 p-6">

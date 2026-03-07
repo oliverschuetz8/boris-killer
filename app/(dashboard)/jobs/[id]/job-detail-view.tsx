@@ -159,19 +159,28 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
                 </div>
 
                 {/* Site */}
-                {job.site && (
+                {(job.site_address_line1 || job.site_name) && (
                   <div className="flex gap-4 p-4">
                     <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
                       <MapPin className="w-4 h-4 text-purple-600" />
                     </div>
                     <div>
                       <p className="text-xs font-medium text-slate-500 mb-0.5">Site</p>
-                      <p className="text-sm font-semibold text-slate-800">
-                        {job.site.site_name || 'Main Site'}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {job.site.address_line1}{job.site.city ? `, ${job.site.city}` : ''}{job.site.postcode ? ` ${job.site.postcode}` : ''}
-                      </p>
+                      {job.site_name && (
+                        <p className="text-sm font-semibold text-slate-800">{job.site_name}</p>
+                      )}
+                      {job.site_address_line1 && (
+                        <p className="text-xs text-slate-500">
+                          {[job.site_address_line1, job.site_city, job.site_state, job.site_postcode]
+                            .filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                      {job.site_manager && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          Site Manager: <span className="font-medium text-slate-700">{job.site_manager}</span>
+                          {job.site_manager_phone && ` · ${job.site_manager_phone}`}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}

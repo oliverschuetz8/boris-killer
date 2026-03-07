@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { updateJob } from '@/app/actions/jobs'
 import { Button } from '@/components/ui/button'
 
+const STATE_OPTIONS = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']
+
 export default function JobEditForm({ job, customers }: { job: any, customers: any[] }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -20,7 +22,6 @@ export default function JobEditForm({ job, customers }: { job: any, customers: a
     e.preventDefault()
     setLoading(true)
     setError(null)
-
     try {
       const formData = new FormData(e.currentTarget)
       await updateJob(job.id, formData)
@@ -45,6 +46,7 @@ export default function JobEditForm({ job, customers }: { job: any, customers: a
       <form onSubmit={handleSubmit}>
         <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-6">
 
+          {/* Job Title */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               Job Title <span className="text-red-500">*</span>
@@ -57,6 +59,7 @@ export default function JobEditForm({ job, customers }: { job: any, customers: a
             />
           </div>
 
+          {/* Description */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
             <textarea
@@ -67,6 +70,7 @@ export default function JobEditForm({ job, customers }: { job: any, customers: a
             />
           </div>
 
+          {/* Schedule */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Scheduled Start</label>
@@ -88,6 +92,7 @@ export default function JobEditForm({ job, customers }: { job: any, customers: a
             </div>
           </div>
 
+          {/* Status + Priority */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Status</label>
@@ -119,6 +124,7 @@ export default function JobEditForm({ job, customers }: { job: any, customers: a
             </div>
           </div>
 
+          {/* Internal Notes */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Internal Notes</label>
             <textarea
@@ -129,11 +135,92 @@ export default function JobEditForm({ job, customers }: { job: any, customers: a
             />
           </div>
 
+          {/* Site Details */}
+          <div className="space-y-4">
+            <h2 className="text-sm font-semibold text-slate-700 border-t border-slate-100 pt-4">Site Details</h2>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Site Name</label>
+              <input
+                name="site_name"
+                defaultValue={job.site_name ?? ''}
+                placeholder="e.g. Head Office, Warehouse"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Street Address</label>
+              <input
+                name="site_address_line1"
+                defaultValue={job.site_address_line1 ?? ''}
+                placeholder="Street address"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">City</label>
+                <input
+                  name="site_city"
+                  defaultValue={job.site_city ?? ''}
+                  placeholder="Sydney"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">State</label>
+                <select
+                  name="site_state"
+                  defaultValue={job.site_state ?? ''}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Select…</option>
+                  {STATE_OPTIONS.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Postcode</label>
+                <input
+                  name="site_postcode"
+                  defaultValue={job.site_postcode ?? ''}
+                  placeholder="2000"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Site Manager</label>
+                <input
+                  name="site_manager"
+                  defaultValue={job.site_manager ?? ''}
+                  placeholder="e.g. John Smith"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Site Manager Phone</label>
+                <input
+                  name="site_manager_phone"
+                  defaultValue={job.site_manager_phone ?? ''}
+                  placeholder="e.g. 0412 345 678"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}
+
         </div>
 
         <div className="flex items-center justify-end gap-3 mt-6">

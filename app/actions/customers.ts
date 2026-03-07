@@ -86,6 +86,8 @@ const customerData = {
       city: formData.get('site_city') as string || null,
       state: formData.get('site_state') as string || null,
       postcode: formData.get('site_postcode') as string || null,
+      site_manager_name: formData.get('site_manager_name') as string || null,
+      site_manager_phone: formData.get('site_manager_phone') as string || null,
     })
   }
 
@@ -137,6 +139,8 @@ export async function createSite(customerId: string, formData: {
   city: string
   state: string
   postcode: string
+  site_manager_name?: string
+  site_manager_phone?: string
 }) {
   const supabase = await createClient()
 
@@ -159,6 +163,8 @@ export async function createSite(customerId: string, formData: {
       city: formData.city || null,
       state: formData.state || null,
       postcode: formData.postcode || null,
+      site_manager_name: formData.site_manager_name || null,
+      site_manager_phone: formData.site_manager_phone || null,
     })
     .select()
     .single()
@@ -174,6 +180,8 @@ export async function updateSite(siteId: string, customerId: string, formData: {
   city: string
   state: string
   postcode: string
+  site_manager_name?: string
+  site_manager_phone?: string
 }) {
   const supabase = await createClient()
 
@@ -185,6 +193,8 @@ export async function updateSite(siteId: string, customerId: string, formData: {
       city: formData.city || null,
       state: formData.state || null,
       postcode: formData.postcode || null,
+      site_manager_name: formData.site_manager_name || null,
+      site_manager_phone: formData.site_manager_phone || null,
     })
     .eq('id', siteId)
 

@@ -57,8 +57,7 @@ export async function getJob(id: string): Promise<JobWithRelations | null> {
     .from('jobs')
     .select(`
       *,
-      customer:customers!jobs_customer_id_fkey(*),
-      site:customer_sites!jobs_site_id_fkey(*)
+      customer:customers!jobs_customer_id_fkey(*)
     `)
     .eq('id', id)
     .single()
@@ -126,6 +125,13 @@ export async function createJob(formData: FormData) {
     status: formData.get('status') as string || 'scheduled',
     priority: formData.get('priority') as string || 'normal',
     notes: formData.get('notes') as string || null,
+    site_name: formData.get('site_name') as string || null,
+    site_address_line1: formData.get('site_address_line1') as string || null,
+    site_city: formData.get('site_city') as string || null,
+    site_state: formData.get('site_state') as string || null,
+    site_postcode: formData.get('site_postcode') as string || null,
+    site_manager: formData.get('site_manager') as string || null,
+    site_manager_phone: formData.get('site_manager_phone') as string || null,
     created_by: user.id,
   }
 
@@ -155,6 +161,13 @@ export async function updateJob(id: string, formData: FormData) {
     status: formData.get('status') as string,
     priority: formData.get('priority') as string,
     notes: formData.get('notes') as string || null,
+    site_name: formData.get('site_name') as string || null,
+    site_address_line1: formData.get('site_address_line1') as string || null,
+    site_city: formData.get('site_city') as string || null,
+    site_state: formData.get('site_state') as string || null,
+    site_postcode: formData.get('site_postcode') as string || null,
+    site_manager: formData.get('site_manager') as string || null,
+    site_manager_phone: formData.get('site_manager_phone') as string || null,
   }
 
   const { error } = await supabase

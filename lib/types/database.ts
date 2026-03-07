@@ -37,6 +37,13 @@ export interface Database {
           created_by: string | null
           notes: string | null
           internal_notes: string | null
+          site_name: string | null
+          site_address_line1: string | null
+          site_city: string | null
+          site_state: string | null
+          site_postcode: string | null
+          site_manager: string | null
+          site_manager_phone: string | null
         }
         Insert: Omit<Database['public']['Tables']['jobs']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['jobs']['Insert']>
@@ -46,7 +53,7 @@ export interface Database {
           id: string
           company_id: string
           name: string
-          email: string | null
+          email: string | null          
           phone: string | null
         }
       }

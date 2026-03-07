@@ -85,7 +85,7 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link
-          href={`/jobs/${job.id}`}
+          href="/jobs"
           className="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center hover:bg-slate-50"
         >
           <ArrowLeft className="w-4 h-4 text-slate-600" />
@@ -201,7 +201,8 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
 
       {/* Action Buttons */}
       {!isCompleted && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 max-w-lg mx-auto">
+        <div className="fixed bottom-16 left-0 right-0 px-4 pb-2 bg-white border-t border-slate-200">
+          <div className="max-w-lg mx-auto pt-3">
           {isNotStarted && (
             <button
               onClick={handleStart}
@@ -222,8 +223,9 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
               {loading === 'complete' ? 'Completing…' : 'Complete Job'}
             </button>
           )}
-        </div>
-      )}
+          </div>
+          </div>
+        )}
     </div>
   )
 }

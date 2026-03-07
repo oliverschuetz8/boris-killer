@@ -122,6 +122,26 @@ export default function NewCustomerPage() {
             </div>
           </div>
 
+          {/* Site Manager */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Site Manager Name</label>
+              <input
+                name="site_manager_name"
+                placeholder="e.g. John Smith"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Site Manager Phone</label>
+              <input
+                name="site_manager_phone"
+                placeholder="e.g. 0412 345 678"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
           {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Notes</label>
