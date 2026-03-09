@@ -1,20 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { updatePhotoMetadata } from '@/lib/services/photos'
+import { getRoomsForJob } from '@/lib/services/building-structure'
 import { X, ChevronDown, Save } from 'lucide-react'
-
-const LEVEL_OPTIONS = [
-  'Basement', 'Ground Floor', 'Level 1', 'Level 2', 'Level 3',
-  'Level 4', 'Level 5', 'Level 6', 'Level 7', 'Level 8', 'Roof',
-]
 
 const SPACE_TYPES = [
   'Room', 'Corridor', 'Stairwell', 'Plant/Service Room',
   'Lobby/Reception', 'External', 'Other',
 ]
 
+interface BuildingData {
+  id: string
+  name: string
+  levels: { id: string; name: string; order_index: number }[]
+}
+
 interface PhotoAssignModalProps {
+  jobId: string
   photoId: string
   currentLevel?: string | null
   currentSpaceType?: string | null
@@ -26,6 +29,7 @@ interface PhotoAssignModalProps {
 }
 
 export default function PhotoAssignModal({
+  jobId,
   photoId,
   currentLevel,
   currentSpaceType,
@@ -35,6 +39,8 @@ export default function PhotoAssignModal({
   onSaved,
   onClose,
 }: PhotoAssignModalProps) {
+  const [buildings, setBuildings] = useState<BuildingData[]>([])
+  const [selectedBuildingId, setSelectedBuildingId] = useState('')
   const [level, setLevel] = useState(currentLevel || '')
   const [spaceType, setSpaceType] = useState(currentSpaceType || '')
   const [spaceIdentifier, setSpaceIdentifier] = useState(currentSpaceIdentifier || '')
@@ -42,6 +48,31 @@ export default function PhotoAssignModal({
   const [workTypeCustom, setWorkTypeCustom] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getRoomsForJob(jobId).then((data: any[]) => {
+      const mapped: BuildingData[] = data.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        levels: (b.levels || [])
+          .slice()
+          .sort((a: any, b: any) => a.order_index - b.order_index),
+      }))
+      setBuildings(mapped)
+
+      // Auto-select if only one building
+      if (mapped.length === 1) {
+        setSelectedBuildingId(mapped[0].id)
+      } else if (currentLevel) {
+        // Try to find which building contains the current level
+        const match = mapped.find(b => b.levels.some(l => l.name === currentLevel))
+        if (match) setSelectedBuildingId(match.id)
+      }
+    })
+  }, [jobId, currentLevel])
+
+  const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
+  const levelOptions = selectedBuilding?.levels ?? []
 
   async function handleSave() {
     setSaving(true)
@@ -73,14 +104,44 @@ export default function PhotoAssignModal({
           </button>
         </div>
 
-        {/* Level */}
+        {/* Structure selector — only shown when 2+ buildings */}
+        {buildings.length >= 2 && (
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">Structure</label>
+            <div className="relative">
+              <select
+                value={selectedBuildingId}
+                onChange={e => {
+                  setSelectedBuildingId(e.target.value)
+                  setLevel('')
+                }}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select structure…</option>
+                {buildings.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+        )}
+
+        {/* Level — from database */}
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1.5">Level</label>
           <div className="relative">
-            <select value={level} onChange={e => setLevel(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select
+              value={level}
+              onChange={e => setLevel(e.target.value)}
+              disabled={buildings.length >= 2 && !selectedBuildingId}
+              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+            >
               <option value="">Select level…</option>
-              {LEVEL_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              {levelOptions.map(l => (
+                <option key={l.id} value={l.name}>{l.name}</option>
+              ))}
+              <option value="Other">Other</option>
             </select>
             <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>

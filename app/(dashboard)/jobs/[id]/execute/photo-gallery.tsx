@@ -303,6 +303,7 @@ export default function PhotoGallery({
 
       {assigningPhoto && (
         <PhotoAssignModal
+          jobId={jobId}
           photoId={assigningPhoto.id}
           currentLevel={assigningPhoto.level}
           currentSpaceType={assigningPhoto.space_type}

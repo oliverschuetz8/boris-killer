@@ -39,15 +39,15 @@ export default async function WorkerDetailPage({
 
   if (!job) notFound()
 
-    const customer = Array.isArray(job.customer) ? job.customer[0] : job.customer
+  const customer = Array.isArray(job.customer) ? job.customer[0] : job.customer
 
-    const siteAddress = job.site_address_line1
-      ? [job.site_address_line1, job.site_city, job.site_state, job.site_postcode].filter(Boolean).join(', ')
-      : null
-  
-    const mapsUrl = siteAddress
-      ? `https://maps.google.com/?q=${encodeURIComponent(siteAddress)}`
-      : null
+  const siteAddress = job.site_address_line1
+    ? [job.site_address_line1, job.site_city, job.site_state, job.site_postcode].filter(Boolean).join(', ')
+    : null
+
+  const mapsUrl = siteAddress
+    ? `https://maps.google.com/?q=${encodeURIComponent(siteAddress)}`
+    : null
 
   const isInProgress = job.status === 'in_progress'
   const isCompleted = job.status === 'completed'
@@ -64,20 +64,12 @@ export default async function WorkerDetailPage({
   }
 
   return (
-    /*
-      overflow-hidden on the outer wrapper prevents any page scroll.
-      h-[calc(100dvh-128px)]: 
-        100dvh = full dynamic viewport height (accounts for mobile browser chrome)
-        minus 64px top nav
-        minus 64px bottom nav
-      flex flex-col so children stack and fill the space.
-    */
     <div
       className="max-w-lg mx-auto px-4 flex flex-col overflow-hidden"
       style={{ height: 'calc(100dvh - 128px)', paddingTop: '16px', paddingBottom: '12px' }}
     >
 
-      {/* ── Header row: back + title + status badge ── */}
+      {/* Header row */}
       <div className="flex items-center gap-3 mb-3 flex-shrink-0">
         <Link
           href="/jobs"
@@ -98,25 +90,15 @@ export default async function WorkerDetailPage({
         </span>
       </div>
 
-      {/*
-        ── Site briefing card ──
-        flex-1 + min-h-0 lets it grow to fill all space between header and button.
-        Inside: flex flex-col justify-between to spread rows evenly.
-      */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col flex-1 min-h-0 mb-3">
+      {/* Site briefing card */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col flex-none mb-3">
 
-        {/* Dark header — px-4 gives left padding to title */}
+        {/* Dark header */}
         <div className="bg-slate-900 px-4 py-3 flex-shrink-0">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Site Briefing</p>
         </div>
 
-        {/*
-          Rows container:
-          - px-4 py-4 gives consistent left/right padding (icons won't hug the edge)
-          - flex-1 + justify-between spreads rows to fill card height
-          - Each row has py-1 so there's vertical breathing room
-        */}
-        <div className="flex flex-col flex-1 justify-start gap-3 px-4 py-4 min-h-0">
+        <div className="flex flex-col justify-start gap-3 px-4 py-4">
 
           {/* Client row */}
           <div className="flex items-center justify-between py-1">
@@ -129,7 +111,6 @@ export default async function WorkerDetailPage({
                 <p className="text-sm font-bold text-slate-800">{customer?.name ?? 'Not assigned'}</p>
               </div>
             </div>
-            
           </div>
 
           <div className="border-t border-slate-100 mx-1" />
@@ -166,18 +147,31 @@ export default async function WorkerDetailPage({
           <div className="border-t border-slate-100 mx-1" />
 
           {/* Site manager row */}
-          <div className="flex items-center gap-3 py-1">
-            <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-              <Phone className="w-4 h-4 text-orange-600" />
+          <div className="flex items-start justify-between py-1 gap-2">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Phone className="w-4 h-4 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-400">Site Manager</p>
+                <p className={`text-sm font-bold ${job.site_manager ? 'text-slate-800' : 'text-slate-400 italic font-normal'}`}>
+                  {job.site_manager ?? 'Not specified'}
+                </p>
+                {job.site_manager_phone && (
+                  <p className="text-xs text-slate-500 mt-0.5">{job.site_manager_phone}</p>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-slate-400">Site Manager</p>
-              <p className={`text-sm font-bold ${job.site_manager ? 'text-slate-800' : 'text-slate-400 italic font-normal'}`}>
-                {job.site_manager ?? 'Not specified'}
-              </p>
-            </div>
+            {job.site_manager_phone && (
+              <a
+                href={`tel:${job.site_manager_phone}`}
+                className="flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-700 text-xs font-bold rounded-lg hover:bg-orange-100 transition-colors flex-shrink-0 mr-1"
+              >
+                <Phone className="w-3 h-3" />
+                Call
+              </a>
+            )}
           </div>
-          
 
           {/* Scheduled row — only if present */}
           {job.scheduled_start && (
@@ -198,7 +192,7 @@ export default async function WorkerDetailPage({
         </div>
       </div>
 
-      {/* ── Action button — flex-shrink-0 keeps it pinned at bottom ── */}
+      {/* Action button */}
       {!isCompleted && (
         <div className="flex-shrink-0">
           <Link

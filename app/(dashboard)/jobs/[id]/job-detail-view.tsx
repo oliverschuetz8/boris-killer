@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { MapPin, User, Calendar, Users, FileText, Camera, Package, Building2 } from 'lucide-react'
+import { ArrowLeft, MapPin, User, Calendar, Users, FileText, Camera, Package, Building2 } from 'lucide-react'
 import PhotoGallery from './execute/photo-gallery'
 import MaterialLog from './execute/material-log'
 import JobCostSummary from './job-cost-summary'
@@ -44,21 +44,22 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
     { id: 'materials' as Tab, label: 'Materials', icon: Package },
     { id: 'structure' as Tab, label: 'Structure', icon: Building2 },
   ]
+
   return (
     <div className="min-h-screen bg-slate-50">
 
-      {/*
-        HEADER CARD
-        Fix 1: bg-white rounded-xl border border-slate-200 → rounded corners (12px radius)
-        Fix 3: max-w-6xl mx-auto px-6 on the wrapper → same constraints as content below
-        Outer div is bg-slate-50 pt-6 → no full-width white bleed, adds breathing room at top
-      */}
       <div className="bg-slate-50 pt-6">
         <div className="max-w-6xl mx-auto px-6">
           <div className="bg-white rounded-xl border border-slate-200 px-6 pt-5 pb-0">
 
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2 mb-3">
+            {/* Back arrow + breadcrumb */}
+            <div className="flex items-center gap-2 mt-3 mb-3">
+              <Link
+                href="/jobs"
+                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors flex-shrink-0"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
+              </Link>
               <Link href="/jobs" className="text-sm text-slate-400 hover:text-slate-600 transition-colors">
                 Jobs
               </Link>
@@ -66,11 +67,7 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
               <span className="text-sm text-slate-500">{job.job_number}</span>
             </div>
 
-            {/*
-              Fix 2: title row is now flex justify-between
-              Left: title + chips
-              Right: buttons with mt-2 → same vertical position as the chips row
-            */}
+            {/* Title row */}
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">{job.title}</h1>
@@ -84,7 +81,6 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
                 </div>
               </div>
 
-              {/* mt-2 pushes buttons down to align with chips row */}
               <div className="flex items-center gap-2 mt-2 flex-shrink-0">
                 {canExecute && (
                   <Link
@@ -103,11 +99,8 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
               </div>
             </div>
 
-            {/*
-              Tabs — -mx-6 px-6 bleeds the border-b to card edges
-              Active tab uses border-b-2 border-blue-600 + -mb-px to overlap card border
-            */}
-            <div className="flex gap-1 mt-4 border-b border-slate-200 -mx-6 px-6">
+            {/* Tabs */}
+            <div className="flex gap-1 mt-4 border-b border-slate-200 -mx-6 px-1">
               {tabs.map(tab => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
@@ -132,7 +125,7 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
         </div>
       </div>
 
-      {/* Tab Content — max-w-6xl mx-auto px-6 matches header wrapper exactly */}
+      {/* Tab Content */}
       <div className="max-w-6xl mx-auto px-6 py-6">
 
         {/* Overview Tab */}
@@ -332,21 +325,13 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
         {/* Structure Tab */}
         {activeTab === 'structure' && (
           <div className="mt-4">
-            {job.site ? (
-              <BuildingStructure
-                siteId={job.site.id}
-                companyId={job.company_id}
-                userRole={userRole}
-              />
-            ) : (
-              <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
-                <Building2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <p className="text-sm text-slate-500">No site assigned to this job.</p>
-                <p className="text-xs text-slate-400 mt-1">Assign a site to the job to set up building structure.</p>
-              </div>
-            )}
+            <BuildingStructure
+              siteId={job.id}
+              companyId={job.company_id}
+              userRole={userRole}
+            />
           </div>
-        )} 
+        )}
 
       </div>
     </div>

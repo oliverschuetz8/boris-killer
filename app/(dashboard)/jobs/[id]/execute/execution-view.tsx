@@ -3,14 +3,13 @@
 import MaterialLog from './material-log'
 import { useState } from 'react'
 import Link from 'next/link'
-import { startJob, completeJob } from '@/lib/services/jobs'
+import { startJob } from '@/lib/services/jobs'
 import PhotoUpload from './photo-upload'
 import PhotoGallery from './photo-gallery'
-import { startTimeEntry, completeTimeEntry } from '@/lib/services/time-entries'
+import { startTimeEntry } from '@/lib/services/time-entries'
 import {
   ArrowLeft,
   Play,
-  CheckCircle2,
   Clock,
   MapPin,
   User,
@@ -40,7 +39,7 @@ interface ExecutionViewProps {
 }
 
 export default function ExecutionView({ job, userId, userName, companyId }: ExecutionViewProps) {
-  const [loading, setLoading] = useState<'start' | 'complete' | null>(null)
+  const [loading, setLoading] = useState<'start' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [localStatus, setLocalStatus] = useState(job.status)
   const [startedAt, setStartedAt] = useState<string | null>(job.started_at)
@@ -60,20 +59,6 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
       setStartedAt(new Date().toISOString())
     } catch {
       setError('Failed to start job. Please try again.')
-    } finally {
-      setLoading(null)
-    }
-  }
-
-  async function handleComplete() {
-    setLoading('complete')
-    setError(null)
-    try {
-      await completeTimeEntry(job.id, userId)
-      await completeJob(job.id, userId)
-      setLocalStatus('completed')
-    } catch {
-      setError('Failed to complete job. Please try again.')
     } finally {
       setLoading(null)
     }
@@ -172,16 +157,16 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
           />
 
           {/* Photo gallery */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden min-h-24">
             <PhotoGallery jobId={job.id} refreshTrigger={photoRefresh} />
           </div>
         </div>
       )}
 
-          {/* Materials */}
-          {(job.status === 'in_progress' || job.status === 'completed') && (
-            <MaterialLog jobId={job.id} userRole="worker" />
-          )}
+      {/* Materials */}
+      {(isInProgress || isCompleted) && (
+        <MaterialLog jobId={job.id} userRole="worker" />
+      )}
 
       {/* Error */}
       {error && (
@@ -190,20 +175,10 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
         </div>
       )}
 
-      {/* Completed state */}
-      {isCompleted && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center mb-4">
-          <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-2" />
-          <p className="font-semibold text-green-800">Job Completed</p>
-          <p className="text-sm text-green-600 mt-1">Great work, {userName.split(' ')[0]}!</p>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      {!isCompleted && (
+      {/* Start Job button — only shown if job not yet started */}
+      {isNotStarted && (
         <div className="fixed bottom-16 left-0 right-0 px-4 pb-2 bg-white border-t border-slate-200">
           <div className="max-w-lg mx-auto pt-3">
-          {isNotStarted && (
             <button
               onClick={handleStart}
               disabled={loading === 'start'}
@@ -212,20 +187,10 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
               <Play className="w-5 h-5" />
               {loading === 'start' ? 'Starting…' : 'Start Job'}
             </button>
-          )}
-          {isInProgress && (
-            <button
-              onClick={handleComplete}
-              disabled={loading === 'complete'}
-              className="w-full flex items-center justify-center gap-3 py-4 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-semibold text-lg rounded-xl transition-colors"
-            >
-              <CheckCircle2 className="w-5 h-5" />
-              {loading === 'complete' ? 'Completing…' : 'Complete Job'}
-            </button>
-          )}
           </div>
-          </div>
-        )}
+        </div>
+      )}
+
     </div>
   )
 }

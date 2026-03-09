@@ -147,7 +147,7 @@ export function JobsList({ initialJobs }: JobsListProps) {
                       {job.priority}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-left text-sm space-x-2">
+                  <td className="px-6 py-4 text-left text-sm space-x-4">
                     <Link
                       href={`/jobs/${job.id}`}
                       className="text-blue-600 hover:text-blue-900"

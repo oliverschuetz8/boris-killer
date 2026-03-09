@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getCustomers } from '@/app/actions/customers'
 import { Button } from '@/components/ui/button'
+import DeleteCustomerButton from './delete-customer-button'
 
 export default async function CustomersPage() {
   const customers = await getCustomers()
@@ -36,7 +37,7 @@ export default async function CustomersPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Phone</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">City</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Sites</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -53,13 +54,16 @@ export default async function CustomersPage() {
                   <td className="px-6 py-4 text-sm text-slate-600">
                     {customer.customer_sites?.length ?? 0}
                   </td>
-                  <td className="px-6 py-4 text-right text-sm space-x-3">
-                    <Link href={`/customers/${customer.id}`} className="text-blue-600 hover:text-blue-800">
-                      View
-                    </Link>
-                    <Link href={`/customers/${customer.id}/edit`} className="text-blue-600 hover:text-blue-800">
-                      Edit
-                    </Link>
+                  <td className="px-6 py-4 text-sm">
+                    <div className="flex items-center gap-6">
+                      <Link href={`/customers/${customer.id}`} className="text-blue-600 hover:text-blue-800">
+                        View
+                      </Link>
+                      <Link href={`/customers/${customer.id}/edit`} className="text-blue-600 hover:text-blue-800">
+                        Edit
+                      </Link>
+                      <DeleteCustomerButton id={customer.id} name={customer.name} />
+                    </div>
                   </td>
                 </tr>
               ))}

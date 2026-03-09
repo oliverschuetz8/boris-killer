@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { uploadJobPhoto, getCompanyWorkTypes, getUsedIdentifiers } from '@/lib/services/photos'
+import { getRoomsForJob } from '@/lib/services/building-structure'
 import { Camera, X, Upload, CheckCircle2, ChevronDown } from 'lucide-react'
 import Image from 'next/image'
 
@@ -10,11 +11,6 @@ interface PhotoUploadProps {
   onPhotoUploaded?: () => void
 }
 
-const LEVEL_OPTIONS = [
-  'Basement', 'Ground Floor', 'Level 1', 'Level 2', 'Level 3',
-  'Level 4', 'Level 5', 'Level 6', 'Level 7', 'Level 8', 'Roof',
-]
-
 const SPACE_TYPES = [
   'Room', 'Corridor', 'Stairwell', 'Plant/Service Room',
   'Lobby/Reception', 'External', 'Other',
@@ -22,9 +18,16 @@ const SPACE_TYPES = [
 
 type UploadState = 'idle' | 'uploading' | 'success' | 'error'
 
+interface BuildingData {
+  id: string
+  name: string
+  levels: { id: string; name: string; order_index: number }[]
+}
+
 interface PhotoPreview {
   file: File
   previewUrl: string
+  buildingId: string
   level: string
   levelCustom: string
   spaceType: string
@@ -41,10 +44,12 @@ export default function PhotoUpload({ jobId, onPhotoUploaded }: PhotoUploadProps
   const [uploadState, setUploadState] = useState<UploadState>('idle')
   const [error, setError] = useState<string | null>(null)
   const [workTypes, setWorkTypes] = useState<string[]>([])
+  const [buildings, setBuildings] = useState<BuildingData[]>([])
   const [identifierSuggestions, setIdentifierSuggestions] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
   // Persist last-used across photos
+  const [lastBuildingId, setLastBuildingId] = useState('')
   const [lastLevel, setLastLevel] = useState('')
   const [lastSpaceType, setLastSpaceType] = useState('')
   const [lastSpaceIdentifier, setLastSpaceIdentifier] = useState('')
@@ -52,9 +57,22 @@ export default function PhotoUpload({ jobId, onPhotoUploaded }: PhotoUploadProps
 
   useEffect(() => {
     getCompanyWorkTypes().then(setWorkTypes)
-  }, [])
+    getRoomsForJob(jobId).then((data: any[]) => {
+      const mapped: BuildingData[] = data.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        levels: (b.levels || [])
+          .slice()
+          .sort((a: any, b: any) => a.order_index - b.order_index),
+      }))
+      setBuildings(mapped)
+    })
+  }, [jobId])
 
-  // Fetch identifier suggestions when level + spaceType change
+  // Derived: which building is currently selected
+  const selectedBuilding = buildings.find(b => b.id === (photo?.buildingId || lastBuildingId))
+  const levelOptions = selectedBuilding?.levels ?? []
+
   const fetchSuggestions = useCallback(async (level: string, spaceType: string) => {
     if (!level || !spaceType || spaceType === 'Other') {
       setIdentifierSuggestions([])
@@ -68,8 +86,13 @@ export default function PhotoUpload({ jobId, onPhotoUploaded }: PhotoUploadProps
     const file = e.target.files?.[0]
     if (!file) return
     const previewUrl = URL.createObjectURL(file)
+
+    // Auto-select building if only one exists
+    const autoBuildingId = buildings.length === 1 ? buildings[0].id : lastBuildingId
+
     setPhoto({
       file, previewUrl,
+      buildingId: autoBuildingId,
       level: lastLevel, levelCustom: '',
       spaceType: lastSpaceType, spaceIdentifier: lastSpaceIdentifier,
       workType: lastWorkType, workTypeCustom: '',
@@ -93,6 +116,12 @@ export default function PhotoUpload({ jobId, onPhotoUploaded }: PhotoUploadProps
 
   function updatePhoto(updates: Partial<PhotoPreview>) {
     setPhoto(p => p ? { ...p, ...updates } : p)
+  }
+
+  // When building changes, reset level
+  function handleBuildingChange(buildingId: string) {
+    updatePhoto({ buildingId, level: '', levelCustom: '' })
+    setIdentifierSuggestions([])
   }
 
   const effectiveLevel = photo?.level === 'Other' ? photo.levelCustom.trim() : photo?.level
@@ -122,6 +151,7 @@ export default function PhotoUpload({ jobId, onPhotoUploaded }: PhotoUploadProps
 
       await uploadJobPhoto(fd)
 
+      setLastBuildingId(photo.buildingId)
       setLastLevel(effectiveLevel!)
       setLastSpaceType(photo.spaceType)
       setLastSpaceIdentifier(photo.spaceIdentifier.trim())
@@ -184,20 +214,47 @@ export default function PhotoUpload({ jobId, onPhotoUploaded }: PhotoUploadProps
             ))}
           </div>
 
-          {/* Level */}
+          {/* Structure selector — only shown when 2+ buildings */}
+          {buildings.length >= 2 && (
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                Which structure are you working in? <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={photo.buildingId}
+                  onChange={e => handleBuildingChange(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select structure…</option>
+                  {buildings.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+          )}
+
+          {/* Level — from database, not hardcoded */}
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">
               Level <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <select value={photo.level}
+              <select
+                value={photo.level}
                 onChange={e => {
                   updatePhoto({ level: e.target.value, levelCustom: '' })
                   if (e.target.value !== 'Other') fetchSuggestions(e.target.value, photo.spaceType)
                 }}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                disabled={buildings.length >= 2 && !photo.buildingId}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+              >
                 <option value="">Select level…</option>
-                {LEVEL_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                {levelOptions.map(l => (
+                  <option key={l.id} value={l.name}>{l.name}</option>
+                ))}
                 <option value="Other">Other (type below)</option>
               </select>
               <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />

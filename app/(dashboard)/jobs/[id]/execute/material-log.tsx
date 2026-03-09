@@ -60,6 +60,8 @@ export default function MaterialLog({
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
 
+  const isAdmin = userRole === 'admin' || userRole === 'manager'
+
   useEffect(() => {
     getMaterials().then(setCatalogue)
     getJobMaterials(jobId).then(setLogged)
@@ -132,10 +134,10 @@ export default function MaterialLog({
   }
 
   const totalCost = logged.reduce((sum, m) => sum + Number(m.total_cost || 0), 0)
-  const canDelete = userRole === 'admin' || userRole === 'manager'
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-slate-100">
         <div className="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center">
@@ -145,7 +147,9 @@ export default function MaterialLog({
           <p className="text-sm font-semibold text-slate-800">Materials Used</p>
           <p className="text-xs text-slate-500">
             {logged.length > 0
-              ? `${logged.length} item${logged.length !== 1 ? 's' : ''} · $${totalCost.toFixed(2)}`
+              ? isAdmin
+                ? `${logged.length} item${logged.length !== 1 ? 's' : ''} · $${totalCost.toFixed(2)}`
+                : `${logged.length} item${logged.length !== 1 ? 's' : ''} logged`
               : 'Log materials used on this job'}
           </p>
         </div>
@@ -168,14 +172,17 @@ export default function MaterialLog({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-800">{mat.material_name}</p>
                 <p className="text-xs text-slate-500">
-                  {mat.quantity} {mat.unit} × ${Number(mat.unit_price).toFixed(2)}
+                  {mat.quantity} {mat.unit}
+                  {isAdmin && ` × $${Number(mat.unit_price).toFixed(2)}`}
                   {mat.notes && ` · ${mat.notes}`}
                 </p>
               </div>
-              <p className="text-sm font-semibold text-slate-700">
-                ${Number(mat.total_cost).toFixed(2)}
-              </p>
-              {canDelete && (
+              {isAdmin && (
+                <p className="text-sm font-semibold text-slate-700">
+                  ${Number(mat.total_cost).toFixed(2)}
+                </p>
+              )}
+              {isAdmin && (
                 <button
                   onClick={() => handleDelete(mat.id)}
                   className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center text-red-400 hover:text-red-600 transition-colors"
@@ -186,11 +193,13 @@ export default function MaterialLog({
             </div>
           ))}
 
-          {/* Total */}
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-50">
-            <p className="text-sm font-semibold text-slate-700">Total Materials</p>
-            <p className="text-sm font-bold text-slate-900">${totalCost.toFixed(2)}</p>
-          </div>
+          {/* Total — admin only */}
+          {isAdmin && (
+            <div className="flex items-center justify-between px-4 py-3 bg-slate-50">
+              <p className="text-sm font-semibold text-slate-700">Total Materials</p>
+              <p className="text-sm font-bold text-slate-900">${totalCost.toFixed(2)}</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -218,19 +227,21 @@ export default function MaterialLog({
                   <select
                     value={entry.material_id || ''}
                     onChange={e => {
-                        if (e.target.value === '__custom__') {
-                          updateEntry(index, { material_id: null, material_name: '', unit: 'each', unit_price: 0, isCustom: true })
-                        } else {
-                          selectMaterial(index, e.target.value)
-                          updateEntry(index, { isCustom: false })
-                        }
-                      }}
+                      if (e.target.value === '__custom__') {
+                        updateEntry(index, { material_id: null, material_name: '', unit: 'each', unit_price: 0, isCustom: true })
+                      } else {
+                        selectMaterial(index, e.target.value)
+                        updateEntry(index, { isCustom: false })
+                      }
+                    }}
                     className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500"
                   >
                     <option value="">Select from catalogue…</option>
                     {catalogue.map(m => (
                       <option key={m.id} value={m.id}>
-                        {m.name} — ${m.unit_price.toFixed(2)}/{m.unit}
+                        {isAdmin
+                          ? `${m.name} — $${m.unit_price.toFixed(2)}/${m.unit}`
+                          : m.name}
                       </option>
                     ))}
                     <option value="__custom__">Other (type manually)</option>
@@ -238,7 +249,6 @@ export default function MaterialLog({
                   <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
 
-                {/* Custom material name */}
                 {entry.isCustom && (
                   <input
                     type="text"
@@ -250,8 +260,8 @@ export default function MaterialLog({
                 )}
               </div>
 
-              {/* Quantity + Unit + Price */}
-              <div className="grid grid-cols-3 gap-2">
+              {/* Quantity + Unit (+ Price for admin only) */}
+              <div className={`grid gap-2 ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">Qty *</label>
                   <input
@@ -276,21 +286,23 @@ export default function MaterialLog({
                     <ChevronDown className="absolute right-2 top-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Unit $</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={entry.unit_price}
-                    onChange={e => updateEntry(index, { unit_price: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
+                {isAdmin && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1.5">Unit $</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={entry.unit_price}
+                      onChange={e => updateEntry(index, { unit_price: Number(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* Line total */}
-              {Number(entry.quantity) > 0 && Number(entry.unit_price) > 0 && (
+              {/* Line total — admin only */}
+              {isAdmin && Number(entry.quantity) > 0 && Number(entry.unit_price) > 0 && (
                 <p className="text-xs text-slate-500 text-right">
                   Line total: <span className="font-semibold text-slate-700">
                     ${(Number(entry.quantity) * Number(entry.unit_price)).toFixed(2)}

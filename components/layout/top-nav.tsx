@@ -33,7 +33,7 @@ const adminNavLinks = [
   { href: '/schedule', label: 'Schedule', icon: Calendar },
   { href: '/invoices', label: 'Invoices', icon: FileText },
   { href: '/settings/team', label: 'Team', icon: Users },
-  { href: '/settings/materials', label: 'Settings', icon: Settings },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
 const workerNavLinks = [
@@ -88,7 +88,7 @@ export default function TopNav({ user }: TopNavProps) {
             {/* Nav Links */}
             <nav className={`hidden ${isWorker ? '!hidden' : 'md:flex'} items-center gap-1`}>
               {navLinks.map(({ href, label, icon: Icon }) => {
-                const isActive = pathname === href || pathname.startsWith(href + '/')
+                const isActive = pathname === href || (href !== '/settings' && pathname.startsWith(href + '/'))
                 return (
                   <Link
                     key={href}
