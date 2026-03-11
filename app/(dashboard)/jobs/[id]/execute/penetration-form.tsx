@@ -7,7 +7,6 @@ import {
   uploadPenetrationPhoto,
 } from '@/lib/services/penetrations'
 import { Plus, Camera, ImageIcon, X, ChevronDown, CheckCircle2, Loader2 } from 'lucide-react'
-import Image from 'next/image'
 
 interface EvidenceField {
   id: string
@@ -69,7 +68,6 @@ export default function PenetrationForm({
             .sort((a: any, z: any) => a.order_index - z.order_index),
         }))
         setBuildings(mapped)
-        // Auto-select if only one building
         if (mapped.length === 1) setSelectedBuildingId(mapped[0].id)
       })
     }
@@ -77,7 +75,6 @@ export default function PenetrationForm({
 
   const selectedBuilding = buildings.find(b => b.id === selectedBuildingId)
   const levelOptions = selectedBuilding?.levels ?? []
-
   const hasStructureLevelField = evidenceFields.some(f => f.field_type === 'structure_level')
 
   function setField(fieldId: string, value: string) {
@@ -85,7 +82,7 @@ export default function PenetrationForm({
   }
 
   function addPhotos(files: FileList | null) {
-    if (!files) return
+    if (!files || files.length === 0) return
     const newPhotos: PendingPhoto[] = Array.from(files).map(file => ({
       file,
       previewUrl: URL.createObjectURL(file),
@@ -114,7 +111,6 @@ export default function PenetrationForm({
         if (!fieldValues[field.id]?.trim()) return `"${field.label}" is required`
       }
     }
-    // If there's a structure_level field and multiple buildings, require building selection
     if (hasStructureLevelField && buildings.length >= 2 && !selectedBuildingId) {
       return 'Please select a structure'
     }
@@ -129,10 +125,8 @@ export default function PenetrationForm({
     setError(null)
 
     try {
-      // Create penetration
       const penetration = await createPenetration(jobId, companyId, userId, fieldValues)
 
-      // Upload photos
       await Promise.all(
         photos.map(p =>
           uploadPenetrationPhoto(
@@ -146,12 +140,10 @@ export default function PenetrationForm({
         )
       )
 
-      // Clean up previews
       photos.forEach(p => URL.revokeObjectURL(p.previewUrl))
 
       setSaved(true)
       setTimeout(() => {
-        // Reset form
         setIsOpen(false)
         setFieldValues({})
         setPhotos([])
@@ -178,9 +170,7 @@ export default function PenetrationForm({
   if (!isOpen) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-sm font-semibold text-slate-800">Penetrations</p>
-        </div>
+        <p className="text-sm font-semibold text-slate-800 mb-1">Penetrations</p>
         <p className="text-xs text-slate-500 mb-4">
           Log each penetration with its metadata and photos.
         </p>
@@ -197,7 +187,7 @@ export default function PenetrationForm({
 
   return (
     <div className="bg-white rounded-xl border border-blue-200 shadow-sm overflow-hidden">
-      {/* Form header */}
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-blue-50 border-b border-blue-100">
         <p className="text-sm font-semibold text-blue-800">New Penetration</p>
         <button
@@ -210,7 +200,7 @@ export default function PenetrationForm({
 
       <div className="p-4 space-y-4">
 
-        {/* Structure selector — only if 2+ buildings AND there's a structure_level field */}
+        {/* Structure selector */}
         {hasStructureLevelField && buildings.length >= 2 && (
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">
@@ -221,7 +211,6 @@ export default function PenetrationForm({
                 value={selectedBuildingId}
                 onChange={e => {
                   setSelectedBuildingId(e.target.value)
-                  // Clear any structure_level field values when building changes
                   const levelFields = evidenceFields.filter(f => f.field_type === 'structure_level')
                   if (levelFields.length > 0) {
                     setFieldValues(prev => {
@@ -244,17 +233,6 @@ export default function PenetrationForm({
         )}
 
         {/* Dynamic evidence fields */}
-        {evidenceFields.length === 0 && (
-          <div className="text-center py-4">
-            <p className="text-xs text-slate-400">
-              No evidence fields configured for this job.
-            </p>
-            <p className="text-xs text-slate-400 mt-0.5">
-              An admin can add fields in Job Edit → Evidence Fields.
-            </p>
-          </div>
-        )}
-
         {evidenceFields.map(field => {
           const value = fieldValues[field.id] ?? ''
 
@@ -334,29 +312,34 @@ export default function PenetrationForm({
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-2">Photos</label>
 
-          {/* Photo previews */}
+          {/* Large photo previews — one per photo, full width */}
           {photos.length > 0 && (
-            <div className="space-y-2 mb-3">
+            <div className="space-y-3 mb-3">
               {photos.map((p, i) => (
-                <div key={i} className="flex gap-2 items-start bg-slate-50 rounded-lg p-2">
-                  <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-slate-200">
-                    <Image src={p.previewUrl} alt="Preview" fill className="object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <input
-                      type="text"
-                      value={p.caption}
-                      onChange={e => updateCaption(i, e.target.value)}
-                      placeholder="Caption (optional)"
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                <div key={i} className="space-y-1.5">
+                  {/* Large preview */}
+                  <div className="relative w-full rounded-xl overflow-hidden bg-slate-100" style={{ aspectRatio: '4/3' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
                     />
+                    <button
+                      onClick={() => removePhoto(i)}
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-md transition-colors"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => removePhoto(i)}
-                    className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  {/* Caption below preview */}
+                  <input
+                    type="text"
+                    value={p.caption}
+                    onChange={e => updateCaption(i, e.target.value)}
+                    placeholder="Caption (optional)"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
                 </div>
               ))}
             </div>
@@ -366,23 +349,33 @@ export default function PenetrationForm({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => cameraRef.current?.click()}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              onClick={() => {
+                if (cameraRef.current) {
+                  cameraRef.current.value = ''
+                  cameraRef.current.click()
+                }
+              }}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-colors"
             >
               <Camera className="w-4 h-4" />
               Take Photo
             </button>
             <button
               type="button"
-              onClick={() => galleryRef.current?.click()}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              onClick={() => {
+                if (galleryRef.current) {
+                  galleryRef.current.value = ''
+                  galleryRef.current.click()
+                }
+              }}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-colors"
             >
               <ImageIcon className="w-4 h-4" />
               From Gallery
             </button>
           </div>
 
-          {/* Hidden inputs */}
+          {/* Camera input */}
           <input
             ref={cameraRef}
             type="file"
@@ -392,6 +385,7 @@ export default function PenetrationForm({
             onChange={e => addPhotos(e.target.files)}
             className="hidden"
           />
+          {/* Gallery input */}
           <input
             ref={galleryRef}
             type="file"
