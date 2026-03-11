@@ -1,20 +1,15 @@
 'use client'
 
-import MaterialLog from './material-log'
 import { useState } from 'react'
 import Link from 'next/link'
+import MaterialLog from './material-log'
+import PenetrationForm from './penetration-form'
+import PenetrationList from './penetration-list'
 import { startJob } from '@/lib/services/jobs'
-import PhotoUpload from './photo-upload'
-import PhotoGallery from './photo-gallery'
 import { startTimeEntry } from '@/lib/services/time-entries'
 import {
-  ArrowLeft,
-  Play,
-  Clock,
-  MapPin,
-  User,
-  AlertTriangle,
-  ClipboardList,
+  ArrowLeft, Play, Clock, MapPin, User,
+  AlertTriangle, ClipboardList,
 } from 'lucide-react'
 
 interface Job {
@@ -27,8 +22,20 @@ interface Job {
   notes: string | null
   started_at: string | null
   completed_at: string | null
+  company_id: string
   customer: { name: string; email: string | null } | null
-  site: { site_name: string | null; address_line1: string | null; city: string | null } | null
+  site_name: string | null
+  site_address_line1: string | null
+  site_city: string | null
+}
+
+interface EvidenceField {
+  id: string
+  label: string
+  field_type: 'text' | 'dropdown' | 'structure_level'
+  options: string[] | null
+  required: boolean
+  order_index: number
 }
 
 interface ExecutionViewProps {
@@ -36,14 +43,23 @@ interface ExecutionViewProps {
   userId: string
   userName: string
   companyId: string
+  evidenceFields: EvidenceField[]
+  materialDefaults: any[]
 }
 
-export default function ExecutionView({ job, userId, userName, companyId }: ExecutionViewProps) {
+export default function ExecutionView({
+  job,
+  userId,
+  userName,
+  companyId,
+  evidenceFields,
+  materialDefaults,
+}: ExecutionViewProps) {
   const [loading, setLoading] = useState<'start' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [localStatus, setLocalStatus] = useState(job.status)
   const [startedAt, setStartedAt] = useState<string | null>(job.started_at)
-  const [photoRefresh, setPhotoRefresh] = useState(0)
+  const [penetrationRefresh, setPenetrationRefresh] = useState(0)
 
   const isNotStarted = localStatus === 'scheduled' || localStatus === 'draft'
   const isInProgress = localStatus === 'in_progress'
@@ -63,6 +79,9 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
       setLoading(null)
     }
   }
+
+  const siteDisplay = job.site_name || job.site_address_line1
+  const siteCity = job.site_city
 
   return (
     <div className="max-w-lg mx-auto pb-24">
@@ -90,12 +109,11 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
             <span className="text-slate-700">{job.customer.name}</span>
           </div>
         )}
-        {job.site && (
+        {siteDisplay && (
           <div className="flex items-center gap-2 text-sm">
             <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
             <span className="text-slate-700">
-              {job.site.site_name || job.site.address_line1 || 'Site not specified'}
-              {job.site.city ? `, ${job.site.city}` : ''}
+              {siteDisplay}{siteCity ? `, ${siteCity}` : ''}
             </span>
           </div>
         )}
@@ -104,8 +122,7 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
             <Clock className="w-4 h-4 text-slate-400 flex-shrink-0" />
             <span className="text-slate-700">
               Started {new Date(startedAt).toLocaleTimeString('en-AU', {
-                hour: '2-digit',
-                minute: '2-digit',
+                hour: '2-digit', minute: '2-digit',
               })}
             </span>
           </div>
@@ -121,7 +138,9 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
       {/* Description */}
       {job.description && (
         <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Job Description</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            Job Description
+          </p>
           <p className="text-sm text-slate-700 whitespace-pre-wrap">{job.description}</p>
         </div>
       )}
@@ -134,9 +153,10 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
         </div>
       )}
 
-      {/* Execution Steps — only visible once started */}
+      {/* Execution sections — only visible once started */}
       {(isInProgress || isCompleted) && (
         <div className="space-y-4 mb-4">
+
           {/* Checklist placeholder */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 opacity-60">
             <div className="flex items-center gap-3">
@@ -150,16 +170,23 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
             </div>
           </div>
 
-          {/* Photo upload */}
-          <PhotoUpload
+          {/* Penetration capture */}
+          <PenetrationForm
             jobId={job.id}
-            onPhotoUploaded={() => setPhotoRefresh(n => n + 1)}
+            companyId={companyId}
+            userId={userId}
+            evidenceFields={evidenceFields}
+            materialDefaults={materialDefaults}
+            onSaved={() => setPenetrationRefresh(n => n + 1)}
           />
 
-          {/* Photo gallery */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden min-h-24">
-            <PhotoGallery jobId={job.id} refreshTrigger={photoRefresh} />
-          </div>
+          {/* Penetration list */}
+          <PenetrationList
+            jobId={job.id}
+            evidenceFields={evidenceFields}
+            refreshTrigger={penetrationRefresh}
+          />
+
         </div>
       )}
 
@@ -175,7 +202,7 @@ export default function ExecutionView({ job, userId, userName, companyId }: Exec
         </div>
       )}
 
-      {/* Start Job button — only shown if job not yet started */}
+      {/* Start Job button */}
       {isNotStarted && (
         <div className="fixed bottom-16 left-0 right-0 px-4 pb-2 bg-white border-t border-slate-200">
           <div className="max-w-lg mx-auto pt-3">

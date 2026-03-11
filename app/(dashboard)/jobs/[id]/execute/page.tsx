@@ -14,7 +14,7 @@ export default async function JobExecutePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-    const { data: profile } = await supabase
+  const { data: profile } = await supabase
     .from('users')
     .select('id, full_name, role, company_id')
     .eq('id', user.id)
@@ -25,12 +25,26 @@ export default async function JobExecutePage({
 
   if (job.status === 'cancelled') redirect(`/jobs/${id}`)
 
+  const { data: evidenceFields } = await supabase
+    .from('job_evidence_fields')
+    .select('*')
+    .eq('job_id', id)
+    .order('order_index')
+
+  const { data: materialDefaults } = await supabase
+    .from('job_material_defaults')
+    .select('*, material:materials(id, name, unit, unit_price)')
+    .eq('job_id', id)
+    .order('created_at')
+
   return (
     <ExecutionView
       job={job}
       userId={user.id}
       userName={profile?.full_name ?? 'Tech'}
       companyId={profile?.company_id ?? ''}
+      evidenceFields={evidenceFields || []}
+      materialDefaults={materialDefaults || []}
     />
   )
 }
