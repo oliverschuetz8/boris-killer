@@ -13,6 +13,8 @@ export interface Penetration {
   job_id: string
   created_by: string
   field_values: Record<string, string>
+  location_level: string | null
+  location_room: string | null
   floorplan_x: number | null
   floorplan_y: number | null
   created_at: string
@@ -33,7 +35,7 @@ export async function getPenetrations(jobId: string): Promise<Penetration[]> {
       )
     `)
     .eq('job_id', jobId)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
   if (error) throw error
   return (data || []) as Penetration[]
 }
@@ -42,7 +44,9 @@ export async function createPenetration(
   jobId: string,
   companyId: string,
   createdBy: string,
-  fieldValues: Record<string, string>
+  fieldValues: Record<string, string>,
+  locationLevel?: string,
+  locationRoom?: string
 ): Promise<Penetration> {
   const supabase = createClient()
   const { data, error } = await supabase
@@ -52,6 +56,8 @@ export async function createPenetration(
       company_id: companyId,
       created_by: createdBy,
       field_values: fieldValues,
+      location_level: locationLevel || null,
+      location_room: locationRoom || null,
     })
     .select()
     .single()
@@ -77,8 +83,6 @@ export async function uploadPenetrationPhoto(
   caption?: string
 ): Promise<PenetrationPhoto> {
   const supabase = createClient()
-
-  // Upload file to storage
   const ext = file.name.split('.').pop() || 'jpg'
   const path = `${companyId}/${jobId}/penetrations/${penetrationId}/${Date.now()}.${ext}`
 
@@ -87,7 +91,6 @@ export async function uploadPenetrationPhoto(
     .upload(path, file, { contentType: file.type, upsert: false })
   if (uploadError) throw uploadError
 
-  // Insert photo record
   const { data, error } = await supabase
     .from('penetration_photos')
     .insert({

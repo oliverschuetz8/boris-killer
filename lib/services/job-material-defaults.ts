@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/client'
 export interface JobMaterialDefault {
   id: string
   job_id: string
-  material_id: string
+  material_id: string | null
+  material_name_override: string | null
   seal_id: string | null
   manufacturer: string | null
   system_product: string | null
@@ -20,10 +21,7 @@ export async function getJobMaterialDefaults(jobId: string): Promise<JobMaterial
   const supabase = createClient()
   const { data, error } = await supabase
     .from('job_material_defaults')
-    .select(`
-      *,
-      material:materials(id, name, unit, unit_price)
-    `)
+    .select('*, material:materials(id, name, unit, unit_price)')
     .eq('job_id', jobId)
     .order('created_at')
   if (error) throw error
@@ -33,7 +31,8 @@ export async function getJobMaterialDefaults(jobId: string): Promise<JobMaterial
 export async function upsertJobMaterialDefault(
   jobId: string,
   companyId: string,
-  materialId: string,
+  materialId: string | null,
+  materialNameOverride: string | null,
   details: {
     seal_id?: string
     manufacturer?: string
@@ -43,18 +42,16 @@ export async function upsertJobMaterialDefault(
   const supabase = createClient()
   const { data, error } = await supabase
     .from('job_material_defaults')
-    .upsert(
-      {
-        job_id: jobId,
-        company_id: companyId,
-        material_id: materialId,
-        seal_id: details.seal_id || null,
-        manufacturer: details.manufacturer || null,
-        system_product: details.system_product || null,
-      },
-      { onConflict: 'job_id,material_id' }
-    )
-    .select(`*, material:materials(id, name, unit, unit_price)`)
+    .insert({
+      job_id: jobId,
+      company_id: companyId,
+      material_id: materialId || null,
+      material_name_override: materialNameOverride || null,
+      seal_id: details.seal_id || null,
+      manufacturer: details.manufacturer || null,
+      system_product: details.system_product || null,
+    })
+    .select('*, material:materials(id, name, unit, unit_price)')
     .single()
   if (error) throw error
   return data

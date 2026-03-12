@@ -38,6 +38,13 @@ interface EvidenceField {
   order_index: number
 }
 
+interface LocationSession {
+  buildingId: string
+  buildingName: string
+  levelName: string
+  roomName: string
+}
+
 interface ExecutionViewProps {
   job: Job
   userId: string
@@ -50,7 +57,6 @@ interface ExecutionViewProps {
 export default function ExecutionView({
   job,
   userId,
-  userName,
   companyId,
   evidenceFields,
   materialDefaults,
@@ -60,6 +66,11 @@ export default function ExecutionView({
   const [localStatus, setLocalStatus] = useState(job.status)
   const [startedAt, setStartedAt] = useState<string | null>(job.started_at)
   const [penetrationRefresh, setPenetrationRefresh] = useState(0)
+
+  // The currently active location (where new penetrations will be logged)
+  const [activeLocation, setActiveLocation] = useState<LocationSession | null>(null)
+  // Whether to show the location picker (to add a new location)
+  const [showLocationPicker, setShowLocationPicker] = useState(true)
 
   const isNotStarted = localStatus === 'scheduled' || localStatus === 'draft'
   const isInProgress = localStatus === 'in_progress'
@@ -153,7 +164,7 @@ export default function ExecutionView({
         </div>
       )}
 
-      {/* Execution sections — only visible once started */}
+      {/* Execution sections */}
       {(isInProgress || isCompleted) && (
         <div className="space-y-4 mb-4">
 
@@ -170,22 +181,73 @@ export default function ExecutionView({
             </div>
           </div>
 
-          {/* Penetration capture */}
-          <PenetrationForm
-            jobId={job.id}
-            companyId={companyId}
-            userId={userId}
-            evidenceFields={evidenceFields}
-            materialDefaults={materialDefaults}
-            onSaved={() => setPenetrationRefresh(n => n + 1)}
-          />
+          {/*
+            LOCATION PICKER — shown when:
+            - No location has been set yet (first time), OR
+            - Worker tapped "New Location"
+          */}
+          {showLocationPicker && (
+            <PenetrationForm
+              jobId={job.id}
+              companyId={companyId}
+              userId={userId}
+              evidenceFields={evidenceFields}
+              materialDefaults={materialDefaults}
+              activeLocation={null}
+              onLocationSet={(loc) => {
+                setActiveLocation(loc)
+                setShowLocationPicker(false)
+              }}
+              onSaved={() => {
+                setPenetrationRefresh(n => n + 1)
+              }}
+            />
+          )}
 
-          {/* Penetration list */}
-          <PenetrationList
-            jobId={job.id}
-            evidenceFields={evidenceFields}
-            refreshTrigger={penetrationRefresh}
-          />
+          {/*
+            PENETRATION LIST — shown once at least one location has been set.
+            Shows all logged penetrations grouped by location.
+            The active location group shows a "New Penetration" button.
+          */}
+          {activeLocation && !showLocationPicker && (
+            <>
+              {/* Active location banner */}
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+                <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <p className="text-sm font-medium text-blue-800 flex-1">
+                  {activeLocation.levelName} — {activeLocation.roomName}
+                </p>
+              </div>
+
+              {/* Penetration form for the active location */}
+              <PenetrationForm
+                jobId={job.id}
+                companyId={companyId}
+                userId={userId}
+                evidenceFields={evidenceFields}
+                materialDefaults={materialDefaults}
+                activeLocation={activeLocation}
+                onLocationSet={(loc) => {
+                  setActiveLocation(loc)
+                  setShowLocationPicker(false)
+                }}
+                onSaved={() => {
+                  setPenetrationRefresh(n => n + 1)
+                }}
+              />
+
+              {/* All logged penetrations grouped by location */}
+              <PenetrationList
+                jobId={job.id}
+                evidenceFields={evidenceFields}
+                refreshTrigger={penetrationRefresh}
+                activeLocation={activeLocation}
+                onChangeLocation={() => {
+                  setShowLocationPicker(true)
+                }}
+              />
+            </>
+          )}
 
         </div>
       )}
