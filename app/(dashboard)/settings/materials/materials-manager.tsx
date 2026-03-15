@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { getMaterials, createMaterial, updateMaterial, deleteMaterial } from '@/lib/services/materials'
-import { Package, Plus, Pencil, Trash2, Check, X, ChevronDown } from 'lucide-react'
+import { Package, Plus, Pencil, Trash2, Check, X, ChevronDown, ArrowLeft } from 'lucide-react'
 
 interface Material {
   id: string
@@ -97,7 +98,17 @@ export default function MaterialsManager() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="w-full px-6 py-8">
+
+      {/* Back link */}
+      <Link
+        href="/settings"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Settings
+      </Link>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -141,7 +152,7 @@ export default function MaterialsManager() {
                 >
                   {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                 </select>
-                <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
             <div>
@@ -197,7 +208,6 @@ export default function MaterialsManager() {
             {materials.map(mat => (
               <div key={mat.id} className="px-4 py-3">
                 {editingId === mat.id ? (
-                  // Edit row
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="sm:col-span-1">
@@ -218,7 +228,7 @@ export default function MaterialsManager() {
                           >
                             {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                           </select>
-                          <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         </div>
                       </div>
                       <div>
@@ -253,7 +263,6 @@ export default function MaterialsManager() {
                     </div>
                   </div>
                 ) : (
-                  // Display row
                   <div className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-800">{mat.name}</p>

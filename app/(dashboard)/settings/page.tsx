@@ -27,7 +27,7 @@ export default function SettingsPage() {
             <Link
               key={section.href}
               href={section.href}
-              className="flex items-center gap-4 bg-white rounded-xl border border-slate-200 px-6 py-8 hover:border-slate-300 hover:shadow-sm transition-all group"
+              className="flex items-center gap-4 bg-white rounded-xl border border-slate-200 px-6 py-4 hover:border-slate-300 hover:shadow-sm transition-all group"
             >
               <div className={`w-10 h-10 rounded-lg ${section.iconBg} flex items-center justify-center flex-shrink-0`}>
                 <Icon className={`w-5 h-5 ${section.iconColor}`} />

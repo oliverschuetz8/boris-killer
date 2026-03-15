@@ -11,7 +11,7 @@ export async function getBuildings(siteId: string) {
       levels (
         id, name, order_index,
         rooms (
-          id, name, planned_count, done_count
+          id, name, planned_count, done_count, is_done
         )
       )
     `)
@@ -67,20 +67,14 @@ export async function createRoom(levelId: string, companyId: string, name: strin
   return data
 }
 
-export async function markRoomDone(roomId: string, plannedCount: number) {
+export async function markRoomDone(roomId: string): Promise<void> {
   const supabase = createClient()
-  await supabase
-    .from('rooms')
-    .update({ done_count: plannedCount })
-    .eq('id', roomId)
+  await supabase.from('rooms').update({ is_done: true }).eq('id', roomId)
 }
 
-export async function markRoomUndone(roomId: string) {
+export async function markRoomUndone(roomId: string): Promise<void> {
   const supabase = createClient()
-  await supabase
-    .from('rooms')
-    .update({ done_count: 0 })
-    .eq('id', roomId)
+  await supabase.from('rooms').update({ is_done: false }).eq('id', roomId)
 }
 
 export async function deleteRoom(id: string) {
@@ -88,7 +82,7 @@ export async function deleteRoom(id: string) {
   await supabase.from('rooms').delete().eq('id', id)
 }
 
-// ---- Flat room list for photo selector ----
+// ---- Flat room list for photo selector / location picker ----
 
 export async function getRoomsForJob(siteId: string) {
   const supabase = createClient()
@@ -98,7 +92,7 @@ export async function getRoomsForJob(siteId: string) {
       id, name,
       levels (
         id, name, order_index,
-        rooms ( id, name, planned_count, done_count )
+        rooms ( id, name, planned_count, done_count, is_done )
       )
     `)
     .eq('site_id', siteId)

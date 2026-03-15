@@ -11,10 +11,13 @@ export interface PenetrationPhoto {
 export interface Penetration {
   id: string
   job_id: string
+  company_id: string
   created_by: string
   field_values: Record<string, string>
   location_level: string | null
   location_room: string | null
+  level_id: string | null
+  room_id: string | null
   floorplan_x: number | null
   floorplan_y: number | null
   created_at: string
@@ -23,21 +26,42 @@ export interface Penetration {
   creator?: { full_name: string | null }
 }
 
-export async function getPenetrations(jobId: string): Promise<Penetration[]> {
+export async function getPenetrations(jobId: string, roomId?: string): Promise<Penetration[]> {
   const supabase = createClient()
-  const { data, error } = await supabase
+  let query = supabase
     .from('penetrations')
     .select(`
       *,
       creator:users!created_by(full_name),
-      photos:penetration_photos(
-        id, storage_path, caption, uploaded_at, uploaded_by
-      )
+      photos:penetration_photos(id, storage_path, caption, uploaded_at, uploaded_by)
     `)
     .eq('job_id', jobId)
     .order('created_at', { ascending: true })
+
+  if (roomId) {
+    query = query.eq('room_id', roomId)
+  }
+
+  const { data, error } = await query
   if (error) throw error
   return (data || []) as Penetration[]
+}
+
+export async function getPenetrationCountsByRoom(jobId: string): Promise<Record<string, number>> {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('penetrations')
+    .select('room_id')
+    .eq('job_id', jobId)
+    .not('room_id', 'is', null)
+
+  const counts: Record<string, number> = {}
+  for (const row of (data || [])) {
+    if (row.room_id) {
+      counts[row.room_id] = (counts[row.room_id] || 0) + 1
+    }
+  }
+  return counts
 }
 
 export async function createPenetration(
@@ -46,7 +70,9 @@ export async function createPenetration(
   createdBy: string,
   fieldValues: Record<string, string>,
   locationLevel?: string,
-  locationRoom?: string
+  locationRoom?: string,
+  levelId?: string,
+  roomId?: string,
 ): Promise<Penetration> {
   const supabase = createClient()
   const { data, error } = await supabase
@@ -58,6 +84,8 @@ export async function createPenetration(
       field_values: fieldValues,
       location_level: locationLevel || null,
       location_room: locationRoom || null,
+      level_id: levelId || null,
+      room_id: roomId || null,
     })
     .select()
     .single()
@@ -67,10 +95,7 @@ export async function createPenetration(
 
 export async function deletePenetration(id: string): Promise<void> {
   const supabase = createClient()
-  const { error } = await supabase
-    .from('penetrations')
-    .delete()
-    .eq('id', id)
+  const { error } = await supabase.from('penetrations').delete().eq('id', id)
   if (error) throw error
 }
 
@@ -110,10 +135,7 @@ export async function uploadPenetrationPhoto(
 export async function deletePenetrationPhoto(id: string, storagePath: string): Promise<void> {
   const supabase = createClient()
   await supabase.storage.from('job-photos').remove([storagePath])
-  const { error } = await supabase
-    .from('penetration_photos')
-    .delete()
-    .eq('id', id)
+  const { error } = await supabase.from('penetration_photos').delete().eq('id', id)
   if (error) throw error
 }
 
