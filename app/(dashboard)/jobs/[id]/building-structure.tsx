@@ -68,8 +68,8 @@ export default function BuildingStructure({
   async function load() {
     const data = await getBuildings(siteId)
     setBuildings(data as Building[])
-    setExpandedBuildings(new Set(data.map((b: any) => b.id)))
-    setExpandedLevels(new Set(data.flatMap((b: any) => b.levels.map((l: any) => l.id))))
+    setExpandedBuildings(new Set())
+    setExpandedLevels(new Set())
     setLoading(false)
   }
 
@@ -220,10 +220,9 @@ export default function BuildingStructure({
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
-            {expandedBuildings.has(building.id)
-              ? <ChevronDown className="w-4 h-4 text-slate-400" />
-              : <ChevronRight className="w-4 h-4 text-slate-400" />
-            }
+            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+              expandedBuildings.has(building.id) ? 'rotate-0' : '-rotate-90'
+              }`} />
           </div>
 
           {expandedBuildings.has(building.id) && (
@@ -252,10 +251,8 @@ export default function BuildingStructure({
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      {isExpanded
-                        ? <ChevronDown className="w-4 h-4 text-slate-400" />
-                        : <ChevronRight className="w-4 h-4 text-slate-400" />
-                      }
+                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'
+                        }`} />
                     </div>
 
                     {isExpanded && (

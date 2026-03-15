@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Package, ChevronRight } from 'lucide-react'
+import { Package, ChevronRight, Calculator } from 'lucide-react'
 
 const SETTINGS_SECTIONS = [
   {
@@ -9,6 +9,14 @@ const SETTINGS_SECTIONS = [
     iconColor: 'text-blue-600',
     title: 'Materials Catalogue',
     description: 'Manage materials and prices for job costing.',
+  },
+  {
+    href: '/settings/pay-rules',
+    icon: Calculator,
+    iconBg: 'bg-green-50',
+    iconColor: 'text-green-600',
+    title: 'Pay Rules',
+    description: 'Configure your award package and overtime calculation rules.',
   },
 ]
 

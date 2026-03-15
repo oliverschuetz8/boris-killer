@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, MapPin, User, Calendar, Users, FileText, Camera, Package, Building2 } from 'lucide-react'
-import PhotoGallery from './execute/photo-gallery'
 import MaterialLog from './execute/material-log'
 import JobCostSummary from './job-cost-summary'
 import BuildingStructure from './building-structure'
+import EvidenceTab from './evidence-tab'
 
 type Tab = 'overview' | 'evidence' | 'materials' | 'structure'
 
@@ -293,14 +293,14 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
         {activeTab === 'evidence' && (
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-800">Photo Evidence</h2>
+              <h2 className="text-sm font-semibold text-slate-800">Evidence</h2>
               {canExecute && (
                 <Link href={`/jobs/${job.id}/execute`} className="text-xs text-blue-600 hover:underline">
-                  + Add photos →
+                  + Log penetrations →
                 </Link>
               )}
             </div>
-            <PhotoGallery jobId={job.id} refreshTrigger={0} userRole={userRole} />
+            <EvidenceTab jobId={job.id} userRole={userRole} />
           </div>
         )}
 
