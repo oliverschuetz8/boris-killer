@@ -20,11 +20,12 @@ export default async function JobEditPage({
 
   if (!job) notFound()
 
-  const [
-    { data: evidenceFields },
-    { data: materialDefaults },
-    { data: companyWorkers },
-  ] = await Promise.all([
+    const [
+      { data: evidenceFields },
+      { data: materialDefaults },
+      { data: companyWorkers },
+      { data: initialAssignments },
+    ] = await Promise.all([
     supabase
       .from('job_evidence_fields')
       .select('*')
@@ -35,12 +36,22 @@ export default async function JobEditPage({
       .select('*, material:materials(id, name, unit, unit_price)')
       .eq('job_id', id)
       .order('created_at'),
-    supabase
+      supabase
       .from('users')
       .select('id, full_name, email, role, trade')
       .eq('company_id', job.company_id)
       .in('role', ['worker', 'manager'])
       .order('full_name'),
+    supabase
+      .from('job_assignments')
+      .select(`
+        id, job_id, user_id, company_id, role, assigned_at,
+        user:users!job_assignments_user_id_fkey(
+          id, full_name, email, role, trade
+        )
+      `)
+      .eq('job_id', id)
+      .order('assigned_at'),
   ])
 
   return (
@@ -51,7 +62,7 @@ export default async function JobEditPage({
       initialEvidenceFields={evidenceFields || []}
       initialMaterialDefaults={materialDefaults || []}
       companyWorkers={companyWorkers || []}
-      initialAssignments={job.assignments || []}
+      initialAssignments={(initialAssignments || []) as any}
     />
   )
 }

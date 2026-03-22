@@ -104,7 +104,7 @@ export default function JobEditForm({
       </div>
 
       {/* ── Core job fields ── */}
-      <form onSubmit={handleSubmit}>
+      <form id="job-edit-form" onSubmit={handleSubmit}>
         <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-6">
 
           <div>
@@ -153,25 +153,31 @@ export default function JobEditForm({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Status</label>
-              <select name="status" defaultValue={job.status}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="draft">Draft</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="in_progress">In Progress</option>
-                <option value="on_hold">On Hold</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+              <div className="relative">
+                <select name="status" defaultValue={job.status}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none pr-10">
+                  <option value="draft">Draft</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="on_hold">On Hold</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Priority</label>
-              <select name="priority" defaultValue={job.priority}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="low">Low</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+              <div className="relative">
+                <select name="priority" defaultValue={job.priority}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none pr-10">
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
           </div>
 
@@ -202,11 +208,14 @@ export default function JobEditForm({
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">State</label>
-                <select name="site_state" defaultValue={job.site_state ?? ''}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <div className="relative">
+                  <select name="site_state" defaultValue={job.site_state ?? ''}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none pr-10">
                   <option value="">Select…</option>
                   {STATE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Postcode</label>
@@ -233,14 +242,6 @@ export default function JobEditForm({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 mt-6">
-          <Link href={`/jobs/${job.id}`}>
-            <Button variant="outline" type="button">Cancel</Button>
-          </Link>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Saving…' : 'Save Changes'}
-          </Button>
-        </div>
       </form>
 
       {/* ── Worker Assignments ── */}
@@ -265,6 +266,16 @@ export default function JobEditForm({
         materials={materials}
         initialDefaults={initialMaterialDefaults}
       />
+
+      {/* ── Cancel / Save ── */}
+      <div className="flex items-center justify-end gap-3">
+        <Link href={`/jobs/${job.id}`}>
+          <Button variant="outline" type="button">Cancel</Button>
+        </Link>
+        <Button type="submit" form="job-edit-form" disabled={loading}>
+          {loading ? 'Saving…' : 'Save Changes'}
+        </Button>
+      </div>
     </div>
   )
 }
@@ -400,15 +411,7 @@ function EvidenceFieldsSection({
                 </button>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-slate-800">{field.label}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${FIELD_TYPE_COLOURS[field.field_type]}`}>
-                    {FIELD_TYPE_LABELS[field.field_type]}
-                  </span>
-                  {field.required && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600">Required</span>
-                  )}
-                </div>
+                <span className="text-sm font-medium text-slate-800">{field.label}</span>
                 {field.field_type === 'dropdown' && field.options && field.options.length > 0 && (
                   <p className="text-xs text-slate-400 mt-0.5 truncate">{field.options.join(', ')}</p>
                 )}
@@ -416,10 +419,18 @@ function EvidenceFieldsSection({
                   <p className="text-xs text-slate-400 mt-0.5">Pulls from job structure</p>
                 )}
               </div>
-              <button onClick={() => handleDelete(field.id)}
-                className="p-1.5 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5">
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${FIELD_TYPE_COLOURS[field.field_type]}`}>
+                  {FIELD_TYPE_LABELS[field.field_type]}
+                </span>
+                {field.required && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600">Required</span>
+                )}
+                <button onClick={() => handleDelete(field.id)}
+                  className="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -844,16 +855,20 @@ function AssignmentsSection({
       )}
 
       {/* Add worker */}
+      {availableWorkers.length === 0 && companyWorkers.length > 0 && (
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
+          <p className="text-xs text-slate-500 text-center">All workers have been assigned to this job.</p>
+        </div>
+      )}
       {availableWorkers.length > 0 && (
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
-          <div className="flex items-end gap-3">
+          <div className="flex items-center gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-600 mb-1.5">Add Worker</label>
               <div className="relative">
                 <select
                   value={selectedUserId}
                   onChange={e => setSelectedUserId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 h-10 pr-10 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select worker…</option>
                   {availableWorkers.map(w => (
@@ -868,7 +883,7 @@ function AssignmentsSection({
             <button
               onClick={handleAssign}
               disabled={!selectedUserId || assigning}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors"
+              className="flex items-center gap-1.5 px-4 h-10 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors flex-shrink-0"
             >
               <UserPlus className="w-3.5 h-3.5" />
               {assigning ? 'Adding…' : 'Assign'}
