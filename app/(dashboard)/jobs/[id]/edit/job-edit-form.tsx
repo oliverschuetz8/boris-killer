@@ -16,7 +16,11 @@ import {
   deleteJobMaterialDefault,
   type JobMaterialDefault,
 } from '@/lib/services/job-material-defaults'
-import { Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import {
+  assignWorker,
+  unassignWorker,
+} from '@/lib/services/job-assignments'
+import { Plus, Trash2, ChevronUp, ChevronDown, UserPlus, X } from 'lucide-react'
 
 const STATE_OPTIONS = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']
 
@@ -27,12 +31,33 @@ interface Material {
   unit_price: number | null
 }
 
+interface CompanyWorker {
+  id: string
+  full_name: string | null
+  email: string
+  role: string
+  trade: string | null
+}
+
+interface Assignment {
+  id: string
+  role: string | null
+  user: {
+    id: string
+    full_name: string | null
+    email: string
+    role: string
+  }
+}
+
 interface Props {
   job: any
   customers: any[]
   materials: Material[]
   initialEvidenceFields: EvidenceField[]
   initialMaterialDefaults: any[]
+  companyWorkers: CompanyWorker[]
+  initialAssignments: Assignment[]
 }
 
 export default function JobEditForm({
@@ -41,6 +66,8 @@ export default function JobEditForm({
   materials,
   initialEvidenceFields,
   initialMaterialDefaults,
+  companyWorkers,
+  initialAssignments,
 }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -215,6 +242,14 @@ export default function JobEditForm({
           </Button>
         </div>
       </form>
+
+      {/* ── Worker Assignments ── */}
+      <AssignmentsSection
+        jobId={job.id}
+        companyId={job.company_id}
+        companyWorkers={companyWorkers}
+        initialAssignments={initialAssignments}
+      />
 
       {/* ── Evidence Fields ── */}
       <EvidenceFieldsSection
@@ -704,6 +739,147 @@ function MaterialDefaultsSection({
               Cancel
             </button>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// Worker Assignments Section
+// ─────────────────────────────────────────────────────────────
+
+function AssignmentsSection({
+  jobId,
+  companyId,
+  companyWorkers,
+  initialAssignments,
+}: {
+  jobId: string
+  companyId: string
+  companyWorkers: CompanyWorker[]
+  initialAssignments: Assignment[]
+}) {
+  const [assignments, setAssignments] = useState<Assignment[]>(initialAssignments)
+  const [selectedUserId, setSelectedUserId] = useState('')
+  const [assigning, setAssigning] = useState(false)
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const assignedUserIds = new Set(assignments.map(a => a.user.id))
+  const availableWorkers = companyWorkers.filter(w => !assignedUserIds.has(w.id))
+
+  async function handleAssign() {
+    if (!selectedUserId) return
+    setAssigning(true)
+    setError(null)
+    try {
+      const result = await assignWorker(jobId, selectedUserId, companyId)
+      setAssignments(prev => [...prev, {
+        id: result.id,
+        role: result.role,
+        user: result.user,
+      }])
+      setSelectedUserId('')
+    } catch {
+      setError('Failed to assign worker')
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  async function handleUnassign(userId: string) {
+    setRemovingId(userId)
+    setError(null)
+    try {
+      await unassignWorker(jobId, userId)
+      setAssignments(prev => prev.filter(a => a.user.id !== userId))
+    } catch {
+      setError('Failed to remove worker')
+    } finally {
+      setRemovingId(null)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-slate-100">
+        <h2 className="text-sm font-semibold text-slate-800">Worker Assignments</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Assign workers to this job. Changes save immediately.</p>
+      </div>
+
+      {/* Assigned workers list */}
+      {assignments.length > 0 && (
+        <div className="divide-y divide-slate-100">
+          {assignments.map(a => (
+            <div key={a.id} className="flex items-center gap-3 px-6 py-3">
+              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-semibold text-slate-600">
+                  {a.user.full_name?.charAt(0) || '?'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-800">{a.user.full_name}</p>
+                <p className="text-xs text-slate-500">{a.user.email}</p>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium capitalize">
+                {a.role || 'worker'}
+              </span>
+              <button
+                onClick={() => handleUnassign(a.user.id)}
+                disabled={removingId === a.user.id}
+                className="p-1.5 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0 disabled:opacity-50"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {assignments.length === 0 && (
+        <div className="px-6 py-6 text-center">
+          <p className="text-sm text-slate-500">No workers assigned yet.</p>
+        </div>
+      )}
+
+      {/* Add worker */}
+      {availableWorkers.length > 0 && (
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Add Worker</label>
+              <div className="relative">
+                <select
+                  value={selectedUserId}
+                  onChange={e => setSelectedUserId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select worker…</option>
+                  {availableWorkers.map(w => (
+                    <option key={w.id} value={w.id}>
+                      {w.full_name || w.email}{w.trade ? ` — ${w.trade}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+            <button
+              onClick={handleAssign}
+              disabled={!selectedUserId || assigning}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              {assigning ? 'Adding…' : 'Assign'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="px-6 py-3 border-t border-slate-100">
+          <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
         </div>
       )}
     </div>

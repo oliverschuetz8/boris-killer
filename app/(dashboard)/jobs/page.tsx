@@ -18,8 +18,19 @@ export default async function JobsPage() {
 
   const isWorker = profile?.role === 'worker'
 
-  // Worker: only fetch their assigned scheduled/in_progress jobs
+  // Worker: only fetch jobs assigned to them
   if (isWorker) {
+    const { data: assignments } = await supabase
+      .from('job_assignments')
+      .select('job_id')
+      .eq('user_id', user.id)
+
+    const assignedJobIds = (assignments || []).map(a => a.job_id)
+
+    if (assignedJobIds.length === 0) {
+      return <WorkerJobsView jobs={[]} />
+    }
+
     const { data: jobs } = await supabase
       .from('jobs')
       .select(`
@@ -28,18 +39,18 @@ export default async function JobsPage() {
         customer:customers(name, phone),
         site:customer_sites(site_name, address_line1, city, state, postcode)
       `)
-      .eq('company_id', profile.company_id)
+      .in('id', assignedJobIds)
       .in('status', ['in_progress', 'scheduled'])
       .order('status', { ascending: false })
       .order('scheduled_start', { ascending: true })
 
-      const typedJobs = (jobs || []).map((j: any) => ({
-        ...j,
-        customer: Array.isArray(j.customer) ? j.customer[0] ?? null : j.customer,
-        site: Array.isArray(j.site) ? j.site[0] ?? null : j.site,
-      }))
-  
-      return <WorkerJobsView jobs={typedJobs} />
+    const typedJobs = (jobs || []).map((j: any) => ({
+      ...j,
+      customer: Array.isArray(j.customer) ? j.customer[0] ?? null : j.customer,
+      site: Array.isArray(j.site) ? j.site[0] ?? null : j.site,
+    }))
+
+    return <WorkerJobsView jobs={typedJobs} />
   }
 
   // Admin/manager: full jobs list
