@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, MapPin, User, Calendar, Users, FileText, Camera, Package, Building2 } from 'lucide-react'
+import { ArrowLeft, MapPin, User, Calendar, Users, FileText, Camera, Package, Building2, DollarSign, ClipboardList } from 'lucide-react'
 import MaterialLog from './execute/material-log'
 import JobCostSummary from './job-cost-summary'
 import BuildingStructure from './building-structure'
 import EvidenceTab from './evidence-tab'
+import JobCostTab from './job-cost-tab'
+import ReportTab from './report-tab'
 
-type Tab = 'overview' | 'evidence' | 'materials' | 'structure'
+type Tab = 'overview' | 'evidence' | 'materials' | 'structure' | 'cost' | 'report'
 
 const STATUS_STYLES: Record<string, string> = {
   scheduled: 'bg-blue-100 text-blue-800',
@@ -38,11 +40,15 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
   const priorityStyle = PRIORITY_STYLES[job.priority] || 'text-gray-600'
   const canExecute = job.status === 'scheduled' || job.status === 'in_progress'
 
+  const isAdminOrManager = userRole === 'admin' || userRole === 'manager'
+
   const tabs = [
     { id: 'overview' as Tab, label: 'Overview', icon: FileText },
     { id: 'evidence' as Tab, label: 'Evidence', icon: Camera },
     { id: 'materials' as Tab, label: 'Materials', icon: Package },
     { id: 'structure' as Tab, label: 'Structure', icon: Building2 },
+    ...(isAdminOrManager ? [{ id: 'cost' as Tab, label: 'Cost', icon: DollarSign }] : []),
+    ...(isAdminOrManager ? [{ id: 'report' as Tab, label: 'Report', icon: ClipboardList }] : []),
   ]
 
   return (
@@ -331,6 +337,16 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
               userRole={userRole}
             />
           </div>
+        )}
+
+        {/* Cost Tab (admin/manager only) */}
+        {activeTab === 'cost' && isAdminOrManager && (
+          <JobCostTab jobId={job.id} />
+        )}
+
+        {/* Report Tab (admin/manager only) */}
+        {activeTab === 'report' && isAdminOrManager && (
+          <ReportTab jobId={job.id} jobNumber={job.job_number} />
         )}
 
       </div>
