@@ -73,6 +73,8 @@ export async function createPenetration(
   locationRoom?: string,
   levelId?: string,
   roomId?: string,
+  floorplanX?: number,
+  floorplanY?: number,
 ): Promise<Penetration> {
   const supabase = createClient()
   const { data, error } = await supabase
@@ -86,11 +88,26 @@ export async function createPenetration(
       location_room: locationRoom || null,
       level_id: levelId || null,
       room_id: roomId || null,
+      floorplan_x: floorplanX ?? null,
+      floorplan_y: floorplanY ?? null,
     })
     .select()
     .single()
   if (error) throw error
   return { ...data, photos: [] }
+}
+
+export async function updatePenetrationPin(
+  penetrationId: string,
+  floorplanX: number,
+  floorplanY: number,
+): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('penetrations')
+    .update({ floorplan_x: floorplanX, floorplan_y: floorplanY })
+    .eq('id', penetrationId)
+  if (error) throw error
 }
 
 export async function deletePenetration(id: string): Promise<void> {

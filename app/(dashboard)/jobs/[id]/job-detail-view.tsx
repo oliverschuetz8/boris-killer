@@ -335,6 +335,7 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
               siteId={job.id}
               companyId={job.company_id}
               userRole={userRole}
+              userId={userId}
             />
           </div>
         )}
