@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { deleteJob, updateJobStatus } from '@/app/actions/jobs'
 import type { JobWithRelations } from '@/lib/types/database'
@@ -35,6 +35,9 @@ function formatDateLocal(dateStr: string): string {
 export function JobsList({ initialJobs }: JobsListProps) {
   const [jobs, setJobs] = useState(initialJobs)
   const [filter, setFilter] = useState<string>('all')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const filteredJobs = filter === 'all'
     ? jobs
@@ -127,9 +130,9 @@ export function JobsList({ initialJobs }: JobsListProps) {
                       <div className="text-sm text-gray-500">{job.site.city}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500" suppressHydrationWarning>
+                  <td className="px-6 py-4 text-sm text-gray-500">
                     {job.scheduled_start
-                      ? formatDateLocal(job.scheduled_start)
+                      ? mounted ? formatDateLocal(job.scheduled_start) : '\u00A0'
                       : 'Not scheduled'
                     }
                   </td>
