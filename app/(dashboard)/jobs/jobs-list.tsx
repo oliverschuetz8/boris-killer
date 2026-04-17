@@ -24,6 +24,14 @@ const PRIORITY_COLORS = {
   urgent: 'text-red-600',
 }
 
+function formatDateSafe(dateStr: string): string {
+  const d = new Date(dateStr)
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const year = d.getUTCFullYear()
+  return `${day}/${month}/${year}`
+}
+
 export function JobsList({ initialJobs }: JobsListProps) {
   const [jobs, setJobs] = useState(initialJobs)
   const [filter, setFilter] = useState<string>('all')
@@ -121,7 +129,7 @@ export function JobsList({ initialJobs }: JobsListProps) {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {job.scheduled_start
-                      ? new Date(job.scheduled_start).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                      ? formatDateSafe(job.scheduled_start)
                       : 'Not scheduled'
                     }
                   </td>
