@@ -24,11 +24,11 @@ const PRIORITY_COLORS = {
   urgent: 'text-red-600',
 }
 
-function formatDateSafe(dateStr: string): string {
+function formatDateLocal(dateStr: string): string {
   const d = new Date(dateStr)
-  const day = String(d.getUTCDate()).padStart(2, '0')
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
-  const year = d.getUTCFullYear()
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
   return `${day}/${month}/${year}`
 }
 
@@ -127,9 +127,9 @@ export function JobsList({ initialJobs }: JobsListProps) {
                       <div className="text-sm text-gray-500">{job.site.city}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 text-sm text-gray-500" suppressHydrationWarning>
                     {job.scheduled_start
-                      ? formatDateSafe(job.scheduled_start)
+                      ? formatDateLocal(job.scheduled_start)
                       : 'Not scheduled'
                     }
                   </td>
