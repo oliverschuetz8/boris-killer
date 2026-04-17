@@ -87,9 +87,13 @@ export async function GET(
     evidenceFields: evidenceFields || [],
   })
 
-  const buffer = await renderToBuffer(element as any)
+  const nodeBuffer = await renderToBuffer(element as any)
+  const arrayBuffer = nodeBuffer.buffer.slice(
+    nodeBuffer.byteOffset,
+    nodeBuffer.byteOffset + nodeBuffer.byteLength,
+  ) as ArrayBuffer
 
-  return new NextResponse(buffer, {
+  return new NextResponse(arrayBuffer, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',

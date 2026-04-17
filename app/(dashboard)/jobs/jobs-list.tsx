@@ -121,7 +121,7 @@ export function JobsList({ initialJobs }: JobsListProps) {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {job.scheduled_start
-                      ? new Date(job.scheduled_start).toLocaleDateString()
+                      ? new Date(job.scheduled_start).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })
                       : 'Not scheduled'
                     }
                   </td>
