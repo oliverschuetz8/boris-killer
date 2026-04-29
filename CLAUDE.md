@@ -187,6 +187,27 @@ Oliver provides the table name. Then:
 5. Create `lib/services/<table-name>.ts` with TypeScript interface + CRUD functions matching existing patterns
 6. Add the new table to `CLAUDE_REFERENCE/database-schema.md`
 
+### AUTONOMOUS WINDOW (prepare unattended work for a future 5-hour window)
+
+Oliver says something like "prepare autonomous window for 6 AM" or "autonomous window at 11 AM, task: build Drawings tab". Then:
+
+1. Parse the **time** (when the 5-hour window resets) and optional **task** from the message
+2. Read `.claude/queue/next-task.md` — if user gave a task, update the queue file. If not, confirm what's in the queue.
+3. Convert time to cron (add 5 min buffer): "6:00 AM" → `5 6 <date> <month> *`. If time already passed today, use tomorrow.
+4. Create a one-shot cron (`recurring: false`) with the full execution prompt:
+   - The cron prompt must instruct Claude to: read CLAUDE.md, read CLAUDE_REFERENCE files, read queue file, orient (git log, tsc), plan, execute step-by-step with commits after every unit, write summary to `.claude/summaries/YYYY-MM-DD-HHMM.md`, update queue file with remaining/next work
+   - Full execution prompt is in `.claude/skills/autonomous-window/SKILL.md` Phase 2
+5. Confirm: "Cron set for [TIME]. Task: [summary]. Keep this tab open."
+6. STOP. Do nothing else. Wait for cron to fire.
+
+**Key rules:**
+- VS Code must stay open for the cron to fire
+- Each tab = one autonomous run (open one tab per window)
+- Tabs coordinate via `.claude/queue/next-task.md` (read at start of each run)
+- Summaries go to `.claude/summaries/`
+- Commit after every logical unit — safety net if session dies mid-work
+- Never run SQL migrations — write them to a file and note in summary
+
 ---
 
 *This file + `CLAUDE_REFERENCE/` are the single source of truth for all Claude Code sessions. If anything in the codebase conflicts with these files, flag it — do not silently override it.*
