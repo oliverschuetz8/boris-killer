@@ -53,25 +53,39 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
     }
   }, [containerRef, imageRef])
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault()
-    const rect = containerRef.current?.getBoundingClientRect()
-    if (!rect) return
+  // Use a ref to always have the latest clampTranslate without re-attaching the listener
+  const clampRef = useRef(clampTranslate)
+  clampRef.current = clampTranslate
 
-    const mx = e.clientX - rect.left
-    const my = e.clientY - rect.top
-    const delta = e.deltaY > 0 ? -0.15 : 0.15
+  // Attach native wheel listener with { passive: false } so preventDefault() actually works
+  // This stops the page from scrolling when the cursor is over the drawing
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
 
-    setScale(prevScale => {
-      const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prevScale + delta))
-      setTranslate(prev => {
-        const imgX = (mx - prev.x) / prevScale
-        const imgY = (my - prev.y) / prevScale
-        return clampTranslate(mx - imgX * newScale, my - imgY * newScale, newScale)
+    function onWheel(e: WheelEvent) {
+      e.preventDefault()
+      e.stopPropagation()
+
+      const rect = el!.getBoundingClientRect()
+      const mx = e.clientX - rect.left
+      const my = e.clientY - rect.top
+      const delta = e.deltaY > 0 ? -0.15 : 0.15
+
+      setScale(prevScale => {
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prevScale + delta))
+        setTranslate(prev => {
+          const imgX = (mx - prev.x) / prevScale
+          const imgY = (my - prev.y) / prevScale
+          return clampRef.current(mx - imgX * newScale, my - imgY * newScale, newScale)
+        })
+        return newScale
       })
-      return newScale
-    })
-  }, [containerRef, clampTranslate])
+    }
+
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [containerRef])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return
@@ -147,7 +161,6 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
   return {
     scale, translate, setScale: setScaleClamped,
     handlers: {
-      onWheel: handleWheel,
       onMouseDown: handleMouseDown,
       onMouseMove: handleMouseMove,
       onMouseUp: handleMouseUp,
