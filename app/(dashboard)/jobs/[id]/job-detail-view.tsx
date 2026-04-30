@@ -2,15 +2,18 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, MapPin, User, Calendar, Users, FileText, Camera, Package, Building2, DollarSign, ClipboardList } from 'lucide-react'
+import { ArrowLeft, MapPin, User, Calendar, Users, FileText, Camera, Package, Building2, DollarSign, ClipboardList, Settings, Map } from 'lucide-react'
 import MaterialLog from './execute/material-log'
 import JobCostSummary from './job-cost-summary'
 import BuildingStructure from './building-structure'
 import EvidenceTab from './evidence-tab'
 import JobCostTab from './job-cost-tab'
 import ReportTab from './report-tab'
+import SetupTab from './setup-tab'
+import DrawingsTab from './drawings-tab'
+import PortalLinksSection from './portal-links-section'
 
-type Tab = 'overview' | 'evidence' | 'materials' | 'structure' | 'cost' | 'report'
+type Tab = 'overview' | 'evidence' | 'materials' | 'structure' | 'drawings' | 'setup' | 'cost' | 'report'
 
 const STATUS_STYLES: Record<string, string> = {
   scheduled: 'bg-blue-100 text-blue-800',
@@ -27,13 +30,26 @@ const PRIORITY_STYLES: Record<string, string> = {
   urgent: 'text-red-600',
 }
 
+interface SetupData {
+  materials: any[]
+  parts: any[]
+  products: any[]
+  evidenceFields: any[]
+  materialDefaults: any[]
+  companyWorkers: any[]
+  assignments: any[]
+}
+
 interface Props {
   job: any
   userId: string
   userRole: string
+  setupData?: SetupData
+  portalLinks?: any[]
+  categoryName?: string | null
 }
 
-export default function JobDetailView({ job, userId, userRole }: Props) {
+export default function JobDetailView({ job, userId, userRole, setupData, portalLinks = [], categoryName }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
 
   const statusStyle = STATUS_STYLES[job.status] || 'bg-gray-100 text-gray-800'
@@ -47,6 +63,8 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
     { id: 'evidence' as Tab, label: 'Evidence', icon: Camera },
     { id: 'materials' as Tab, label: 'Materials', icon: Package },
     { id: 'structure' as Tab, label: 'Structure', icon: Building2 },
+    { id: 'drawings' as Tab, label: 'Drawings', icon: Map },
+    ...(isAdminOrManager ? [{ id: 'setup' as Tab, label: 'Setup', icon: Settings }] : []),
     ...(isAdminOrManager ? [{ id: 'cost' as Tab, label: 'Cost', icon: DollarSign }] : []),
     ...(isAdminOrManager ? [{ id: 'report' as Tab, label: 'Report', icon: ClipboardList }] : []),
   ]
@@ -84,6 +102,16 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
                   <span className={`text-sm font-medium capitalize ${priorityStyle}`}>
                     {job.priority} priority
                   </span>
+                  {categoryName && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                      {categoryName}
+                    </span>
+                  )}
+                  {!categoryName && job.job_type && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize bg-indigo-50 text-indigo-700">
+                      {job.job_type}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -106,7 +134,7 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 mt-4 border-b border-slate-200 -mx-6 px-1">
+            <div className="flex gap-1 mt-4 border-b border-slate-200 -mx-6 px-1 overflow-x-auto">
               {tabs.map(tab => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
@@ -114,7 +142,7 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
                       isActive
                         ? 'border-blue-600 text-blue-600'
                         : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
@@ -196,7 +224,8 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
                         {job.scheduled_start
                           ? new Date(job.scheduled_start).toLocaleString('en-AU', {
                               day: 'numeric', month: 'short', year: 'numeric',
-                              hour: '2-digit', minute: '2-digit'
+                              hour: '2-digit', minute: '2-digit',
+                              timeZone: 'Australia/Sydney',
                             })
                           : 'Not scheduled'}
                       </p>
@@ -207,7 +236,8 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
                         {job.scheduled_end
                           ? new Date(job.scheduled_end).toLocaleString('en-AU', {
                               day: 'numeric', month: 'short', year: 'numeric',
-                              hour: '2-digit', minute: '2-digit'
+                              hour: '2-digit', minute: '2-digit',
+                              timeZone: 'Australia/Sydney',
                             })
                           : 'Not scheduled'}
                       </p>
@@ -272,7 +302,8 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
                       <p className="text-sm font-medium text-slate-800">
                         {new Date(job.started_at).toLocaleString('en-AU', {
                           day: 'numeric', month: 'short',
-                          hour: '2-digit', minute: '2-digit'
+                          hour: '2-digit', minute: '2-digit',
+                          timeZone: 'Australia/Sydney',
                         })}
                       </p>
                     </div>
@@ -283,7 +314,8 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
                       <p className="text-sm font-medium text-slate-800">
                         {new Date(job.completed_at).toLocaleString('en-AU', {
                           day: 'numeric', month: 'short',
-                          hour: '2-digit', minute: '2-digit'
+                          hour: '2-digit', minute: '2-digit',
+                          timeZone: 'Australia/Sydney',
                         })}
                       </p>
                     </div>
@@ -291,6 +323,13 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
                 </div>
               )}
               <JobCostSummary jobId={job.id} compact />
+              {isAdminOrManager && (
+                <PortalLinksSection
+                  jobId={job.id}
+                  companyId={job.company_id}
+                  initialLinks={portalLinks}
+                />
+              )}
             </div>
           </div>
         )}
@@ -338,6 +377,34 @@ export default function JobDetailView({ job, userId, userRole }: Props) {
               userId={userId}
             />
           </div>
+        )}
+
+        {/* Drawings Tab */}
+        {activeTab === 'drawings' && (
+          <div className="mt-4">
+            <DrawingsTab
+              jobId={job.id}
+              companyId={job.company_id}
+              userRole={userRole}
+              userId={userId}
+            />
+          </div>
+        )}
+
+        {/* Setup Tab (admin/manager only) */}
+        {activeTab === 'setup' && isAdminOrManager && setupData && (
+          <SetupTab
+            jobId={job.id}
+            companyId={job.company_id}
+            materials={setupData.materials}
+            parts={setupData.parts}
+            products={setupData.products}
+            initialEvidenceFields={setupData.evidenceFields}
+            initialMaterialDefaults={setupData.materialDefaults}
+            companyWorkers={setupData.companyWorkers}
+            initialAssignments={setupData.assignments}
+            evidenceCategoryId={job.evidence_category_id}
+          />
         )}
 
         {/* Cost Tab (admin/manager only) */}

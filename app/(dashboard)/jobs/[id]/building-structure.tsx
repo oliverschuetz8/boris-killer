@@ -1,19 +1,15 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Building2, ChevronDown, Plus, Trash2,
-  CheckCircle2, Circle, Layers, Upload, FileImage, X,
+  CheckCircle2, Circle, Layers,
 } from 'lucide-react'
 import {
   getBuildings, createBuilding, deleteBuilding,
   createLevel, deleteLevel,
   createRoom, markRoomDone, markRoomUndone, deleteRoom,
 } from '@/lib/services/building-structure'
-import {
-  getDrawingsForJob, uploadLevelDrawing, deleteLevelDrawing, getDrawingUrl,
-  type LevelDrawing,
-} from '@/lib/services/level-drawings'
 
 interface Room {
   id: string
@@ -67,38 +63,16 @@ export default function BuildingStructure({
   const [newRoomName, setNewRoomName] = useState<Record<string, string>>({})
   const [showNewRoom, setShowNewRoom] = useState<Record<string, boolean>>({})
 
-  // Drawing state
-  const [drawingsMap, setDrawingsMap] = useState<Record<string, LevelDrawing[]>>({})
-  const [drawingUrls, setDrawingUrls] = useState<Record<string, string>>({})
-  const [uploadingLevel, setUploadingLevel] = useState<string | null>(null)
-  const [previewDrawing, setPreviewDrawing] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const uploadLevelRef = useRef<string | null>(null)
-
   const isAdmin = userRole === 'admin' || userRole === 'manager'
 
   useEffect(() => { load() }, [siteId])
 
   async function load() {
-    const [data, drawings] = await Promise.all([
-      getBuildings(siteId),
-      getDrawingsForJob(siteId),
-    ])
+    const data = await getBuildings(siteId)
     setBuildings(data as Building[])
-    setDrawingsMap(drawings)
     setExpandedBuildings(new Set())
     setExpandedLevels(new Set())
     setLoading(false)
-
-    // Pre-load signed URLs for all drawings
-    const urls: Record<string, string> = {}
-    for (const levelDrawings of Object.values(drawings)) {
-      for (const d of levelDrawings) {
-        const url = await getDrawingUrl(d.file_url)
-        if (url) urls[d.id] = url
-      }
-    }
-    setDrawingUrls(urls)
   }
 
   function toggleBuilding(id: string) {
@@ -211,73 +185,12 @@ export default function BuildingStructure({
     }
   }
 
-  // ---- Drawing handlers ----
-
-  function triggerDrawingUpload(levelId: string) {
-    uploadLevelRef.current = levelId
-    fileInputRef.current?.click()
-  }
-
-  async function handleDrawingFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    const levelId = uploadLevelRef.current
-    if (!file || !levelId || !userId) return
-
-    setUploadingLevel(levelId)
-    try {
-      const drawing = await uploadLevelDrawing(levelId, companyId, siteId, userId, file)
-      setDrawingsMap(prev => ({
-        ...prev,
-        [levelId]: [drawing, ...(prev[levelId] || [])],
-      }))
-      // Get signed URL for the new drawing
-      const url = await getDrawingUrl(drawing.file_url)
-      if (url) {
-        setDrawingUrls(prev => ({ ...prev, [drawing.id]: url }))
-      }
-    } catch (err) {
-      console.error('Failed to upload drawing:', err)
-      alert('Failed to upload drawing. Please try again.')
-    } finally {
-      setUploadingLevel(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-  }
-
-  async function handleDeleteDrawing(drawingId: string, storagePath: string, levelId: string) {
-    if (!confirm('Delete this floor plan drawing?')) return
-    try {
-      await deleteLevelDrawing(drawingId, storagePath)
-      setDrawingsMap(prev => ({
-        ...prev,
-        [levelId]: (prev[levelId] || []).filter(d => d.id !== drawingId),
-      }))
-      setDrawingUrls(prev => {
-        const next = { ...prev }
-        delete next[drawingId]
-        return next
-      })
-      if (previewDrawing === drawingId) setPreviewDrawing(null)
-    } catch (err) {
-      console.error('Failed to delete drawing:', err)
-    }
-  }
-
   if (loading) return (
     <div className="p-6 text-center text-sm text-slate-400">Loading structure…</div>
   )
 
   return (
     <div className="space-y-4">
-      {/* Hidden file input for drawing uploads */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*,.pdf"
-        className="hidden"
-        onChange={handleDrawingFileChange}
-      />
-
       {buildings.length === 0 && (
         <div className="text-center py-10">
           <Layers className="w-8 h-8 text-slate-300 mx-auto mb-3" />
@@ -320,7 +233,6 @@ export default function BuildingStructure({
                 const colour = LEVEL_COLOURS[levelIndex % LEVEL_COLOURS.length]
                 const doneCount = level.rooms.filter(r => r.is_done).length
                 const isExpanded = expandedLevels.has(level.id)
-                const levelDrawings = drawingsMap[level.id] || []
 
                 return (
                   <div key={level.id}>
@@ -330,12 +242,6 @@ export default function BuildingStructure({
                       onClick={() => toggleLevel(level.id)}
                     >
                       <span className="flex-1 text-sm font-medium text-slate-700">{level.name}</span>
-                      {levelDrawings.length > 0 && (
-                        <span className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                          <FileImage className="w-3 h-3" />
-                          {levelDrawings.length} drawing{levelDrawings.length !== 1 ? 's' : ''}
-                        </span>
-                      )}
                       <span className="text-xs text-slate-400 mr-1">
                         {doneCount}/{level.rooms.length} rooms done
                       </span>
@@ -354,85 +260,6 @@ export default function BuildingStructure({
                     {isExpanded && (
                       <div className="bg-slate-50 px-4 pb-3 pt-2 space-y-3"
                         style={{ borderLeft: `3px solid ${colour}` }}>
-
-                        {/* Floor Plan Drawings Section */}
-                        {(isAdmin || levelDrawings.length > 0) && (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Floor Plans</p>
-                              {isAdmin && (
-                                <button
-                                  onClick={() => triggerDrawingUpload(level.id)}
-                                  disabled={uploadingLevel === level.id}
-                                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50"
-                                >
-                                  <Upload className="w-3 h-3" />
-                                  {uploadingLevel === level.id ? 'Uploading…' : 'Upload Drawing'}
-                                </button>
-                              )}
-                            </div>
-
-                            {levelDrawings.length > 0 && (
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {levelDrawings.map(drawing => (
-                                  <div key={drawing.id} className="relative group">
-                                    <button
-                                      onClick={() => setPreviewDrawing(previewDrawing === drawing.id ? null : drawing.id)}
-                                      className="w-full aspect-[4/3] rounded-lg border border-slate-200 overflow-hidden bg-white hover:border-blue-400 transition-colors"
-                                    >
-                                      {drawingUrls[drawing.id] ? (
-                                        <img
-                                          src={drawingUrls[drawing.id]}
-                                          alt={drawing.file_name}
-                                          className="w-full h-full object-contain p-1"
-                                        />
-                                      ) : (
-                                        <div className="flex items-center justify-center h-full">
-                                          <FileImage className="w-6 h-6 text-slate-300" />
-                                        </div>
-                                      )}
-                                    </button>
-                                    <p className="text-xs text-slate-500 mt-1 truncate px-1">{drawing.file_name}</p>
-                                    {isAdmin && (
-                                      <button
-                                        onClick={() => handleDeleteDrawing(drawing.id, drawing.file_url, level.id)}
-                                        className="absolute top-1 right-1 p-1 bg-white/90 rounded-full text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                                      >
-                                        <Trash2 className="w-3 h-3" />
-                                      </button>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {levelDrawings.length === 0 && isAdmin && (
-                              <div className="flex items-center gap-2 py-2 px-3 bg-amber-50 border border-amber-200 rounded-lg">
-                                <FileImage className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                                <p className="text-xs text-amber-700">
-                                  No floor plan uploaded. Upload a drawing for workers to pin evidence locations.
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Drawing Preview (lightbox) */}
-                        {previewDrawing && drawingUrls[previewDrawing] && (
-                          <div className="relative bg-white rounded-lg border border-slate-200 p-2">
-                            <button
-                              onClick={() => setPreviewDrawing(null)}
-                              className="absolute top-3 right-3 p-1 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors z-10"
-                            >
-                              <X className="w-4 h-4 text-slate-600" />
-                            </button>
-                            <img
-                              src={drawingUrls[previewDrawing]}
-                              alt="Floor plan preview"
-                              className="w-full rounded object-contain max-h-[500px]"
-                            />
-                          </div>
-                        )}
 
                         {/* Rooms Section */}
                         <div>
