@@ -35,17 +35,17 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
     const iw = image.scrollWidth * s
     const ih = image.scrollHeight * s
 
-    // How much of the drawing must remain visible (in pixels)
-    const margin = 0.2
-    const minVisibleX = cw * margin
-    const minVisibleY = ch * margin
+    // How far past each edge the drawing can be dragged (as fraction of container size)
+    const padding = 0.2
 
-    // Clamp: drawing can't be dragged so far that less than margin% is visible
-    const minX = Math.min(0, cw - iw + (cw * margin) - cw * margin) // simplify: -(iw - minVisibleX)
-    const maxX = cw - minVisibleX
+    // All four directions: drawing can overshoot by (container size * padding)
+    const padX = cw * padding
+    const padY = ch * padding
 
-    const minY = -(ih - minVisibleY)
-    const maxY = ch - minVisibleY
+    const minX = -(iw - padX)   // dragged left: only padX pixels of drawing visible on right
+    const maxX = cw - padX      // dragged right: only padX pixels of drawing visible on left
+    const minY = -(ih - padY)   // dragged up: only padY pixels visible at bottom
+    const maxY = ch - padY      // dragged down: only padY pixels visible at top
 
     return {
       x: Math.max(minX, Math.min(maxX, tx)),
