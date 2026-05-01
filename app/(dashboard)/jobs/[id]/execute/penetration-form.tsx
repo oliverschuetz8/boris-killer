@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createPenetration, uploadPenetrationPhoto } from '@/lib/services/penetrations'
+import { getEvidenceSubcategories, getTemplateFields, type EvidenceSubcategory, type EvidenceTemplateField } from '@/lib/services/evidence-categories'
+import { FloorPlanPicker, type PinData } from '@/components/floor-plan-pin'
 import { Camera, ImageIcon, X, ChevronDown, CheckCircle2, Loader2 } from 'lucide-react'
 
 interface EvidenceField {
@@ -11,6 +13,7 @@ interface EvidenceField {
   options: string[] | null
   required: boolean
   order_index: number
+  default_value?: string | null
 }
 
 interface LocationSession {
@@ -33,9 +36,15 @@ interface Props {
   companyId: string
   userId: string
   evidenceFields: EvidenceField[]
+  categoryId: string | null
   activeLocation: LocationSession
+  floorPlanUrl?: string | null
+  existingPins: PinData[]
   onSaved: () => void
   onCancel: () => void
+  onPinEdit?: (pin: PinData) => void
+  onPinMove?: (pinId: string, x: number, y: number) => void
+  onPinDelete?: (pinId: string) => void
 }
 
 export default function PenetrationForm({
@@ -43,15 +52,65 @@ export default function PenetrationForm({
   companyId,
   userId,
   evidenceFields,
+  categoryId,
   activeLocation,
+  floorPlanUrl,
+  existingPins,
   onSaved,
   onCancel,
+  onPinEdit,
+  onPinMove,
+  onPinDelete,
 }: Props) {
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({})
+  // Subcategory state
+  const [subcategories, setSubcategories] = useState<EvidenceSubcategory[]>([])
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('')
+  const [templateFields, setTemplateFields] = useState<EvidenceTemplateField[]>([])
+  const [loadingTemplates, setLoadingTemplates] = useState(false)
+
+  // Load subcategories when category is set
+  useEffect(() => {
+    if (categoryId) {
+      getEvidenceSubcategories(categoryId).then(setSubcategories).catch(console.error)
+    }
+  }, [categoryId])
+
+  // Load template fields when subcategory changes
+  useEffect(() => {
+    if (!selectedSubcategoryId) {
+      setTemplateFields([])
+      return
+    }
+    setLoadingTemplates(true)
+    getTemplateFields(selectedSubcategoryId)
+      .then(fields => {
+        setTemplateFields(fields)
+        // Pre-fill defaults from template fields
+        const defaults: Record<string, string> = {}
+        for (const tf of fields) {
+          if (tf.default_value) defaults[tf.id] = tf.default_value
+        }
+        setFieldValues(prev => ({ ...prev, ...defaults }))
+      })
+      .catch(console.error)
+      .finally(() => setLoadingTemplates(false))
+  }, [selectedSubcategoryId])
+
+  // Pre-fill field values from custom field defaults
+  const initialValues: Record<string, string> = {}
+  for (const field of evidenceFields) {
+    if (field.default_value) {
+      initialValues[field.id] = field.default_value
+    }
+  }
+
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>(initialValues)
   const [photos, setPhotos] = useState<PendingPhoto[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [pin, setPin] = useState<{ x: number; y: number } | null>(null)
+  const [pinLabel, setPinLabel] = useState('')
 
   const cameraRef = useRef<HTMLInputElement>(null)
   const galleryRef = useRef<HTMLInputElement>(null)
@@ -81,12 +140,31 @@ export default function PenetrationForm({
     setPhotos(prev => prev.map((p, i) => i === index ? { ...p, caption } : p))
   }
 
+  // Combine template fields and custom fields for rendering
+  const allFields: Array<{ id: string; label: string; field_type: string; options: string[] | null; required: boolean; default_value?: string | null }> = [
+    ...templateFields
+      .filter(f => f.field_type !== 'structure_level')
+      .map(tf => ({
+        id: tf.id,
+        label: tf.label,
+        field_type: tf.field_type,
+        options: tf.options,
+        required: tf.required,
+        default_value: tf.default_value,
+      })),
+    ...evidenceFields.filter(f => f.field_type !== 'structure_level'),
+  ]
+
   function validate(): string | null {
-    for (const field of evidenceFields) {
+    // Require subcategory if category is set and subcategories exist
+    if (categoryId && subcategories.length > 0 && !selectedSubcategoryId) {
+      return 'Please select a subcategory'
+    }
+    for (const field of allFields) {
       if (!field.required) continue
-      if (field.field_type === 'structure_level') continue // handled by location
       if (!fieldValues[field.id]?.trim()) return `"${field.label}" is required`
     }
+    if (pin && !pinLabel.trim()) return 'Pin label is required when placing a pin'
     return null
   }
 
@@ -102,6 +180,10 @@ export default function PenetrationForm({
         activeLocation.roomName,
         activeLocation.levelId,
         activeLocation.roomId,
+        pin?.x,
+        pin?.y,
+        pinLabel.trim() || undefined,
+        selectedSubcategoryId || undefined,
       )
       await Promise.all(
         photos.map(p =>
@@ -114,9 +196,12 @@ export default function PenetrationForm({
       photos.forEach(p => URL.revokeObjectURL(p.previewUrl))
       setSaved(true)
       setTimeout(() => {
-        setFieldValues({})
+        setFieldValues(initialValues)
         setPhotos([])
+        setPin(null)
+        setPinLabel('')
         setSaved(false)
+        // Keep subcategory selected for the next penetration (likely same type)
         onSaved()
       }, 900)
     } catch {
@@ -130,6 +215,10 @@ export default function PenetrationForm({
     photos.forEach(p => URL.revokeObjectURL(p.previewUrl))
     setFieldValues({})
     setPhotos([])
+    setPin(null)
+    setPinLabel('')
+    setSelectedSubcategoryId('')
+    setTemplateFields([])
     setError(null)
     onCancel()
   }
@@ -146,47 +235,101 @@ export default function PenetrationForm({
 
       <div className="p-4 space-y-4">
 
-        {/* Evidence fields — skip structure_level (handled by location) */}
-        {evidenceFields
-          .filter(f => f.field_type !== 'structure_level')
-          .map(field => {
-            const value = fieldValues[field.id] ?? ''
+        {/* Subcategory dropdown — first field if category is set */}
+        {categoryId && subcategories.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">
+              Type <span className="text-red-500 ml-0.5">*</span>
+            </label>
+            <div className="relative">
+              <select
+                value={selectedSubcategoryId}
+                onChange={e => {
+                  setSelectedSubcategoryId(e.target.value)
+                  // Clear template field values when changing subcategory
+                  setFieldValues(prev => {
+                    const cleaned: Record<string, string> = {}
+                    // Keep only custom field values
+                    for (const f of evidenceFields) {
+                      if (prev[f.id]) cleaned[f.id] = prev[f.id]
+                    }
+                    return cleaned
+                  })
+                }}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+              >
+                <option value="">Select type...</option>
+                {subcategories.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+        )}
 
-            if (field.field_type === 'text') {
-              return (
-                <div key={field.id}>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                    {field.label}{field.required && <span className="text-red-500 ml-0.5">*</span>}
-                  </label>
-                  <input type="text" value={value}
-                    onChange={e => setField(field.id, e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        {/* Loading indicator for template fields */}
+        {loadingTemplates && (
+          <div className="flex items-center gap-2 py-2 text-xs text-slate-500">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Loading questions...
+          </div>
+        )}
+
+        {/* All evidence fields — template fields first, then custom fields */}
+        {allFields.map(field => {
+          const value = fieldValues[field.id] ?? ''
+
+          if (field.field_type === 'text') {
+            return (
+              <div key={field.id}>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  {field.label}{field.required && <span className="text-red-500 ml-0.5">*</span>}
+                </label>
+                <input type="text" value={value}
+                  onChange={e => setField(field.id, e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            )
+          }
+
+          if (field.field_type === 'dropdown') {
+            return (
+              <div key={field.id}>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  {field.label}{field.required && <span className="text-red-500 ml-0.5">*</span>}
+                </label>
+                <div className="relative">
+                  <select value={value} onChange={e => setField(field.id, e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10">
+                    <option value="">Select...</option>
+                    {(field.options || []).map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
-              )
-            }
+              </div>
+            )
+          }
 
-            if (field.field_type === 'dropdown') {
-              return (
-                <div key={field.id}>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                    {field.label}{field.required && <span className="text-red-500 ml-0.5">*</span>}
-                  </label>
-                  <div className="relative">
-                    <select value={value} onChange={e => setField(field.id, e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="">Select…</option>
-                      {(field.options || []).map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              )
-            }
+          return null
+        })}
 
-            return null
-          })}
+        {/* Floor Plan Pin */}
+        {floorPlanUrl && (
+          <FloorPlanPicker
+            imageUrl={floorPlanUrl}
+            pin={pin}
+            pinLabel={pinLabel}
+            onPinChange={setPin}
+            onPinLabelChange={setPinLabel}
+            existingPins={existingPins}
+            onPinTap={onPinEdit}
+            onPinMove={onPinMove}
+            onPinDelete={onPinDelete}
+          />
+        )}
 
         {/* Photos */}
         <div>
@@ -225,7 +368,7 @@ export default function PenetrationForm({
               <ImageIcon className="w-4 h-4" />From Gallery
             </button>
           </div>
-          <input ref={cameraRef} type="file" accept="image/*" capture="environment" multiple
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment"
             onChange={e => addPhotos(e.target.files)} className="hidden" />
           <input ref={galleryRef} type="file" accept="image/*" multiple
             onChange={e => addPhotos(e.target.files)} className="hidden" />
@@ -242,7 +385,7 @@ export default function PenetrationForm({
           <button onClick={handleSave} disabled={saving}
             className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold text-sm rounded-xl transition-colors">
             {saving
-              ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</>
+              ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
               : <><CheckCircle2 className="w-4 h-4" />Save Penetration</>
             }
           </button>

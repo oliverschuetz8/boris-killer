@@ -31,13 +31,22 @@ export async function GET(
     .select(`
       *,
       customer:customers(name, email, phone),
-      company:companies(name)
+      company:companies(name, logo_url, primary_color, abn, email, phone, website)
     `)
     .eq('id', id)
     .eq('company_id', profile.company_id)
     .single()
 
   if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+
+  // Generate signed URL for company logo if it exists
+  let companyLogoSignedUrl: string | null = null
+  if (job.company?.logo_url) {
+    const { data: logoData } = await supabase.storage
+      .from('job-photos')
+      .createSignedUrl(job.company.logo_url, 300)
+    companyLogoSignedUrl = logoData?.signedUrl ?? null
+  }
 
   // Fetch buildings → levels → rooms
   const { data: buildings } = await supabase
@@ -52,12 +61,12 @@ export async function GET(
     .eq('site_id', id)
     .order('created_at')
 
-  // Fetch penetrations with photos
+  // Fetch penetrations with photos (storage_path, not url)
   const { data: penetrations } = await supabase
     .from('penetrations')
     .select(`
       *,
-      penetration_photos(id, url, caption)
+      penetration_photos(id, storage_path, caption)
     `)
     .eq('job_id', id)
     .order('created_at')
@@ -78,13 +87,76 @@ export async function GET(
     .select('id, label')
     .eq('job_id', id)
 
+  // Fetch company credentials/licences
+  const { data: companyCredentials } = await supabase
+    .from('company_credentials')
+    .select('label, value')
+    .eq('company_id', profile.company_id)
+    .order('display_order')
+
+  // Fetch level drawings for all levels in this job
+  const allLevelIds: string[] = []
+  for (const b of buildings || []) {
+    for (const l of (b as any).levels || []) {
+      allLevelIds.push(l.id)
+    }
+  }
+
+  let levelDrawingsMap: Record<string, string> = {}
+  if (allLevelIds.length > 0) {
+    const { data: drawings } = await supabase
+      .from('level_drawings')
+      .select('level_id, file_url')
+      .in('level_id', allLevelIds)
+
+    // Generate signed URLs for all drawings
+    if (drawings && drawings.length > 0) {
+      const drawingSignPromises = drawings.map(async (d) => {
+        const { data: signedData } = await supabase.storage
+          .from('job-photos')
+          .createSignedUrl(d.file_url, 300)
+        return { levelId: d.level_id, url: signedData?.signedUrl ?? null }
+      })
+      const drawingResults = await Promise.all(drawingSignPromises)
+      for (const r of drawingResults) {
+        if (r.url) levelDrawingsMap[r.levelId] = r.url
+      }
+    }
+  }
+
+  // Generate signed URLs for all penetration photos
+  const pensWithSignedPhotos = await Promise.all(
+    (penetrations || []).map(async (pen) => {
+      const photos = pen.penetration_photos || []
+      const signedPhotos = await Promise.all(
+        photos.map(async (photo: any) => {
+          const { data: signedData } = await supabase.storage
+            .from('job-photos')
+            .createSignedUrl(photo.storage_path, 300)
+          return {
+            id: photo.id,
+            url: signedData?.signedUrl ?? null,
+            caption: photo.caption,
+          }
+        })
+      )
+      return {
+        ...pen,
+        penetration_photos: signedPhotos.filter((p: any) => p.url),
+      }
+    })
+  )
+
   // Render PDF to buffer
   const element = React.createElement(JobReportDocument, {
     job,
     buildings: buildings || [],
-    penetrations: penetrations || [],
+    penetrations: pensWithSignedPhotos,
     roomMaterials: roomMaterials || [],
     evidenceFields: evidenceFields || [],
+    companyLogoUrl: companyLogoSignedUrl,
+    companyCredentials: companyCredentials || [],
+    levelDrawingsMap,
   })
 
   const nodeBuffer = await renderToBuffer(element as any)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import PenetrationForm from './penetration-form'
 import PenetrationList from './penetration-list'
@@ -9,10 +9,13 @@ import OverviewView from './overview-view'
 import { startJob } from '@/lib/services/jobs'
 import { startTimeEntry } from '@/lib/services/time-entries'
 import { getRoomsForJob } from '@/lib/services/building-structure'
+import { getLevelDrawings, getDrawingUrl } from '@/lib/services/level-drawings'
+import { getPenetrationsByLevel, updatePenetrationPin, deletePenetration } from '@/lib/services/penetrations'
+import { FloorPlanViewer, type PinData } from '@/components/floor-plan-pin'
 import {
   ArrowLeft, Play, Clock, MapPin, User,
   AlertTriangle, ClipboardList, ChevronDown,
-  LayoutList, Plus, CheckCircle2,
+  LayoutList, Plus, CheckCircle2, Map, X,
 } from 'lucide-react'
 
 interface Job {
@@ -26,6 +29,7 @@ interface Job {
   started_at: string | null
   completed_at: string | null
   company_id: string
+  evidence_category_id: string | null
   customer: { name: string; email: string | null } | null
   site_name: string | null
   site_address_line1: string | null
@@ -39,6 +43,7 @@ interface EvidenceField {
   options: string[] | null
   required: boolean
   order_index: number
+  default_value?: string | null
 }
 
 interface LocationSession {
@@ -97,6 +102,9 @@ export default function ExecutionView({
   const [overviewRefresh, setOverviewRefresh] = useState(0)
   const [showOverview, setShowOverview] = useState(false)
   const [roomDone, setRoomDone] = useState(false)
+  const [floorPlanUrl, setFloorPlanUrl] = useState<string | null>(null)
+  const [levelPins, setLevelPins] = useState<PinData[]>([])
+  const [showDrawingModal, setShowDrawingModal] = useState(false)
 
   const isNotStarted = localStatus === 'scheduled' || localStatus === 'draft'
   const isInProgress = localStatus === 'in_progress'
@@ -130,7 +138,25 @@ export default function ExecutionView({
   const selectedLevel = selectedBuilding?.levels.find(l => l.id === selectedLevelId)
   const roomOptions = selectedLevel?.rooms ?? []
 
-  function handleConfirmLocation() {
+  // Load level pins whenever we have an active location
+  const loadLevelPins = useCallback(async (levelId: string) => {
+    try {
+      const pens = await getPenetrationsByLevel(job.id, levelId)
+      const pins: PinData[] = pens
+        .filter(p => p.floorplan_x != null && p.floorplan_y != null)
+        .map(p => ({
+          id: p.id,
+          x: p.floorplan_x!,
+          y: p.floorplan_y!,
+          label: p.floorplan_label || '',
+        }))
+      setLevelPins(pins)
+    } catch {
+      setLevelPins([])
+    }
+  }, [job.id])
+
+  async function handleConfirmLocation() {
     if (!selectedLevelId || !selectedRoomId) {
       setLocationError('Select a level and room to continue')
       return
@@ -150,6 +176,22 @@ export default function ExecutionView({
     })
     setRoomDone(room.is_done ?? false)
     setShowPenetrationForm(false)
+
+    // Fetch floor plan drawing for this level
+    setFloorPlanUrl(null)
+    setLevelPins([])
+    try {
+      const drawings = await getLevelDrawings(level.id)
+      if (drawings.length > 0) {
+        const url = await getDrawingUrl(drawings[0].file_url)
+        setFloorPlanUrl(url)
+      }
+    } catch {
+      // Non-critical — floor plan is optional
+    }
+
+    // Load existing pins for this level
+    await loadLevelPins(level.id)
   }
 
   function handleNewLocation() {
@@ -159,6 +201,8 @@ export default function ExecutionView({
     setLocationError(null)
     setShowPenetrationForm(false)
     setRoomDone(false)
+    setFloorPlanUrl(null)
+    setLevelPins([])
   }
 
   async function handleStart() {
@@ -176,6 +220,25 @@ export default function ExecutionView({
     }
   }
 
+  async function handlePinMove(pinId: string, x: number, y: number) {
+    try {
+      await updatePenetrationPin(pinId, x, y)
+      setLevelPins(prev => prev.map(p => p.id === pinId ? { ...p, x, y } : p))
+    } catch {
+      alert('Failed to move pin')
+    }
+  }
+
+  async function handlePinDelete(pinId: string) {
+    try {
+      await deletePenetration(pinId)
+      setLevelPins(prev => prev.filter(p => p.id !== pinId))
+      setPenetrationRefresh(n => n + 1)
+      setOverviewRefresh(n => n + 1)
+    } catch {
+      alert('Failed to delete penetration')
+    }
+  }
 
   return (
     <div className="max-w-lg mx-auto pb-24">
@@ -214,7 +277,7 @@ export default function ExecutionView({
           <div className="flex items-center gap-2 text-sm">
             <Clock className="w-4 h-4 text-slate-400 flex-shrink-0" />
             <span className="text-slate-700">
-              Started {new Date(startedAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+              Started {new Date(startedAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', timeZone: 'Australia/Sydney' })}
             </span>
           </div>
         )}
@@ -266,7 +329,7 @@ export default function ExecutionView({
               </div>
               <div className="p-4 space-y-3">
                 {loadingStructure ? (
-                  <p className="text-sm text-slate-400 text-center py-4">Loading structure…</p>
+                  <p className="text-sm text-slate-400 text-center py-4">Loading structure...</p>
                 ) : buildings.length === 0 ? (
                   <p className="text-sm text-slate-400 text-center py-4">
                     No structure set up for this job. Ask an admin to add levels and rooms.
@@ -281,8 +344,8 @@ export default function ExecutionView({
                         <div className="relative">
                           <select value={selectedBuildingId}
                             onChange={e => { setSelectedBuildingId(e.target.value); setSelectedLevelId(''); setSelectedRoomId('') }}
-                            className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select structure…</option>
+                            className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10">
+                            <option value="">Select structure...</option>
                             {buildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -298,8 +361,8 @@ export default function ExecutionView({
                         <select value={selectedLevelId}
                           onChange={e => { setSelectedLevelId(e.target.value); setSelectedRoomId('') }}
                           disabled={buildings.length >= 2 && !selectedBuildingId}
-                          className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400">
-                          <option value="">Select level…</option>
+                          className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400 pr-10">
+                          <option value="">Select level...</option>
                           {(selectedBuilding?.levels ?? []).map(l => (
                             <option key={l.id} value={l.id}>{l.name}</option>
                           ))}
@@ -316,8 +379,8 @@ export default function ExecutionView({
                         <select value={selectedRoomId}
                           onChange={e => setSelectedRoomId(e.target.value)}
                           disabled={!selectedLevelId}
-                          className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400">
-                          <option value="">Select room…</option>
+                          className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400 pr-10">
+                          <option value="">Select room...</option>
                           {roomOptions.map(r => (
                             <option key={r.id} value={r.id}>{r.name}</option>
                           ))}
@@ -348,7 +411,7 @@ export default function ExecutionView({
                   <p className="text-sm font-semibold text-blue-800 flex-1 flex items-center gap-2">
                     <span>{activeLocation.levelName} — {activeLocation.roomName}</span>
                     {roomDone && (
-                      <span className="text-green-600 text-xs font-normal">✓ Done</span>
+                      <span className="text-green-600 text-xs font-normal">Done</span>
                     )}
                   </p>
                 </div>
@@ -359,23 +422,41 @@ export default function ExecutionView({
                       companyId={companyId}
                       userId={userId}
                       evidenceFields={evidenceFields}
+                      categoryId={job.evidence_category_id}
                       activeLocation={activeLocation}
+                      floorPlanUrl={floorPlanUrl}
+                      existingPins={levelPins}
                       onSaved={() => {
                         setShowPenetrationForm(false)
                         setPenetrationRefresh(n => n + 1)
                         setOverviewRefresh(n => n + 1)
                         setRoomDone(false)
+                        // Refresh level pins
+                        if (activeLocation) loadLevelPins(activeLocation.levelId)
                       }}
                       onCancel={() => setShowPenetrationForm(false)}
+                      onPinMove={handlePinMove}
+                      onPinDelete={handlePinDelete}
                     />
                   ) : (
-                    <button
-                      onClick={() => setShowPenetrationForm(true)}
-                      className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      New Penetration
-                    </button>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setShowPenetrationForm(true)}
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        New Penetration
+                      </button>
+                      {floorPlanUrl && (
+                        <button
+                          onClick={() => setShowDrawingModal(true)}
+                          className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-600 font-medium text-sm rounded-xl hover:bg-slate-50 transition-colors"
+                        >
+                          <Map className="w-4 h-4" />
+                          View Drawing
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -456,8 +537,40 @@ export default function ExecutionView({
             <button onClick={handleStart} disabled={loading === 'start'}
               className="w-full flex items-center justify-center gap-3 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold text-lg rounded-xl transition-colors">
               <Play className="w-5 h-5" />
-              {loading === 'start' ? 'Starting…' : 'Start Job'}
+              {loading === 'start' ? 'Starting...' : 'Start Job'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Drawing Modal (Part 2) ── */}
+      {showDrawingModal && floorPlanUrl && activeLocation && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white flex-shrink-0">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">
+                {activeLocation.levelName} — Floor Plan
+              </p>
+              <p className="text-xs text-slate-500">
+                {levelPins.length} pin{levelPins.length !== 1 ? 's' : ''} placed
+              </p>
+            </div>
+            <button
+              onClick={() => setShowDrawingModal(false)}
+              className="w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-600" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto p-4">
+            <FloorPlanViewer
+              imageUrl={floorPlanUrl}
+              pins={levelPins}
+              interactive
+              onPinTap={() => {}}
+              onPinMove={handlePinMove}
+              onPinDelete={handlePinDelete}
+            />
           </div>
         </div>
       )}

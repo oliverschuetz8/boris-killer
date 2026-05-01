@@ -1,6 +1,6 @@
 # AUTONYX — What We're Building Next
 
-> Last updated: 28 April 2026 (added boss feedback: partial invoicing, report overhaul, drawing exports, prefix system, evidence categories, company branding, AI assistant, schedule)
+> Last updated: 30 April 2026 (Pin scaling on zoom + zoom-to-cursor + Drawings pin detail completed)
 > This document covers the full build order from current state through launch and beyond.
 
 ---
@@ -29,33 +29,22 @@
 - Dashboard Charts & Visualisations (Recharts: job status donut chart, completion rate bar chart, revenue summary cards, jobs per worker horizontal bar chart, empty states, modern clean design)
 - Xero OAuth + Invoice Sync (OAuth 2.0 PKCE flow, push invoices to Xero as draft, pull timesheets, hybrid auto/manual job mapping, sync employee pay rates, labour rate parts with buy/sell/margin, unassigned hours queue)
 - Webhook System + Public API Keys (per-company webhooks with HMAC signing, API keys with SHA-256 hash, REST API at /api/v1/, event integration in jobs/invoices/xero actions)
+- Website-to-App Lead Tracking (leads table, admin UI at /leads with stats/filters/CRUD, public API POST/GET /api/v1/leads with API key auth, lead.created webhook event)
+- Company Settings & Branding (settings page at /settings/company, logo upload, brand colours, company details, licences/credentials with label+value CRUD, PDF report footer with branding + credentials, company_credentials table)
+- Report Overhaul (PDF overhauled: 2×2 grid, 4 per page, floor plan crops with pin, grouped by building/level/room. Spreadsheet export .xlsx. Document export .docx. Report tab with 3 independent export buttons. Fixed photo column bug. Signed URL generation for all assets. Standalone drawing export still TODO.)
+- Dedicated Drawings Tab (moved from Structure tab to own tab, zoom constrained: min 1x with symmetric pan boundaries, scroll-to-zoom captures page scroll)
+- Pin Scaling on Zoom (pins scale inversely with zoom, zoom-to-cursor with atomic state, badge/label text scales proportionally, pin detail panel on Drawings tab with evidence fields + photos + lightbox)
+- Evidence Field Categories & Default Questions (Certification/Inspection categories, subcategories per category, worker picks subcategory per penetration, template questions load dynamically, admin custom fields still supported, per-penetration subcategory stored in DB)
 
 ---
 
 ## 🔨 IMMEDIATE NEXT (Pre-Launch Core)
 
-### Report Overhaul (PDF + Spreadsheet + Document Export)
-**The current PDF report is too basic. Needs a full content overhaul + multiple export formats.**
-
-**Report content (per penetration):**
-- All evidence field answers the worker filled in
-- Photo(s) taken for that penetration
-- Cropped close-up of the floor plan drawing showing where the pin is located (mini-map)
-- Layout: **4 penetrations per page** in a column layout (like the boss's current manual reports)
-- Clean, professional, branded with company logo + colours
-
-**Export formats:**
-- PDF (current — but with overhauled content and layout)
-- Spreadsheet (Excel/CSV — tabular data, one row per penetration, filterable by level prefix)
-- Document (Word/.docx — editable in Google Docs)
-
-**Standalone drawing export:**
+### Standalone Drawing Export
 - Separate export of just floor plan drawings with pins (not part of the main report)
 - Grouped by building, one drawing per level
 - Interactive — viewer can zoom in
 - Pins must scale when zooming (not stay oversized) so exact placement is visible
-
-**Reference image:** Oliver has a screenshot showing the target layout — 4 columns per page, photo at top, evidence data in middle, cropped floor plan with red pin at bottom.
 
 ### Drawing Prefix System
 - Each level/drawing gets a configurable **prefix** (e.g. "L1-", "L2-", "GF-")
@@ -63,15 +52,13 @@
 - Enables filtering/grouping exports by level — one spreadsheet per level based on prefix
 - Prefix is set by admin when configuring levels in the building structure
 
-### Evidence Field Categories & Default Questions
-**Major rework of how evidence fields/questions work.**
-
-- Two main job categories: **Certification** and **Inspection** (replaces/refines current job_type field)
-- Under each category, multiple **subcategories** (specific list coming from boss)
-- Each subcategory has **default questions** that workers always see automatically
-- Admin can still **add custom questions** on top of defaults for any specific job
-- When setting up a job, admin picks category + subcategory → workers automatically get the right default question set
-- Workers must know whether they're on a certification or inspection job
+### ~~Evidence Field Categories & Default Questions~~ ✅ DONE
+- Two main job categories: Certification and Inspection
+- Subcategories per category (e.g. Penetration Sealing, Fire Collar, Fire Door)
+- Admin picks category at job level; worker picks subcategory per penetration
+- Template questions load dynamically based on worker's subcategory selection
+- Admin can still add custom questions via Setup tab
+- Different penetrations in same job can have different subcategories
 
 ### Partial/Progress Invoicing + Invoice Creation from Invoices Page
 - Big jobs need monthly invoices instead of one invoice at the end
@@ -82,25 +69,21 @@
 - Job selection shows job title, job number, customer, and how much has already been invoiced
 - Keep the existing "Generate Invoice" button on the job cost tab as well (both paths work)
 
-### Dedicated Drawings Tab
-- Move floor plan drawings out of the Structure tab into a **new "Drawings" tab** on the job detail page
-- Upload drawings here (instead of in Structure)
-- View all drawings with their pins after workers place them
-- Structure tab stays focused on building/level/room management only
+### ~~Dedicated Drawings Tab~~ ✅ DONE
+- Drawings moved to own tab on job detail page
+- Zoom constrained: min 1x, pan boundaries prevent losing drawing off-screen
 
-### Pin Scaling on Zoom
-- Currently pins stay the same visual size regardless of zoom level
-- Pins need to **scale with the drawing** — zooming in makes them proportionally smaller so exact placement is visible
-- Applies both in-app (floor plan viewer) and in exported drawings/reports
-- Critical for large floor plans with many pins close together
+### ~~Pin Scaling on Zoom~~ ✅ DONE
+- Pins scale inversely with zoom (effectivePinSize = pinSize / scale, min 8px floor)
+- Badge text and label also scale proportionally (lowered internal Math.max floors)
+- Zoom-to-cursor: refactored useZoomPan to single atomic state (scale + x + y in one useState) — eliminates React batching drift
+- Pin detail panel on Drawings tab: clicking a pin shows full penetration details (evidence fields, photos with lightbox, subcategory, room, timestamp)
+- Still TODO: pin scaling in exported drawings/reports (standalone drawing export)
 
-### Company Settings & Branding
-- New section in Settings for company profile setup
-- Company logo upload
-- Brand colours (primary, secondary)
-- Company name, address, ABN, contact details
-- Branding applied to: reports, invoices, customer portal, email notifications
-- Required before report/invoice exports look professional
+### ~~Company Settings & Branding~~ ✅ DONE
+- Company settings page, logo upload, brand colours, company details, credentials/licences
+- PDF report footer branded with company details + credentials
+- Still TODO: apply branding to invoices, customer portal, email notifications
 
 ### Scheduling/Calendar
 - "Schedule" tab already exists as placeholder — needs to be built
@@ -135,12 +118,11 @@
 - Job 24hrs away → reminder to customer + worker
 - Invoice overdue → auto payment reminder
 
-### Website-to-App Lead Tracking
-- Connect AUTONYX marketing website inquiry form to the app
-- Track leads: how many people inquired, how many signed up, conversion rate
-- Admin can see lead pipeline in the app (or at minimum via webhook/n8n integration)
-- Could be as simple as a webhook endpoint that receives form submissions and stores them
-- Or a dedicated leads/inquiries table with status tracking
+### ~~Website-to-App Lead Tracking~~ ✅ DONE
+- Leads table with status lifecycle (new → contacted → qualified → proposal → converted → lost)
+- Admin UI at /leads with stat cards, search, status/source filters, add/edit/delete modals
+- Public API: POST + GET /api/v1/leads authenticated via Bearer API key
+- lead.created webhook event fires on new leads from API
 
 ---
 
@@ -213,11 +195,11 @@ Worker records 60-second video. AI identifies penetrations, maps to rooms, gener
 
 | Phase | What |
 |-------|------|
-| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal |
-| Now | Report overhaul (PDF/spreadsheet/doc), Company branding, Drawings tab, Pin scaling |
-| Now (parallel) | Drawing prefix system, Evidence field categories + default questions |
+| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom |
+| Now | Standalone drawing export |
+| Now (parallel) | Drawing prefix system |
 | Next | Partial invoicing, Scheduling/calendar, Stripe billing |
-| Next (parallel) | Email notifications, Website lead tracking |
+| Next (parallel) | Email notifications |
 | Pre-launch AI | Voice entry, Photo checker, Natural language BI, Defect-to-quote, In-app AI assistant |
 | Post-launch | AI portal assistant, Predictive materials, Profitability coach |
 | Post-launch | Smart scheduling AI, Compliance risk score, AI site walk |

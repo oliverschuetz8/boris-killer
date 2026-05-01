@@ -390,6 +390,7 @@ function PhotoModal({ photo, url, siblings, canModify, deleting, onClose, onNavi
   const location = [photo.level, photo.space_type, photo.space_identifier].filter(Boolean).join(' · ')
   const uploadedAt = new Date(photo.uploaded_at).toLocaleString('en-AU', {
     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    timeZone: 'Australia/Sydney',
   })
 
   return (

@@ -8,6 +8,8 @@ import {
   getPenetrationPhotoUrl,
   type Penetration,
 } from '@/lib/services/penetrations'
+import { getTemplateFields, getEvidenceSubcategories } from '@/lib/services/evidence-categories'
+import { createClient } from '@/lib/supabase/client'
 import { ChevronDown, ChevronRight, Trash2, ImageIcon, X } from 'lucide-react'
 
 interface EvidenceField {
@@ -29,6 +31,8 @@ interface Props {
 export default function PenetrationList({ jobId, roomId, evidenceFields, refreshTrigger }: Props) {
   const [penetrations, setPenetrations] = useState<Penetration[]>([])
   const [urls, setUrls] = useState<Record<string, string>>({})
+  const [templateFieldMap, setTemplateFieldMap] = useState<Record<string, string>>({})
+  const [subcategoryNames, setSubcategoryNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -39,6 +43,31 @@ export default function PenetrationList({ jobId, roomId, evidenceFields, refresh
     try {
       const data = await getPenetrations(jobId, roomId)
       setPenetrations(data)
+
+      // Load subcategory names and template field labels
+      const uniqueSubIds = [...new Set(
+        data.map(p => p.evidence_subcategory_id).filter(Boolean) as string[]
+      )]
+      if (uniqueSubIds.length > 0) {
+        // Fetch subcategory names
+        const supabase = createClient()
+        const { data: subNames } = await supabase
+          .from('evidence_subcategories')
+          .select('id, name')
+          .in('id', uniqueSubIds)
+        const nameMap: Record<string, string> = {}
+        for (const s of (subNames || [])) nameMap[s.id] = s.name
+        setSubcategoryNames(nameMap)
+
+        // Fetch template field labels
+        const allTf = await Promise.all(uniqueSubIds.map(id => getTemplateFields(id)))
+        const tfMap: Record<string, string> = {}
+        for (const fields of allTf) {
+          for (const f of fields) tfMap[f.id] = f.label
+        }
+        setTemplateFieldMap(tfMap)
+      }
+
       const allPhotos = data.flatMap(p => p.photos)
       const urlMap: Record<string, string> = {}
       await Promise.all(
@@ -109,12 +138,12 @@ export default function PenetrationList({ jobId, roomId, evidenceFields, refresh
           const createdAt = new Date(pen.created_at).toLocaleTimeString('en-AU', {
             hour: '2-digit', minute: '2-digit',
           })
-          const summaryParts = evidenceFields
-            .filter(f => f.field_type !== 'structure_level')
-            .slice(0, 2)
-            .map(f => pen.field_values[f.id])
-            .filter(Boolean)
-          const summary = summaryParts.join(' · ') || `Penetration ${index + 1}`
+          // Build summary: subcategory name + pin label (e.g. "Penetration 1.2", "Fire Door 1.3")
+          const subName = pen.evidence_subcategory_id
+            ? subcategoryNames[pen.evidence_subcategory_id] || 'Penetration'
+            : 'Penetration'
+          const pinLabel = pen.floorplan_label || String(index + 1)
+          const summary = `${subName} ${pinLabel}`
 
           return (
             <div key={pen.id}>
@@ -148,20 +177,20 @@ export default function PenetrationList({ jobId, roomId, evidenceFields, refresh
 
               {isExpanded && (
                 <div className="pb-3 pt-1 space-y-3 bg-slate-50 rounded-lg px-3 mb-1">
-                  {evidenceFields.filter(f => f.field_type !== 'structure_level').length > 0 && (
+                  {Object.keys(pen.field_values || {}).length > 0 && (
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2">
-                      {evidenceFields
-                        .filter(f => f.field_type !== 'structure_level')
-                        .map(field => {
-                          const val = pen.field_values[field.id]
-                          if (!val) return null
-                          return (
-                            <div key={field.id}>
-                              <p className="text-xs text-slate-500">{field.label}</p>
-                              <p className="text-sm font-medium text-slate-800">{val}</p>
-                            </div>
-                          )
-                        })}
+                      {Object.entries(pen.field_values || {}).map(([fieldId, val]) => {
+                        if (!val) return null
+                        const label = evidenceFields.find(f => f.id === fieldId)?.label
+                          || templateFieldMap[fieldId]
+                          || 'Field'
+                        return (
+                          <div key={fieldId}>
+                            <p className="text-xs text-slate-500">{label}</p>
+                            <p className="text-sm font-medium text-slate-800">{val}</p>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                   {photoCount > 0 ? (

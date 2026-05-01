@@ -26,6 +26,7 @@ function formatDate(dateStr: string | null) {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
+    timeZone: 'Australia/Sydney',
   })
 }
 

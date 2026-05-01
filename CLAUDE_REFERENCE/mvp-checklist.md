@@ -29,8 +29,8 @@
 
 - [x] Customer Proof Portal (dead simple: timeline, status, photos, downloads, approve/sign)
 - [ ] Evidence -> Report automation (auto-generate branded report with photos + timestamps + signatures)
-- [ ] Report overhaul: 4 penetrations per page, photo + evidence data + cropped floor plan close-up per penetration
-- [ ] Multiple export formats: PDF, spreadsheet (Excel/CSV), document (.docx for Google Docs)
+- [x] Report overhaul: 4 penetrations per page, photo + evidence data + cropped floor plan close-up per penetration
+- [x] Multiple export formats: PDF, spreadsheet (Excel/CSV), document (.docx for Google Docs)
 - [ ] Standalone drawing export: interactive, zoomable pins, grouped by building
 - [ ] Automatic status updates (email/SMS: booked -> on-site -> completed -> report ready)
 - [x] Floor plan drawings with pin mapping (LEGALLY REQUIRED for AS1851 — admin uploads drawings per level, workers pin evidence locations, report includes annotated drawings)
@@ -57,10 +57,10 @@
 
 ## Evidence Fields & Categories
 
-- [ ] Two main job categories: Certification and Inspection (replaces/refines job_type)
-- [ ] Subcategories under each category (specific list TBD from boss)
-- [ ] Default questions per subcategory (workers see automatically)
-- [ ] Admin can still add custom questions per job on top of defaults
+- [x] Two main job categories: Certification and Inspection (replaces/refines job_type)
+- [x] Subcategories under each category (specific list TBD from boss)
+- [x] Default questions per subcategory (workers see automatically)
+- [x] Admin can still add custom questions per job on top of defaults
 
 ---
 
@@ -73,22 +73,22 @@
 
 ## Drawings & Pins
 
-- [ ] Dedicated Drawings tab on job detail page (moved from Structure tab)
+- [x] Dedicated Drawings tab on job detail page (moved from Structure tab)
 - [ ] Drawing prefix system (auto-label penetrations per level, e.g. "L1-001")
-- [ ] Pin scaling on zoom (pins scale with drawing, not stay oversized)
+- [x] Pin scaling on zoom (pins scale with drawing, zoom-to-cursor, pin detail panel on Drawings tab)
 
 ---
 
 ## Company Setup
 
-- [ ] Company settings & branding (logo, colours, name, address, ABN)
-- [ ] Branding applied to reports, invoices, customer portal, emails
+- [x] Company settings & branding (logo, colours, name, address, ABN, licences/credentials)
+- [ ] Branding applied to reports, invoices, customer portal, emails (reports done — invoices, portal, emails remaining)
 
 ---
 
 ## Website & Leads
 
-- [ ] Website inquiry form → app lead tracking (conversion funnel visibility)
+- [x] Website inquiry form → app lead tracking (conversion funnel visibility)
 
 ---
 

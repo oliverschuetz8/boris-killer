@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 28 April 2026 | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~88% complete)
+Last Updated: 30 April 2026 (pin scaling + zoom-to-cursor + drawings pin detail) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~95% complete)
 
 ---
 
@@ -47,7 +47,10 @@ Last Updated: 28 April 2026 | Project: AUTONYX (codename: BORIS Killer) | Status
 - Workers place pins on the drawing to mark exact penetration locations
 - Free-text pin labels (e.g. 1, 1.1, A1, B-2) — not auto-numbered
 - Cumulative pins: all existing pins visible while placing a new one, scoped per level
-- Zoom & pan: mouse wheel zoom toward cursor, click-drag pan, pinch-to-zoom on mobile
+- Zoom & pan: mouse wheel zoom toward cursor (captures scroll — no page scroll while zooming), click-drag pan, pinch-to-zoom on mobile
+- Zoom constrained: min 1x (can't shrink below original size), max 5x; pan boundaries keep at least 20% of drawing visible on all edges
+- Zoom-to-cursor: scroll wheel zooms exactly where the mouse cursor points (atomic state update — scale + translate in single useState to prevent drift)
+- Pin scaling on zoom: pins scale inversely with zoom level (effectivePinSize = pinSize / scale, min 8px). Badge text and label also scale proportionally. Manual pin size +/- controls still adjust the base size.
 - Pin size +/- controls, hide/show pins toggle
 - Tap existing pin → action menu: Edit, Move, Delete
 - "View Drawing" button opens full-screen drawings-only modal with all pins + interactive actions
@@ -168,13 +171,69 @@ Last Updated: 28 April 2026 | Project: AUTONYX (codename: BORIS Killer) | Status
 ### Webhook System + Public API Keys
 - Per-company webhook subscriptions at /settings/webhooks (admin/manager)
 - HMAC-SHA256 signed payloads with X-Webhook-Signature header
-- Events: job.created, job.completed, job.status_changed, job.assigned, invoice.created, invoice.status_changed, invoice.overdue, hours.submitted, room.completed, webhook.test
+- Events: job.created, job.completed, job.status_changed, job.assigned, invoice.created, invoice.status_changed, invoice.overdue, hours.submitted, room.completed, lead.created, webhook.test
 - Add/edit/delete webhooks with URL, event selection, description
 - Toggle active/paused, test button, failure count tracking
 - Webhook delivery log with event, status code, success/fail, timestamp
 - Per-company API keys (admin only) with SHA-256 hash storage, one-time key display
-- Public REST API at /api/v1/ (jobs list/detail, invoices list/detail) authenticated via Bearer token
+- Public REST API at /api/v1/ (jobs list/detail, invoices list/detail, leads create/list) authenticated via Bearer token
 - Non-blocking fire-and-forget webhook delivery from server actions (createJob, updateJobStatus, createInvoiceFromJob, updateInvoiceStatus, syncTimesheets)
+
+### Website-to-App Lead Tracking
+- Leads table with full lifecycle: new → contacted → qualified → proposal → converted → lost
+- Admin lead management UI at /leads (admin/manager only) with nav link
+- 5 stat cards: Total, New, Qualified, Converted, Conversion Rate
+- Filter by search, status, source with full-width admin layout
+- Add/edit/delete leads with modal forms
+- Auto-sets converted_at timestamp when status changes to 'converted'
+- Public API: POST /api/v1/leads (create lead via API key auth, fires lead.created webhook)
+- Public API: GET /api/v1/leads (list leads via API key auth, optional status/limit filters)
+- Service layer in lib/services/leads.ts with getLeads, getLeadStats, createLead, updateLead, deleteLead
+
+### Company Settings & Branding
+- Company settings page at /settings/company (admin/manager view, admin edit)
+- Company logo upload with preview (stored in job-photos bucket at {company_id}/branding/logo.png)
+- Brand colours: primary + secondary colour pickers
+- Company details: name, email, phone, address (line1/line2, city, state, postcode, country), ABN, website
+- Licences & Credentials system: admin adds custom label+value pairs (e.g. "QBCC Licence: 12345", "FPA Member: FM-001")
+- Credentials stored in company_credentials table with display_order for consistent ordering
+- PDF report footer: professional branded footer on every page — company logo, name, ABN, contact details on left; credentials on right; accent-coloured top border; job number + page count at bottom
+- Report API route passes company branding + credentials to PDF renderer
+- Service layer in lib/services/company-settings.ts (getCompanySettings, updateCompanySettings, uploadCompanyLogo, deleteCompanyLogo, getCompanyLogoUrl, CRUD for credentials)
+
+### Evidence Field Categories & Default Questions (Per-Penetration Subcategories)
+- Two main job categories: Certification and Inspection (evidence_categories table)
+- Multiple subcategories per category (evidence_subcategories table, e.g. "Penetration Sealing", "Fire Collar", "Fire Door")
+- Default template questions per subcategory (evidence_template_fields table) — workers see automatically
+- Admin picks only category at job level (create/edit); worker picks subcategory per penetration
+- Subcategory dropdown shown as first field ("Type") in penetration form during execution
+- Template fields load dynamically based on worker's subcategory selection
+- Different penetrations in the same job can have different subcategories and different questions
+- Admin can still add custom questions via Setup tab (job_evidence_fields) — apply to all penetrations
+- Field values stored in penetration's field_values JSON with IDs from both template fields and custom fields
+- Evidence tab and penetration list resolve labels from both sources
+- Penetration list shows subcategory name + pin label (e.g. "Penetration 1.2", "Fire Door 1.3")
+- Database: evidence_subcategory_id column added to penetrations table
+
+### Dedicated Drawings Tab
+- Floor plan drawings moved from Structure tab to a dedicated "Drawings" tab on job detail page
+- Upload and view drawings with pins in the Drawings tab
+- Structure tab now focused on building/level/room management only
+- Floor plan zoom constrained: minimum zoom 1x, symmetric pan boundaries on all four sides prevent losing the drawing off-screen
+- Scroll-to-zoom captures scroll event: mouse wheel only zooms when cursor is over the drawing, page does not scroll simultaneously
+- Pin detail panel: clicking a pin on the Drawings tab shows full penetration details below the floor plan — evidence field question/answer pairs, all photos (clickable lightbox), subcategory badge, room name, timestamp
+
+### Report Overhaul (PDF + Spreadsheet + Document Export)
+- PDF report overhauled: 2×2 grid layout (4 penetrations per page), each card shows photo + evidence fields + cropped floor plan close-up with pin location
+- Penetrations grouped by building → level → room with group headers
+- Header on page 1 only (job details, building structure, materials summary), branded footer on all pages
+- Floor plan crop: overflow:hidden container with calculated offsets from pin percentage coordinates, red dot overlay at pin location
+- Spreadsheet export (.xlsx): one row per penetration, dynamic columns from evidence fields, styled header, auto-filter, alternating row colours (exceljs)
+- Document export (.docx): editable Word document mirroring PDF content, embedded photos as image buffers, materials table, credentials footer (docx package)
+- Report tab UI: 3 independent export cards (PDF, Spreadsheet, Document) with per-format loading/success/error states
+- Fixed critical bug: penetration_photos query used `url` column (doesn't exist) — changed to `storage_path` with signed URL generation
+- Signed URL generation for all photos, level drawings, and company logo in PDF and document routes
+- API routes: /api/jobs/[id]/report (PDF), /api/jobs/[id]/report/spreadsheet (xlsx), /api/jobs/[id]/report/document (docx)
 
 ---
 
@@ -209,6 +268,11 @@ Last Updated: 28 April 2026 | Project: AUTONYX (codename: BORIS Killer) | Status
 | webhooks | Per-company webhook subscriptions (URL, secret, events, status) |
 | webhook_logs | Webhook delivery log (event, payload, response, success) |
 | api_keys | Per-company API keys (hashed, prefix for display, permissions) |
+| leads | Lead/inquiry tracking with status lifecycle and conversion tracking |
+| company_credentials | Custom licence/credential label+value pairs per company (display on reports) |
+| evidence_categories | Job categories: Certification, Inspection |
+| evidence_subcategories | Subcategories under each category (e.g. Penetration Sealing, Fire Collar) |
+| evidence_template_fields | Default questions per subcategory (loaded dynamically at form time) |
 
 Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations/{penetration_id}/{timestamp}.ext`
 
@@ -229,17 +293,16 @@ Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations
 
 ## Not Yet Built (Must-Have for MVP)
 
-- **Report overhaul** — Current PDF too basic. Needs: 4 penetrations per page (photo + evidence data + cropped floor plan close-up with pin), multiple export formats (PDF, spreadsheet/Excel, document/.docx for Google Docs), standalone interactive drawing export with zoomable pins. Key differentiator vs BORIS.
+- ~~**Report overhaul**~~ ✅ DONE — PDF overhauled (2×2 grid, 4 per page, floor plan crops, grouped by location), spreadsheet export (.xlsx), document export (.docx). Standalone interactive drawing export still TODO.
 - **Drawing prefix system** — Each level gets a prefix (e.g. "L1-"), auto-applied to penetration labels. Enables filtering exports by level.
-- **Evidence field categories & default questions** — Two main job categories (Certification / Inspection) with subcategories. Each subcategory has default questions. Admin can add custom questions on top. Workers see the right questions based on job category + subcategory.
+- ~~**Evidence field categories & default questions**~~ ✅ DONE — Two main job categories (Certification / Inspection) with subcategories. Worker picks subcategory per penetration. Template questions load dynamically. Admin can add custom questions on top.
 - **Partial/progress invoicing + invoice creation from invoices page** — Multiple invoices per job (monthly billing). "New Invoice" button on /invoices page: select job, choose full or partial scope. Track total invoiced vs total job value. Keep existing generate button on job cost tab too.
-- **Dedicated Drawings tab** — Move drawings from Structure tab to its own tab on job detail page. Upload + view drawings with pins.
-- **Pin scaling on zoom** — Pins must scale with the drawing when zooming (currently stay oversized). Applies in-app and in exports.
-- **Company settings & branding** — Company logo, brand colours, name, address, ABN. Applied to reports, invoices, portal, emails.
+- ~~**Dedicated Drawings tab**~~ ✅ DONE — Drawings moved to own tab, structure tab focused on building/level/room only. Zoom constrained (min 1x, pan boundaries).
+- ~~**Pin scaling on zoom**~~ ✅ DONE — Pins scale inversely with zoom, zoom-to-cursor with atomic state, pin detail panel on Drawings tab. Still TODO: pin scaling in exported drawings/reports.
+- ~~**Company settings & branding**~~ ✅ DONE — Company logo, brand colours, name, address, ABN, credentials/licences. Applied to PDF reports (footer). Invoices, portal, emails still to be branded.
 - **Scheduling/calendar** — Calendar view with drag-and-drop, day/week/month views, worker availability.
 - **Stripe billing** — Starter/Pro/Business/Enterprise tiers, per-seat pricing, 30-day trial.
 - **Email notifications** — Job completed, assigned, created, reminders, overdue invoices.
-- **Website-to-app lead tracking** — Marketing website inquiry form to app for conversion funnel visibility.
 - **In-app AI help assistant** — AI chat icon (bottom-right) trained on our app, helps admins navigate and find features.
 
 ## Known Issues / Technical Debt

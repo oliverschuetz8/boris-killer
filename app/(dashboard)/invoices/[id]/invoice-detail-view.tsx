@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Send, CheckCircle2, XCircle,
-  Trash2, Loader2, FileText, User, Calendar, Briefcase,
+  Trash2, Loader2, FileText, User, Calendar, Briefcase, Upload,
 } from 'lucide-react'
 import { updateInvoiceStatus, deleteInvoice, type Invoice } from '@/lib/services/invoices'
+import { pushInvoiceToXero } from '@/lib/services/xero'
 
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-600',
@@ -45,6 +46,19 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
       router.push('/invoices')
     } catch {
       alert('Failed to delete invoice')
+      setBusy(null)
+    }
+  }
+
+  async function handlePushToXero() {
+    setBusy('xero')
+    try {
+      await pushInvoiceToXero(invoice.id)
+      alert('Invoice pushed to Xero as draft.')
+      router.refresh()
+    } catch (err: any) {
+      alert(err.message || 'Failed to push to Xero')
+    } finally {
       setBusy(null)
     }
   }
@@ -221,6 +235,7 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
                     <p className="text-sm font-medium text-slate-800">
                       {new Date(invoice.issued_date).toLocaleDateString('en-AU', {
                         day: 'numeric', month: 'short', year: 'numeric',
+                        timeZone: 'Australia/Sydney',
                       })}
                     </p>
                   </div>
@@ -231,6 +246,7 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
                     <p className="text-sm font-medium text-slate-800">
                       {new Date(invoice.due_date).toLocaleDateString('en-AU', {
                         day: 'numeric', month: 'short', year: 'numeric',
+                        timeZone: 'Australia/Sydney',
                       })}
                     </p>
                   </div>
@@ -241,12 +257,36 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
                     <p className="text-sm font-medium text-green-700">
                       {new Date(invoice.paid_date).toLocaleDateString('en-AU', {
                         day: 'numeric', month: 'short', year: 'numeric',
+                        timeZone: 'Australia/Sydney',
                       })}
                     </p>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Push to Xero */}
+            {invoice.status !== 'cancelled' && (
+              <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Upload className="w-4 h-4 text-slate-400" />
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Xero</p>
+                </div>
+                <button
+                  onClick={handlePushToXero}
+                  disabled={busy !== null}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  {busy === 'xero' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  Push to Xero
+                </button>
+                <p className="text-xs text-slate-400 mt-2">Creates a draft invoice in your connected Xero account.</p>
+              </div>
+            )}
 
             {invoice.notes && (
               <div className="bg-white rounded-xl border border-slate-200 p-4">

@@ -1,23 +1,63 @@
 'use client'
 
 import { useState } from 'react'
-import { FileDown, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { FileDown, Loader2, CheckCircle, AlertCircle, FileSpreadsheet, FileText } from 'lucide-react'
+
+type ExportFormat = 'pdf' | 'spreadsheet' | 'document'
+type DownloadStatus = 'idle' | 'loading' | 'success' | 'error'
 
 interface Props {
   jobId: string
   jobNumber: string
 }
 
-export default function ReportTab({ jobId, jobNumber }: Props) {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [errorMsg, setErrorMsg] = useState('')
+const EXPORTS: { id: ExportFormat; label: string; description: string; endpoint: string; filename: string; icon: typeof FileDown }[] = [
+  {
+    id: 'pdf',
+    label: 'Download PDF Report',
+    description: 'Full branded report with photos, evidence data, and floor plan close-ups',
+    endpoint: '',
+    filename: '-report.pdf',
+    icon: FileDown,
+  },
+  {
+    id: 'spreadsheet',
+    label: 'Download Spreadsheet',
+    description: 'Excel file with one row per penetration — filterable by level, room, and fields',
+    endpoint: '/spreadsheet',
+    filename: '-report.xlsx',
+    icon: FileSpreadsheet,
+  },
+  {
+    id: 'document',
+    label: 'Download Document',
+    description: 'Editable Word document — open in Google Docs or Microsoft Word',
+    endpoint: '/document',
+    filename: '-report.docx',
+    icon: FileText,
+  },
+]
 
-  async function handleDownload() {
-    setStatus('loading')
-    setErrorMsg('')
+export default function ReportTab({ jobId, jobNumber }: Props) {
+  const [statuses, setStatuses] = useState<Record<ExportFormat, DownloadStatus>>({
+    pdf: 'idle',
+    spreadsheet: 'idle',
+    document: 'idle',
+  })
+  const [errors, setErrors] = useState<Record<ExportFormat, string>>({
+    pdf: '',
+    spreadsheet: '',
+    document: '',
+  })
+
+  async function handleDownload(format: ExportFormat) {
+    setStatuses(prev => ({ ...prev, [format]: 'loading' }))
+    setErrors(prev => ({ ...prev, [format]: '' }))
+
+    const exp = EXPORTS.find(e => e.id === format)!
 
     try {
-      const response = await fetch(`/api/jobs/${jobId}/report`)
+      const response = await fetch(`/api/jobs/${jobId}/report${exp.endpoint}`)
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({ error: 'Failed to generate report' }))
@@ -28,26 +68,28 @@ export default function ReportTab({ jobId, jobNumber }: Props) {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${jobNumber}-report.pdf`
+      a.download = `${jobNumber}${exp.filename}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
 
-      setStatus('success')
-      setTimeout(() => setStatus('idle'), 3000)
+      setStatuses(prev => ({ ...prev, [format]: 'success' }))
+      setTimeout(() => setStatuses(prev => ({ ...prev, [format]: 'idle' })), 3000)
     } catch (err: any) {
-      setErrorMsg(err.message || 'Something went wrong')
-      setStatus('error')
+      setErrors(prev => ({ ...prev, [format]: err.message || 'Something went wrong' }))
+      setStatuses(prev => ({ ...prev, [format]: 'error' }))
     }
   }
 
   const includes = [
-    'Company branding header',
+    'Company branding header & footer',
     'Job details & customer info',
-    'All rooms with done/pending status',
-    'Penetrations with evidence photos',
-    'Materials used per room',
+    '4 penetrations per page (2×2 grid)',
+    'Photo + evidence data per penetration',
+    'Cropped floor plan close-up with pin location',
+    'Grouped by building › level › room',
+    'Materials used table',
     'Page numbers & generation date',
   ]
 
@@ -58,46 +100,69 @@ export default function ReportTab({ jobId, jobNumber }: Props) {
         {/* Title + description */}
         <h2 className="text-lg font-semibold text-slate-900 mb-1">Completion Report</h2>
         <p className="text-sm text-slate-500 mb-6 max-w-lg">
-          Generate a PDF report including job details, building structure, all penetrations with photos, and materials used.
+          Export the job completion report in multiple formats. The PDF includes branded layouts with photos and floor plan close-ups.
         </p>
 
-        {/* Download button */}
-        <button
-          onClick={handleDownload}
-          disabled={status === 'loading'}
-          className="flex items-center gap-2.5 px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-        >
-          {status === 'loading' ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Generating PDF…
-            </>
-          ) : (
-            <>
-              <FileDown className="w-4 h-4" />
-              Download PDF Report
-            </>
-          )}
-        </button>
+        {/* Export buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {EXPORTS.map(exp => {
+            const Icon = exp.icon
+            const status = statuses[exp.id]
+            const error = errors[exp.id]
 
-        {/* Feedback messages */}
-        {status === 'success' && (
-          <div className="flex items-center gap-2 mt-4 text-green-600">
-            <CheckCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">Report downloaded successfully</span>
-          </div>
-        )}
-        {status === 'error' && (
-          <div className="flex items-center gap-2 mt-4 text-red-600">
-            <AlertCircle className="w-4 h-4" />
-            <span className="text-sm">{errorMsg}</span>
-          </div>
-        )}
+            return (
+              <div
+                key={exp.id}
+                className="border border-slate-200 rounded-lg p-5 flex flex-col"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-semibold text-slate-800">{exp.label.replace('Download ', '')}</span>
+                </div>
+
+                <p className="text-xs text-slate-500 mb-4 flex-1">{exp.description}</p>
+
+                <button
+                  onClick={() => handleDownload(exp.id)}
+                  disabled={status === 'loading'}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {status === 'loading' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating…
+                    </>
+                  ) : (
+                    <>
+                      <Icon className="w-4 h-4" />
+                      {exp.label}
+                    </>
+                  )}
+                </button>
+
+                {status === 'success' && (
+                  <div className="flex items-center gap-2 mt-3 text-green-600">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span className="text-xs font-medium">Downloaded</span>
+                  </div>
+                )}
+                {status === 'error' && (
+                  <div className="flex items-center gap-2 mt-3 text-red-600">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span className="text-xs">{error}</span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
 
         {/* Report includes */}
         <div className="mt-8 pt-6 border-t border-slate-100">
           <div className="pl-4 border-l-4 border-blue-500 mb-4">
-            <p className="text-sm font-bold text-slate-700 uppercase tracking-wider">Report Includes</p>
+            <p className="text-sm font-bold text-slate-700 uppercase tracking-wider">PDF Report Includes</p>
           </div>
 
           <div className="grid grid-cols-2 gap-x-8 gap-y-3">

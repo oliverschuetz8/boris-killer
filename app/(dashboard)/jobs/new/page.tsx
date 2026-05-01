@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createJob, getCustomers } from '@/app/actions/jobs'
 import { Button } from '@/components/ui/button'
+import { ChevronDown } from 'lucide-react'
+import {
+  getEvidenceCategories,
+  type EvidenceCategory,
+} from '@/lib/services/evidence-categories'
 
 interface Customer {
   id: string
@@ -15,11 +20,14 @@ interface Customer {
 export default function NewJobPage() {
   const router = useRouter()
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [categories, setCategories] = useState<EvidenceCategory[]>([])
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     getCustomers().then(setCustomers).catch(console.error)
+    getEvidenceCategories().then(setCategories).catch(console.error)
   }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -29,6 +37,7 @@ export default function NewJobPage() {
 
     try {
       const formData = new FormData(e.currentTarget)
+      formData.set('evidence_category_id', selectedCategoryId || '')
       await createJob(formData)
       router.push('/jobs')
       router.refresh()
@@ -70,16 +79,19 @@ export default function NewJobPage() {
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               Customer <span className="text-red-500">*</span>
             </label>
-            <select
-              name="customer_id"
-              required
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Select a customer…</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                name="customer_id"
+                required
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none pr-10"
+              >
+                <option value="">Select a customer…</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
             {customers.length === 0 && (
               <p className="text-xs text-slate-500 mt-1">
                 No customers yet.{' '}
@@ -133,33 +145,68 @@ export default function NewJobPage() {
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
                 Status
               </label>
-              <select
-                name="status"
-                defaultValue="scheduled"
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                <option value="draft">Draft</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="in_progress">In Progress</option>
-                <option value="on_hold">On Hold</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="status"
+                  defaultValue="scheduled"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none pr-10"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="on_hold">On Hold</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
                 Priority
               </label>
-              <select
-                name="priority"
-                defaultValue="normal"
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                <option value="low">Low</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="priority"
+                  defaultValue="normal"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none pr-10"
+                >
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
           </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Category
+            </label>
+            <div className="relative">
+              <select
+                value={selectedCategoryId}
+                onChange={e => setSelectedCategoryId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none pr-10"
+              >
+                <option value="">Select category…</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Hidden job_type — backwards compat, derived from category */}
+          <input type="hidden" name="job_type" value={
+            categories.find(c => c.id === selectedCategoryId)?.name.toLowerCase().includes('inspection')
+              ? 'inspection'
+              : categories.find(c => c.id === selectedCategoryId)?.name.toLowerCase().includes('certification')
+                ? 'installation'
+                : 'installation'
+          } />
 
           {/* Notes */}
           <div>

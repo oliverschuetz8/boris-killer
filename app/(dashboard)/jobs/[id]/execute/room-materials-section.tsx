@@ -8,16 +8,20 @@ import {
   type RoomMaterial,
 } from '@/lib/services/room-materials'
 import { markRoomDone } from '@/lib/services/building-structure'
-import { Plus, Trash2, ChevronDown, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, AlertCircle, CheckCircle2, Loader2, Layers, Package } from 'lucide-react'
 
 interface JobMaterialDefault {
   id: string
   material_id: string | null
+  part_id: string | null
+  product_id: string | null
   material_name_override: string | null
   seal_id: string | null
   manufacturer: string | null
   system_product: string | null
   material?: { id: string; name: string; unit: string | null }
+  part?: { id: string; name: string; unit: string }
+  product?: { id: string; name: string }
 }
 
 interface Props {
@@ -31,6 +35,8 @@ interface Props {
   onRoomMarkedDone: () => void
   onMaterialAdded: () => void
 }
+
+type SelectionType = 'default' | 'manual'
 
 export default function RoomMaterialsSection({
   jobId,
@@ -46,7 +52,7 @@ export default function RoomMaterialsSection({
   const [materials, setMaterials] = useState<RoomMaterial[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
-  const [selectedMaterialId, setSelectedMaterialId] = useState('')
+  const [selectedDefaultId, setSelectedDefaultId] = useState('')
   const [manualName, setManualName] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [notes, setNotes] = useState('')
@@ -55,7 +61,7 @@ export default function RoomMaterialsSection({
   const [error, setError] = useState<string | null>(null)
   const [doneError, setDoneError] = useState<string | null>(null)
 
-  const isManual = selectedMaterialId === '__manual__'
+  const isManual = selectedDefaultId === '__manual__'
 
   useEffect(() => {
     load()
@@ -72,7 +78,7 @@ export default function RoomMaterialsSection({
   }
 
   function resetForm() {
-    setSelectedMaterialId('')
+    setSelectedDefaultId('')
     setManualName('')
     setQuantity('1')
     setNotes('')
@@ -81,7 +87,7 @@ export default function RoomMaterialsSection({
   }
 
   async function handleAdd() {
-    if (!selectedMaterialId) { setError('Select a material'); return }
+    if (!selectedDefaultId) { setError('Select a material'); return }
     if (isManual && !manualName.trim()) { setError('Enter a material name'); return }
     const qty = parseFloat(quantity)
     if (isNaN(qty) || qty <= 0) { setError('Enter a valid quantity'); return }
@@ -89,11 +95,24 @@ export default function RoomMaterialsSection({
     setSaving(true)
     setError(null)
     try {
-      const catalogueMaterial = materialDefaults.find(d =>
-        (d.material_id === selectedMaterialId) || (selectedMaterialId === d.id)
-      )
-      const materialId = isManual ? null : (catalogueMaterial?.material_id ?? null)
-      const nameOverride = isManual ? manualName.trim() : null
+      // Find the selected default
+      const defaultItem = materialDefaults.find(d => d.id === selectedDefaultId)
+
+      let materialId: string | null = null
+      let partId: string | null = null
+      let productId: string | null = null
+      let nameOverride: string | null = null
+
+      if (isManual) {
+        nameOverride = manualName.trim()
+      } else if (defaultItem) {
+        partId = defaultItem.part_id || null
+        productId = defaultItem.product_id || null
+        materialId = defaultItem.material_id || null
+        if (!partId && !productId && !materialId) {
+          nameOverride = defaultItem.material_name_override || null
+        }
+      }
 
       const created = await addRoomMaterial({
         jobId,
@@ -102,6 +121,8 @@ export default function RoomMaterialsSection({
         companyId,
         loggedBy: userId,
         materialId,
+        partId,
+        productId,
         materialNameOverride: nameOverride,
         quantity: qty,
         notes: notes.trim() || undefined,
@@ -142,6 +163,28 @@ export default function RoomMaterialsSection({
     }
   }
 
+  function getItemDisplayName(m: RoomMaterial): string {
+    if (m.part?.name) return m.part.name
+    if (m.product?.name) return m.product.name
+    if (m.material?.name) return m.material.name
+    if (m.material_name_override) return m.material_name_override
+    return 'Unknown'
+  }
+
+  function getItemUnit(m: RoomMaterial): string {
+    if (m.part?.unit) return m.part.unit
+    if (m.material?.unit) return m.material.unit
+    return ''
+  }
+
+  function getDefaultDisplayName(d: JobMaterialDefault): string {
+    if (d.part?.name) return d.part.name
+    if (d.product?.name) return `${d.product.name} (product)`
+    if (d.material?.name) return d.material.name
+    if (d.material_name_override) return d.material_name_override
+    return 'Unknown'
+  }
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
@@ -174,12 +217,18 @@ export default function RoomMaterialsSection({
         <div className="divide-y divide-slate-100">
           {materials.map(m => (
             <div key={m.id} className="flex items-center gap-3 px-4 py-2.5">
+              <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0">
+                {m.product_id
+                  ? <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                  : <Package className="w-3.5 h-3.5 text-blue-500" />
+                }
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-800 truncate">
-                  {m.material?.name ?? m.material_name_override ?? 'Unknown'}
+                  {getItemDisplayName(m)}
                 </p>
                 <p className="text-xs text-slate-500">
-                  Qty: {m.quantity}{m.material?.unit ? ` ${m.material.unit}` : ''}
+                  Qty: {m.quantity}{getItemUnit(m) ? ` ${getItemUnit(m)}` : ''}
                   {m.notes ? ` · ${m.notes}` : ''}
                 </p>
               </div>
@@ -203,19 +252,19 @@ export default function RoomMaterialsSection({
             </label>
             <div className="relative">
               <select
-                value={selectedMaterialId}
-                onChange={e => { setSelectedMaterialId(e.target.value); setManualName('') }}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedDefaultId}
+                onChange={e => { setSelectedDefaultId(e.target.value); setManualName('') }}
+                className="w-full px-3 py-2 pr-10 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select material…</option>
                 {materialDefaults.map(d => (
                   <option key={d.id} value={d.id}>
-                    {d.material?.name ?? d.material_name_override ?? 'Unknown'}
+                    {getDefaultDisplayName(d)}
                   </option>
                 ))}
                 <option value="__manual__">+ Type manually</option>
               </select>
-              <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-slate-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
 

@@ -9,6 +9,9 @@ interface Job {
   job_number: string
   status: string
   priority: string | null
+  job_type: string | null
+  evidence_category_id: string | null
+  evidence_category: { name: string } | null
   site_manager: string | null
   scheduled_start: string | null
   started_at: string | null
@@ -36,6 +39,7 @@ function formatDate() {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
+    timeZone: 'Australia/Sydney',
   })
 }
 
@@ -150,7 +154,18 @@ function JobCard({ job }: { job: Job }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-bold text-slate-900 text-base leading-tight">{job.title}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{job.job_number}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-xs text-slate-400">{job.job_number}</p>
+              {job.evidence_category?.name ? (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 text-indigo-700">
+                  {job.evidence_category.name}
+                </span>
+              ) : job.job_type ? (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium capitalize bg-indigo-50 text-indigo-700">
+                  {job.job_type}
+                </span>
+              ) : null}
+            </div>
           </div>
           {job.scheduled_start && (
             <div className="flex items-center gap-1 text-sm text-slate-500 flex-shrink-0 bg-slate-50 px-2 py-1 rounded-lg">

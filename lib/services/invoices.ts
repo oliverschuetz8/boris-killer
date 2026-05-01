@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { fireWebhookEvent } from '@/lib/services/webhooks'
 
 export interface InvoiceLineItem {
   id: string
@@ -155,8 +156,42 @@ export async function createInvoiceFromJob(
     }
   })
 
-  // Labour lines — placeholder until Xero integration
-  const labourLines: any[] = []
+  // Labour lines from Xero time entries assigned to this job
+  // Uses the worker's labour rate part sell_price for invoicing (not the buy_cost/Xero rate)
+  const { data: timeEntries } = await supabase
+    .from('job_time_entries')
+    .select(`
+      id, employee_name, hours, user_id,
+      user:users(id, full_name, labour_rate_part_id)
+    `)
+    .eq('job_id', jobId)
+    .eq('status', 'assigned')
+
+  const labourLines: { description: string; quantity: number; unit_price: number; amount: number; line_type: 'labour' }[] = []
+
+  for (const entry of timeEntries || []) {
+    const user = Array.isArray(entry.user) ? entry.user[0] : entry.user
+    let sellRate = 0
+
+    // If worker has a labour rate part, use its sell_price for the invoice
+    if (user?.labour_rate_part_id) {
+      const { data: labourPart } = await supabase
+        .from('parts')
+        .select('sell_price')
+        .eq('id', user.labour_rate_part_id)
+        .single()
+      sellRate = Number(labourPart?.sell_price || 0)
+    }
+
+    const hrs = Number(entry.hours || 0)
+    labourLines.push({
+      description: `Labour — ${entry.employee_name}`,
+      quantity: hrs,
+      unit_price: sellRate,
+      amount: Math.round(hrs * sellRate * 100) / 100,
+      line_type: 'labour' as const,
+    })
+  }
 
   const allLines = [...materialLines, ...labourLines]
   const subtotal = allLines.reduce((s, l) => s + l.amount, 0)
@@ -208,6 +243,17 @@ export async function createInvoiceFromJob(
     if (lineError) throw new Error(`Failed to create line items: ${lineError.message}`)
   }
 
+  // Fire webhook (non-blocking)
+  fireWebhookEvent(profile.company_id, 'invoice.created', {
+    invoice_id: invoice.id,
+    invoice_number: invoiceNumber,
+    job_id: jobId,
+    job_number: job.job_number,
+    subtotal,
+    total,
+    status: 'draft',
+  }).catch(() => {})
+
   revalidatePath('/invoices')
   return invoice.id
 }
@@ -229,12 +275,37 @@ export async function updateInvoiceStatus(
     if (paymentData?.payment_reference) updates.payment_reference = paymentData.payment_reference
   }
 
+  // Get invoice details for webhook payload before updating
+  const { data: invoice } = await supabase
+    .from('invoices')
+    .select('company_id, invoice_number, status, total')
+    .eq('id', id)
+    .single()
+
   const { error } = await supabase
     .from('invoices')
     .update(updates)
     .eq('id', id)
 
   if (error) throw new Error(`Failed to update invoice: ${error.message}`)
+
+  // Fire webhook (non-blocking)
+  if (invoice) {
+    const payload = {
+      invoice_id: id,
+      invoice_number: invoice.invoice_number,
+      previous_status: invoice.status,
+      new_status: status,
+      total: invoice.total,
+    }
+
+    fireWebhookEvent(invoice.company_id, 'invoice.status_changed', payload).catch(() => {})
+
+    if (status === 'overdue') {
+      fireWebhookEvent(invoice.company_id, 'invoice.overdue', payload).catch(() => {})
+    }
+  }
+
   revalidatePath('/invoices')
   revalidatePath(`/invoices/${id}`)
 }

@@ -150,7 +150,7 @@ Oliver says which feature. Then:
    - Orientation commands from section 0
    - Clear description of what to build
    - Numbered detailed requirements (database, routes, components, services, access control, design)
-   - SQL migration note: "Write the migration SQL but DO NOT run it — give me the SQL to run manually"
+   - SQL migration note: "Run the migration via Supabase MCP after confirming the plan"
    - Plan-first instruction: "Do NOT build yet — first explain your full plan and wait for approval"
 
 ### UPDATE REFS (after completing a feature)
@@ -183,7 +183,7 @@ Oliver provides the table name. Then:
 1. Read `database-schema.md` and one existing `lib/services/` file for patterns
 2. Ask Oliver for columns, types, FKs, constraints, and access level (unless already provided)
 3. Generate SQL migration with: table, RLS enabled, all 4 RLS policies using subquery pattern `(SELECT company_id FROM users WHERE id = auth.uid())`, indexes on company_id and FKs
-4. Output SQL but DO NOT run it — tell Oliver to run manually in Supabase SQL editor
+4. Run the migration via Supabase MCP
 5. Create `lib/services/<table-name>.ts` with TypeScript interface + CRUD functions matching existing patterns
 6. Add the new table to `CLAUDE_REFERENCE/database-schema.md`
 
@@ -206,7 +206,7 @@ Oliver says something like "prepare autonomous window for 6 AM" or "autonomous w
 - Tabs coordinate via `.claude/queue/next-task.md` (read at start of each run)
 - Summaries go to `.claude/summaries/`
 - Commit after every logical unit — safety net if session dies mid-work
-- Never run SQL migrations — write them to a file and note in summary
+- Run SQL migrations via Supabase MCP — write them to a migration file and apply
 
 ---
 

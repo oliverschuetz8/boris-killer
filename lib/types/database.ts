@@ -44,6 +44,9 @@ export interface Database {
           site_postcode: string | null
           site_manager: string | null
           site_manager_phone: string | null
+          job_type: string | null
+          evidence_category_id: string | null
+          evidence_subcategory_id: string | null
         }
         Insert: Omit<Database['public']['Tables']['jobs']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['jobs']['Insert']>

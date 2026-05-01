@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -24,6 +25,7 @@ import {
   Settings,
   LogOut,
   Building2,
+  Target,
 } from 'lucide-react'
 
 const adminNavLinks = [
@@ -32,6 +34,7 @@ const adminNavLinks = [
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/schedule', label: 'Schedule', icon: Calendar },
   { href: '/invoices', label: 'Invoices', icon: FileText },
+  { href: '/leads', label: 'Leads', icon: Target },
   { href: '/settings/team', label: 'Team', icon: Users },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
@@ -56,6 +59,8 @@ export default function TopNav({ user }: TopNavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
   const isWorker = user?.role === 'worker'
   const navLinks = isWorker ? workerNavLinks : adminNavLinks
 
@@ -108,45 +113,56 @@ export default function TopNav({ user }: TopNavProps) {
             </nav>
           </div>
 
-          {/* Right: User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800 px-2"
-              >
-                <Avatar className="w-7 h-7">
-                  <AvatarFallback className="bg-blue-600 text-white text-xs font-semibold">
-                    {getInitials(userName)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm hidden sm:block">{userName}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span className="font-medium">{userName}</span>
-                  <span className="text-xs text-slate-500 font-normal">{userEmail}</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleSignOut}
-                className="flex items-center gap-2 text-red-600 cursor-pointer focus:text-red-600"
-              >
-                <LogOut className="w-4 h-4" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Right: User Menu — client-only to avoid Radix ID hydration mismatch */}
+          {mounted ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800 px-2"
+                >
+                  <Avatar className="w-7 h-7">
+                    <AvatarFallback className="bg-blue-600 text-white text-xs font-semibold">
+                      {getInitials(userName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm hidden sm:block">{userName}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{userName}</span>
+                    <span className="text-xs text-slate-500 font-normal">{userEmail}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 text-red-600 cursor-pointer focus:text-red-600"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2 text-slate-400 px-2">
+              <Avatar className="w-7 h-7">
+                <AvatarFallback className="bg-blue-600 text-white text-xs font-semibold">
+                  {getInitials(userName)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm hidden sm:block">{userName}</span>
+            </div>
+          )}
 
         </div>
       </div>

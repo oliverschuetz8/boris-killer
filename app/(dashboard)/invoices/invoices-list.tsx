@@ -153,6 +153,7 @@ export default function InvoicesList({ invoices }: { invoices: Invoice[] }) {
                       {inv.issued_date
                         ? new Date(inv.issued_date).toLocaleDateString('en-AU', {
                             day: 'numeric', month: 'short', year: 'numeric',
+                            timeZone: 'Australia/Sydney',
                           })
                         : <span className="text-slate-400">—</span>
                       }
@@ -161,6 +162,7 @@ export default function InvoicesList({ invoices }: { invoices: Invoice[] }) {
                       {inv.due_date
                         ? new Date(inv.due_date).toLocaleDateString('en-AU', {
                             day: 'numeric', month: 'short', year: 'numeric',
+                            timeZone: 'Australia/Sydney',
                           })
                         : <span className="text-slate-400">—</span>
                       }

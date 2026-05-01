@@ -3,10 +3,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Job, JobWithRelations } from '@/lib/types/database'
+import { fireWebhookEvent } from '@/lib/services/webhooks'
 
 export async function getJobs(): Promise<JobWithRelations[]> {
   const supabase = await createClient()
-  
+
   // First get jobs with customer and site
   const { data: jobs, error } = await supabase
     .from('jobs')
@@ -51,7 +52,7 @@ export async function getJobs(): Promise<JobWithRelations[]> {
 
 export async function getJob(id: string): Promise<JobWithRelations | null> {
   const supabase = await createClient()
-  
+
   // Get job with customer and site
   const { data: job, error } = await supabase
     .from('jobs')
@@ -90,29 +91,31 @@ export async function getJob(id: string): Promise<JobWithRelations | null> {
 
 export async function createJob(formData: FormData) {
   const supabase = await createClient()
-  
+
   // Get current user to get company_id
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
-  
+
   const { data: userProfile } = await supabase
     .from('users')
     .select('company_id')
     .eq('id', user.id)
     .single()
-  
+
   if (!userProfile?.company_id) {
     throw new Error('User profile not found or company not set')
   }
-  
+
   // Generate job number
   const { count } = await supabase
     .from('jobs')
     .select('*', { count: 'exact', head: true })
     .eq('company_id', userProfile.company_id)
-  
+
   const jobNumber = `JOB-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
-  
+
+  const evidenceCategoryId = formData.get('evidence_category_id') as string || null
+
   const jobData = {
     company_id: userProfile.company_id,
     customer_id: formData.get('customer_id') as string,
@@ -124,6 +127,8 @@ export async function createJob(formData: FormData) {
     scheduled_end: formData.get('scheduled_end') as string || null,
     status: formData.get('status') as string || 'scheduled',
     priority: formData.get('priority') as string || 'normal',
+    job_type: formData.get('job_type') as string || 'installation',
+    evidence_category_id: evidenceCategoryId || null,
     notes: formData.get('notes') as string || null,
     site_name: formData.get('site_name') as string || null,
     site_address_line1: formData.get('site_address_line1') as string || null,
@@ -146,13 +151,23 @@ export async function createJob(formData: FormData) {
     throw new Error('Failed to create job')
   }
 
+  // Fire webhook (non-blocking)
+  fireWebhookEvent(userProfile.company_id, 'job.created', {
+    job_id: data.id,
+    job_number: data.job_number,
+    title: data.title,
+    status: data.status,
+  }).catch(() => {})
+
   revalidatePath('/jobs')
   return data
 }
 
 export async function updateJob(id: string, formData: FormData) {
   const supabase = await createClient()
-  
+
+  const evidenceCategoryId = formData.get('evidence_category_id') as string || null
+
   const updates = {
     title: formData.get('title') as string,
     description: formData.get('description') as string || null,
@@ -160,6 +175,8 @@ export async function updateJob(id: string, formData: FormData) {
     scheduled_end: formData.get('scheduled_end') as string || null,
     status: formData.get('status') as string,
     priority: formData.get('priority') as string,
+    job_type: formData.get('job_type') as string || 'installation',
+    evidence_category_id: evidenceCategoryId || null,
     notes: formData.get('notes') as string || null,
     site_name: formData.get('site_name') as string || null,
     site_address_line1: formData.get('site_address_line1') as string || null,
@@ -186,7 +203,7 @@ export async function updateJob(id: string, formData: FormData) {
 
 export async function deleteJob(id: string) {
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('jobs')
     .delete()
@@ -202,14 +219,21 @@ export async function deleteJob(id: string) {
 
 export async function updateJobStatus(id: string, status: string) {
   const supabase = await createClient()
-  
+
   const updates: any = { status }
-  
+
+  const { data: { user } } = await supabase.auth.getUser()
   if (status === 'completed') {
-    const { data: { user } } = await supabase.auth.getUser()
     updates.completed_at = new Date().toISOString()
     updates.completed_by = user?.id
   }
+
+  // Get job details for webhook payload before updating
+  const { data: job } = await supabase
+    .from('jobs')
+    .select('company_id, job_number, title, status')
+    .eq('id', id)
+    .single()
 
   const { error } = await supabase
     .from('jobs')
@@ -219,6 +243,23 @@ export async function updateJobStatus(id: string, status: string) {
   if (error) {
     console.error('Error updating job status:', error)
     throw new Error('Failed to update job status')
+  }
+
+  // Fire webhooks (non-blocking)
+  if (job) {
+    const payload = {
+      job_id: id,
+      job_number: job.job_number,
+      title: job.title,
+      previous_status: job.status,
+      new_status: status,
+    }
+
+    fireWebhookEvent(job.company_id, 'job.status_changed', payload).catch(() => {})
+
+    if (status === 'completed') {
+      fireWebhookEvent(job.company_id, 'job.completed', payload).catch(() => {})
+    }
   }
 
   revalidatePath('/jobs')

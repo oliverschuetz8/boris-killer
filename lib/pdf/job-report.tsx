@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     backgroundColor: '#ffffff',
     paddingTop: 40,
-    paddingBottom: 50,
+    paddingBottom: 75,
     paddingHorizontal: 40,
   },
 
@@ -169,74 +169,98 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 
-  // ── Penetrations ────────────────────────────────────────────────
-  penetrationsSection: {
-    marginTop: 18,
+  // ── Penetration Grid (2×2) ──────────────────────────────────────
+  groupHeader: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  groupHeaderText: {
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    color: '#475569',
+  },
+  gridRow: {
+    flexDirection: 'row',
+    gap: 10,
     marginBottom: 10,
   },
-  penetrationCard: {
-    marginBottom: 12,
+  penCard: {
+    flex: 1,
     borderWidth: 1,
     borderColor: '#e2e8f0',
     borderRadius: 6,
     overflow: 'hidden',
   },
-  penetrationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  penCardEmpty: {
+    flex: 1,
   },
-  penetrationLocation: {
+  penPhoto: {
+    width: '100%',
+    height: 110,
+    objectFit: 'cover',
+  },
+  penNoPhoto: {
+    width: '100%',
+    height: 40,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  penNoPhotoText: {
+    fontSize: 7,
+    color: '#94a3b8',
+    fontStyle: 'italic',
+  },
+  penBody: {
+    padding: 6,
+  },
+  penLabel: {
     fontSize: 9,
     fontFamily: 'Helvetica-Bold',
-    color: '#334155',
+    color: '#1e293b',
+    marginBottom: 4,
   },
-  penetrationMeta: {
-    fontSize: 8,
-    color: '#64748b',
-  },
-  penetrationBody: {
-    padding: 10,
-  },
-  fieldsRow: {
+  penFieldRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
+    marginBottom: 2,
   },
-  fieldItem: {
-    minWidth: '30%',
-  },
-  fieldLabel: {
-    fontSize: 7,
+  penFieldLabel: {
+    fontSize: 6.5,
     color: '#94a3b8',
     fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase',
-    marginBottom: 2,
+    width: 65,
   },
-  fieldValue: {
-    fontSize: 9,
+  penFieldValue: {
+    fontSize: 7.5,
     color: '#1e293b',
+    flex: 1,
   },
-  photosRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 6,
+  // Floor plan crop container
+  drawingCropContainer: {
+    width: '100%',
+    height: 70,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: '#f8fafc',
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
   },
-  photo: {
-    width: 100,
-    height: 80,
+  drawingImage: {
+    position: 'absolute',
+  },
+  pinDot: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
     borderRadius: 4,
-    objectFit: 'cover',
-  },
-  noPhotos: {
-    fontSize: 8,
-    color: '#94a3b8',
-    fontStyle: 'italic',
+    backgroundColor: '#ef4444',
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
   },
 
   // ── Materials ───────────────────────────────────────────────────
@@ -285,24 +309,53 @@ const styles = StyleSheet.create({
   // ── Footer ──────────────────────────────────────────────────────
   footer: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 20,
     left: 40,
     right: 40,
+    paddingTop: 8,
+    borderTopWidth: 2,
+    borderTopColor: '#2563eb',
+  },
+  footerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  footerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  footerCompanyName: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e293b',
+  },
+  footerDetails: {
+    fontSize: 7,
+    color: '#64748b',
+    marginTop: 1,
+  },
+  footerCredentials: {
+    alignItems: 'flex-end',
+  },
+  footerCredential: {
+    fontSize: 7,
+    color: '#64748b',
+    textAlign: 'right' as const,
+  },
+  footerBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 8,
-    borderTopWidth: 1,
+    marginTop: 4,
+    paddingTop: 3,
+    borderTopWidth: 0.5,
     borderTopColor: '#e2e8f0',
   },
   footerText: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#94a3b8',
-  },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    marginVertical: 12,
   },
 })
 
@@ -317,66 +370,284 @@ function statusColors(status: string) {
   return map[status] || { bg: '#f1f5f9', text: '#475569' }
 }
 
+interface CompanyCredentialPdf {
+  label: string
+  value: string
+}
+
 interface Props {
   job: any
   buildings: any[]
   penetrations: any[]
   roomMaterials: any[]
   evidenceFields: any[]
+  companyLogoUrl?: string | null
+  companyCredentials?: CompanyCredentialPdf[]
+  levelDrawingsMap?: Record<string, string>
 }
 
-export function JobReportDocument({ job, buildings, penetrations, roomMaterials, evidenceFields }: Props) {
+// ── Helper: group penetrations by building → level → room ────────
+interface GroupedPenetration {
+  buildingName: string
+  levelName: string
+  levelId: string | null
+  roomName: string
+  penetration: any
+}
+
+function groupPenetrations(penetrations: any[], buildings: any[]): GroupedPenetration[] {
+  // Build lookup maps from building structure
+  const roomLookup: Record<string, { roomName: string; levelId: string; levelName: string; buildingName: string }> = {}
+  const levelLookup: Record<string, { levelName: string; buildingName: string }> = {}
+
+  for (const b of buildings) {
+    for (const l of (b.levels || [])) {
+      levelLookup[l.id] = { levelName: l.name, buildingName: b.name }
+      for (const r of (l.rooms || [])) {
+        roomLookup[r.id] = { roomName: r.name, levelId: l.id, levelName: l.name, buildingName: b.name }
+      }
+    }
+  }
+
+  const grouped: GroupedPenetration[] = penetrations.map(pen => {
+    if (pen.room_id && roomLookup[pen.room_id]) {
+      const info = roomLookup[pen.room_id]
+      return {
+        buildingName: info.buildingName,
+        levelName: info.levelName,
+        levelId: info.levelId,
+        roomName: info.roomName,
+        penetration: pen,
+      }
+    }
+    if (pen.level_id && levelLookup[pen.level_id]) {
+      const info = levelLookup[pen.level_id]
+      return {
+        buildingName: info.buildingName,
+        levelName: info.levelName,
+        levelId: pen.level_id,
+        roomName: pen.location_room || 'Unknown Room',
+        penetration: pen,
+      }
+    }
+    return {
+      buildingName: 'Unassigned',
+      levelName: pen.location_level || 'Unknown Level',
+      levelId: pen.level_id,
+      roomName: pen.location_room || 'Unknown Room',
+      penetration: pen,
+    }
+  })
+
+  // Sort by building → level → room for consistent grouping
+  grouped.sort((a, b) => {
+    if (a.buildingName !== b.buildingName) return a.buildingName.localeCompare(b.buildingName)
+    if (a.levelName !== b.levelName) return a.levelName.localeCompare(b.levelName)
+    return a.roomName.localeCompare(b.roomName)
+  })
+
+  return grouped
+}
+
+// ── Helper: chunk array into groups of N ─────────────────────────
+function chunk<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = []
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size))
+  }
+  return result
+}
+
+// ── Penetration Card Component ───────────────────────────────────
+function PenCard({
+  pen,
+  fieldLabels,
+  drawingUrl,
+}: {
+  pen: any
+  fieldLabels: Record<string, string>
+  drawingUrl?: string | null
+}) {
+  const photos = pen.penetration_photos || []
+  const fieldValues = pen.field_values || {}
+  const primaryPhoto = photos[0]
+
+  // Drawing crop calculations
+  const CROP_W = 242 // half of usable page width minus gaps (~515/2 - 10 gap/2)
+  const CROP_H = 70
+  const DRAW_SCALE_W = 600 // render drawing at this width for crop
+  const DRAW_SCALE_H = 450 // approximate aspect ratio
+
+  const pinX = pen.floorplan_x ?? 50
+  const pinY = pen.floorplan_y ?? 50
+
+  // Calculate offsets to center the pin in the crop container
+  const offsetX = Math.max(0, (pinX / 100) * DRAW_SCALE_W - CROP_W / 2)
+  const offsetY = Math.max(0, (pinY / 100) * DRAW_SCALE_H - CROP_H / 2)
+
+  return (
+    <View style={styles.penCard}>
+      {/* Photo */}
+      {primaryPhoto?.url ? (
+        <Image src={primaryPhoto.url} style={styles.penPhoto} />
+      ) : (
+        <View style={styles.penNoPhoto}>
+          <Text style={styles.penNoPhotoText}>No photo</Text>
+        </View>
+      )}
+
+      {/* Evidence fields */}
+      <View style={styles.penBody}>
+        {pen.floorplan_label && (
+          <Text style={styles.penLabel}>{pen.floorplan_label}</Text>
+        )}
+
+        {Object.entries(fieldValues).map(([key, val]) => (
+          <View key={key} style={styles.penFieldRow}>
+            <Text style={styles.penFieldLabel}>{fieldLabels[key] || key}</Text>
+            <Text style={styles.penFieldValue}>{String(val) || '—'}</Text>
+          </View>
+        ))}
+
+        {Object.keys(fieldValues).length === 0 && !pen.floorplan_label && (
+          <Text style={{ fontSize: 7, color: '#94a3b8', fontStyle: 'italic' }}>No data recorded</Text>
+        )}
+      </View>
+
+      {/* Floor plan crop */}
+      {drawingUrl && pen.floorplan_x != null && pen.floorplan_y != null && (
+        <View style={styles.drawingCropContainer}>
+          <Image
+            src={drawingUrl}
+            style={[
+              styles.drawingImage,
+              {
+                width: DRAW_SCALE_W,
+                height: DRAW_SCALE_H,
+                left: -offsetX,
+                top: -offsetY,
+              },
+            ]}
+          />
+          {/* Red pin dot at center of container */}
+          <View
+            style={[
+              styles.pinDot,
+              {
+                left: Math.min((pinX / 100) * DRAW_SCALE_W - offsetX - 4, CROP_W - 8),
+                top: Math.min((pinY / 100) * DRAW_SCALE_H - offsetY - 4, CROP_H - 8),
+              },
+            ]}
+          />
+        </View>
+      )}
+    </View>
+  )
+}
+
+// ── Main Document ────────────────────────────────────────────────
+export function JobReportDocument({
+  job,
+  buildings,
+  penetrations,
+  roomMaterials,
+  evidenceFields,
+  companyLogoUrl,
+  companyCredentials = [],
+  levelDrawingsMap = {},
+}: Props) {
   const generatedAt = new Date().toLocaleString('en-AU', {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
+    timeZone: 'Australia/Sydney',
   })
 
+  const accentColor = job.company?.primary_color || '#2563eb'
   const sc = statusColors(job.status)
 
-  // Build a lookup: field id → field label
+  // Build field id → label lookup
   const fieldLabels: Record<string, string> = {}
   for (const f of evidenceFields) {
     fieldLabels[f.id] = f.label
   }
 
-  // Group penetrations by room_id
-  const pensByRoom: Record<string, any[]> = {}
-  for (const p of penetrations) {
-    const key = p.room_id || 'unassigned'
-    if (!pensByRoom[key]) pensByRoom[key] = []
-    pensByRoom[key].push(p)
-  }
+  // Group penetrations
+  const grouped = groupPenetrations(penetrations, buildings)
 
-  // Group room materials by room_id
-  const matsByRoom: Record<string, any[]> = {}
-  for (const m of roomMaterials) {
-    const key = m.room_id || 'unassigned'
-    if (!matsByRoom[key]) matsByRoom[key] = []
-    matsByRoom[key].push(m)
-  }
+  // Build penetration pages: 4 per page in 2×2 grid
+  const penPages = chunk(grouped, 4)
 
+  // Room counts
   const totalRooms = buildings.flatMap(b => b.levels?.flatMap((l: any) => l.rooms || []) || []).length
   const doneRooms = buildings.flatMap(b => b.levels?.flatMap((l: any) => (l.rooms || []).filter((r: any) => r.is_done)) || []).length
 
+  // ── Footer (shared across all pages) ──
+  const FooterView = (
+    <View style={[styles.footer, { borderTopColor: accentColor }]} fixed>
+      <View style={styles.footerTop}>
+        <View>
+          <View style={styles.footerLeft}>
+            {companyLogoUrl && (
+              <Image src={companyLogoUrl} style={{ width: 20, height: 20, objectFit: 'contain' }} />
+            )}
+            <Text style={styles.footerCompanyName}>{job.company?.name || 'AUTONYX'}</Text>
+          </View>
+          {job.company?.abn && (
+            <Text style={styles.footerDetails}>ABN: {job.company.abn}</Text>
+          )}
+          {(job.company?.phone || job.company?.email) && (
+            <Text style={styles.footerDetails}>
+              {[job.company.phone, job.company.email].filter(Boolean).join(' · ')}
+            </Text>
+          )}
+          {job.company?.website && (
+            <Text style={styles.footerDetails}>{job.company.website}</Text>
+          )}
+        </View>
+
+        {companyCredentials.length > 0 && (
+          <View style={styles.footerCredentials}>
+            {companyCredentials.map((cred, i) => (
+              <Text key={i} style={styles.footerCredential}>
+                {cred.label}: {cred.value}
+              </Text>
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.footerBottom}>
+        <Text style={styles.footerText}>{job.job_number}</Text>
+        <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+      </View>
+    </View>
+  )
+
   return (
     <Document title={`${job.job_number} — Completion Report`} author={job.company?.name || 'AUTONYX'}>
+
+      {/* ── Page 1: Header + Job Details + Building Structure + Materials ── */}
       <Page size="A4" style={styles.page}>
 
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.companyName}>{job.company?.name || 'AUTONYX'}</Text>
-            <Text style={styles.reportLabel}>Job Completion Report</Text>
+        {/* Header */}
+        <View style={[styles.header, { borderBottomColor: accentColor }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {companyLogoUrl && (
+              <Image src={companyLogoUrl} style={{ width: 48, height: 48, objectFit: 'contain' }} />
+            )}
+            <View>
+              <Text style={styles.companyName}>{job.company?.name || 'AUTONYX'}</Text>
+              <Text style={styles.reportLabel}>Job Completion Report</Text>
+            </View>
           </View>
           <View style={styles.headerRight}>
-            <Text style={styles.jobNumber}>{job.job_number}</Text>
+            <Text style={[styles.jobNumber, { color: accentColor }]}>{job.job_number}</Text>
             <Text style={styles.generatedAt}>Generated {generatedAt}</Text>
           </View>
         </View>
 
-        {/* ── Job Details Grid ── */}
+        {/* Job Details Grid */}
         <View style={styles.detailsGrid}>
-
           <View style={styles.detailCard}>
             <Text style={styles.detailCardTitle}>Job</Text>
             <Text style={styles.detailValue}>{job.title}</Text>
@@ -408,22 +679,21 @@ export function JobReportDocument({ job, buildings, penetrations, roomMaterials,
             <Text style={styles.detailCardTitle}>Dates</Text>
             {job.scheduled_start && (
               <Text style={styles.detailSub}>
-                Start: {new Date(job.scheduled_start).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                Start: {new Date(job.scheduled_start).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Australia/Sydney' })}
               </Text>
             )}
             {job.completed_at && (
               <Text style={[styles.detailValue, { marginTop: 2 }]}>
-                Completed: {new Date(job.completed_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                Completed: {new Date(job.completed_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Australia/Sydney' })}
               </Text>
             )}
             {!job.completed_at && !job.scheduled_start && (
               <Text style={styles.detailSub}>Not scheduled</Text>
             )}
           </View>
-
         </View>
 
-        {/* ── Building Structure ── */}
+        {/* Building Structure */}
         {buildings.length > 0 && (
           <View>
             <View style={styles.sectionHeader}>
@@ -461,65 +731,7 @@ export function JobReportDocument({ job, buildings, penetrations, roomMaterials,
           </View>
         )}
 
-        {/* ── Penetrations ── */}
-        {penetrations.length > 0 && (
-          <View style={styles.penetrationsSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Penetrations</Text>
-              <Text style={styles.sectionCount}>{penetrations.length} logged</Text>
-            </View>
-
-            {penetrations.map((pen, i) => {
-              const photos = pen.penetration_photos || []
-              const fieldValues = pen.field_values || {}
-
-              return (
-                <View key={pen.id} style={styles.penetrationCard} wrap={false}>
-                  <View style={styles.penetrationHeader}>
-                    <Text style={styles.penetrationLocation}>
-                      {[pen.location_level, pen.location_room].filter(Boolean).join(' › ') || 'No location'}
-                    </Text>
-                    <Text style={styles.penetrationMeta}>#{i + 1}</Text>
-                  </View>
-
-                  <View style={styles.penetrationBody}>
-                    {/* Field values */}
-                    {Object.keys(fieldValues).length > 0 && (
-                      <View style={styles.fieldsRow}>
-                        {Object.entries(fieldValues).map(([key, val]) => (
-                          <View key={key} style={styles.fieldItem}>
-                            <Text style={styles.fieldLabel}>{fieldLabels[key] || key}</Text>
-                            <Text style={styles.fieldValue}>{String(val) || '—'}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
-                    {pen.notes && (
-                      <View style={{ marginBottom: 6 }}>
-                        <Text style={styles.fieldLabel}>Notes</Text>
-                        <Text style={styles.fieldValue}>{pen.notes}</Text>
-                      </View>
-                    )}
-
-                    {/* Photos */}
-                    {photos.length > 0 ? (
-                      <View style={styles.photosRow}>
-                        {photos.map((photo: any) => (
-                          <Image key={photo.id} src={photo.url} style={styles.photo} />
-                        ))}
-                      </View>
-                    ) : (
-                      <Text style={styles.noPhotos}>No photos</Text>
-                    )}
-                  </View>
-                </View>
-              )
-            })}
-          </View>
-        )}
-
-        {/* ── Materials ── */}
+        {/* Materials */}
         {roomMaterials.length > 0 && (
           <View style={styles.materialsSection}>
             <View style={styles.sectionHeader}>
@@ -551,13 +763,80 @@ export function JobReportDocument({ job, buildings, penetrations, roomMaterials,
           </View>
         )}
 
-        {/* ── Footer ── */}
-        <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{job.company?.name || 'AUTONYX'} · {job.job_number}</Text>
-          <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
-        </View>
+        {/* Penetrations summary count on page 1 */}
+        {penetrations.length > 0 && (
+          <View style={{ marginTop: 18 }}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Penetrations</Text>
+              <Text style={styles.sectionCount}>{penetrations.length} logged — detail on following pages</Text>
+            </View>
+          </View>
+        )}
 
+        {FooterView}
       </Page>
+
+      {/* ── Penetration Pages: 4 per page in 2×2 grid ── */}
+      {penPages.map((pageGroup, pageIdx) => {
+        // Track group headers needed for this page
+        let lastGroup = pageIdx > 0 && penPages[pageIdx - 1].length > 0
+          ? `${penPages[pageIdx - 1][penPages[pageIdx - 1].length - 1].buildingName}|${penPages[pageIdx - 1][penPages[pageIdx - 1].length - 1].levelName}|${penPages[pageIdx - 1][penPages[pageIdx - 1].length - 1].roomName}`
+          : ''
+
+        // Split into rows of 2
+        const rows = chunk(pageGroup, 2)
+
+        return (
+          <Page key={`pen-page-${pageIdx}`} size="A4" style={styles.page}>
+            {/* Page title */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text style={{ fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#1e293b' }}>
+                Penetrations
+              </Text>
+              <Text style={{ fontSize: 8, color: '#94a3b8' }}>
+                {job.job_number}
+              </Text>
+            </View>
+
+            {rows.map((row, rowIdx) => {
+              // Check if we need a group header before this row
+              const firstInRow = row[0]
+              const groupKey = `${firstInRow.buildingName}|${firstInRow.levelName}|${firstInRow.roomName}`
+              const needsHeader = groupKey !== lastGroup
+              lastGroup = row[row.length - 1]
+                ? `${row[row.length - 1].buildingName}|${row[row.length - 1].levelName}|${row[row.length - 1].roomName}`
+                : lastGroup
+
+              return (
+                <View key={rowIdx}>
+                  {needsHeader && (
+                    <View style={styles.groupHeader}>
+                      <Text style={styles.groupHeaderText}>
+                        {firstInRow.buildingName} › {firstInRow.levelName} › {firstInRow.roomName}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.gridRow}>
+                    {row.map((item, colIdx) => (
+                      <PenCard
+                        key={item.penetration.id}
+                        pen={item.penetration}
+                        fieldLabels={fieldLabels}
+                        drawingUrl={item.levelId ? levelDrawingsMap[item.levelId] : undefined}
+                      />
+                    ))}
+                    {/* Empty spacer if odd number in row */}
+                    {row.length === 1 && <View style={styles.penCardEmpty} />}
+                  </View>
+                </View>
+              )
+            })}
+
+            {FooterView}
+          </Page>
+        )
+      })}
+
     </Document>
   )
 }

@@ -36,11 +36,14 @@ export default async function TodayPage() {
         job_number,
         status,
         priority,
+        job_type,
+        evidence_category_id,
         site_manager,
         scheduled_start,
         started_at,
         customer:customers (name, phone),
-        site:customer_sites (site_name, address_line1, city, postcode)
+        site:customer_sites (site_name, address_line1, city, postcode),
+        evidence_category:evidence_categories (name)
       )
     `)
     .eq('user_id', user.id)

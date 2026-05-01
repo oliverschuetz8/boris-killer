@@ -14,9 +14,14 @@ export interface PinData {
 
 // ─── Zoom/Pan hook (shared by Picker and Viewer) ───
 
+interface ViewState {
+  scale: number
+  x: number
+  y: number
+}
+
 function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageRef: React.RefObject<HTMLDivElement | null>) {
-  const [scale, setScale] = useState(1)
-  const [translate, setTranslate] = useState({ x: 0, y: 0 })
+  const [view, setView] = useState<ViewState>({ scale: 1, x: 0, y: 0 })
   const isPanning = useRef(false)
   const lastTouch = useRef<{ x: number; y: number } | null>(null)
   const lastPinchDist = useRef<number | null>(null)
@@ -25,7 +30,7 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
   const MAX_SCALE = 5
 
   // Clamp translation so at least 20% of the drawing stays visible on each edge
-  const clampTranslate = useCallback((tx: number, ty: number, s: number) => {
+  const clampXY = useCallback((tx: number, ty: number, s: number) => {
     const container = containerRef.current
     const image = imageRef.current
     if (!container || !image) return { x: tx, y: ty }
@@ -35,17 +40,14 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
     const iw = image.scrollWidth * s
     const ih = image.scrollHeight * s
 
-    // How far past each edge the drawing can be dragged (as fraction of container size)
     const padding = 0.2
-
-    // All four directions: drawing can overshoot by (container size * padding)
     const padX = cw * padding
     const padY = ch * padding
 
-    const minX = -(iw - padX)   // dragged left: only padX pixels of drawing visible on right
-    const maxX = cw - padX      // dragged right: only padX pixels of drawing visible on left
-    const minY = -(ih - padY)   // dragged up: only padY pixels visible at bottom
-    const maxY = ch - padY      // dragged down: only padY pixels visible at top
+    const minX = -(iw - padX)
+    const maxX = cw - padX
+    const minY = -(ih - padY)
+    const maxY = ch - padY
 
     return {
       x: Math.max(minX, Math.min(maxX, tx)),
@@ -53,12 +55,11 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
     }
   }, [containerRef, imageRef])
 
-  // Use a ref to always have the latest clampTranslate without re-attaching the listener
-  const clampRef = useRef(clampTranslate)
-  clampRef.current = clampTranslate
+  // Keep a ref so the native wheel listener always has the latest clampXY
+  const clampRef = useRef(clampXY)
+  clampRef.current = clampXY
 
-  // Attach native wheel listener with { passive: false } so preventDefault() actually works
-  // This stops the page from scrolling when the cursor is over the drawing
+  // Attach native wheel listener with { passive: false } so preventDefault() works
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -72,14 +73,12 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
       const my = e.clientY - rect.top
       const delta = e.deltaY > 0 ? -0.15 : 0.15
 
-      setScale(prevScale => {
-        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prevScale + delta))
-        setTranslate(prev => {
-          const imgX = (mx - prev.x) / prevScale
-          const imgY = (my - prev.y) / prevScale
-          return clampRef.current(mx - imgX * newScale, my - imgY * newScale, newScale)
-        })
-        return newScale
+      // Single atomic state update — scale and translate computed together
+      setView(prev => {
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prev.scale + delta))
+        const imgX = (mx - prev.x) / prev.scale
+        const imgY = (my - prev.y) / prev.scale
+        return { scale: newScale, x: mx - imgX * newScale, y: my - imgY * newScale }
       })
     }
 
@@ -97,9 +96,12 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
     if (!isPanning.current || !lastTouch.current) return
     const dx = e.clientX - lastTouch.current.x
     const dy = e.clientY - lastTouch.current.y
-    setTranslate(prev => clampTranslate(prev.x + dx, prev.y + dy, scale))
+    setView(prev => {
+      const clamped = clampXY(prev.x + dx, prev.y + dy, prev.scale)
+      return { ...prev, ...clamped }
+    })
     lastTouch.current = { x: e.clientX, y: e.clientY }
-  }, [clampTranslate, scale])
+  }, [clampXY])
 
   const handleMouseUp = useCallback(() => {
     isPanning.current = false
@@ -124,17 +126,22 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
       const dy = e.touches[0].clientY - e.touches[1].clientY
       const dist = Math.hypot(dx, dy)
       const delta = (dist - lastPinchDist.current) * 0.01
-      const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale + delta))
-      setScale(newScale)
-      setTranslate(prev => clampTranslate(prev.x, prev.y, newScale))
+      setView(prev => {
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prev.scale + delta))
+        const clamped = clampXY(prev.x, prev.y, newScale)
+        return { scale: newScale, ...clamped }
+      })
       lastPinchDist.current = dist
     } else if (e.touches.length === 1 && isPanning.current && lastTouch.current) {
       const dx = e.touches[0].clientX - lastTouch.current.x
       const dy = e.touches[0].clientY - lastTouch.current.y
-      setTranslate(prev => clampTranslate(prev.x + dx, prev.y + dy, scale))
+      setView(prev => {
+        const clamped = clampXY(prev.x + dx, prev.y + dy, prev.scale)
+        return { ...prev, ...clamped }
+      })
       lastTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
     }
-  }, [clampTranslate, scale])
+  }, [clampXY])
 
   const handleTouchEnd = useCallback(() => {
     isPanning.current = false
@@ -143,20 +150,22 @@ function useZoomPan(containerRef: React.RefObject<HTMLDivElement | null>, imageR
   }, [])
 
   const resetView = useCallback(() => {
-    setScale(1)
-    setTranslate({ x: 0, y: 0 })
+    setView({ scale: 1, x: 0, y: 0 })
   }, [])
 
-  // Wrap setScale to enforce limits
+  // Wrap setScale for the +/- zoom buttons (no cursor target, just clamp translate)
   const setScaleClamped = useCallback((updater: number | ((prev: number) => number)) => {
-    setScale(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater
+    setView(prev => {
+      const next = typeof updater === 'function' ? updater(prev.scale) : updater
       const clamped = Math.max(MIN_SCALE, Math.min(MAX_SCALE, next))
-      // Re-clamp translate for the new scale
-      setTranslate(t => clampTranslate(t.x, t.y, clamped))
-      return clamped
+      const xy = clampXY(prev.x, prev.y, clamped)
+      return { scale: clamped, ...xy }
     })
-  }, [clampTranslate])
+  }, [clampXY])
+
+  // Expose scale and translate as separate values for backward compatibility
+  const scale = view.scale
+  const translate = { x: view.x, y: view.y }
 
   return {
     scale, translate, setScale: setScaleClamped,
@@ -189,8 +198,8 @@ function PinBadge({
   onClick?: (e: React.MouseEvent) => void
 }) {
   const iconSize = size
-  const fontSize = Math.max(8, size * 0.45)
-  const badgeMinW = Math.max(14, size * 0.7)
+  const fontSize = Math.max(4, size * 0.45)
+  const badgeMinW = Math.max(6, size * 0.7)
 
   return (
     <div
@@ -261,6 +270,7 @@ export function FloorPlanPicker({
   const [actionMenu, setActionMenu] = useState<{ pin: PinData; x: number; y: number } | null>(null)
   const [moveMode, setMoveMode] = useState<string | null>(null) // penetration ID being moved
   const clickStart = useRef<{ x: number; y: number; time: number } | null>(null)
+  const effectivePinSize = Math.max(8, pinSize / scale)
 
   function getImageCoords(clientX: number, clientY: number) {
     const el = imageRef.current
@@ -450,7 +460,7 @@ export function FloorPlanPicker({
             >
               <PinBadge
                 label={p.label}
-                size={pinSize}
+                size={effectivePinSize}
                 isGrey={!!moveMode && moveMode !== p.id}
                 isActive={actionMenu?.pin.id === p.id}
                 onClick={e => handleExistingPinClick(e, p)}
@@ -466,7 +476,7 @@ export function FloorPlanPicker({
             >
               <PinBadge
                 label={pinLabel || '?'}
-                size={pinSize + 4}
+                size={effectivePinSize + 4 / scale}
                 isActive
               />
             </div>
@@ -555,6 +565,7 @@ export function FloorPlanViewer({
   const [moveMode, setMoveMode] = useState<string | null>(null)
   const [hoveredPin, setHoveredPin] = useState<string | null>(null)
   const clickStart = useRef<{ x: number; y: number; time: number } | null>(null)
+  const effectivePinSize = Math.max(8, pinSize / scale)
 
   function getImageCoords(clientX: number, clientY: number) {
     const el = imageRef.current
@@ -690,7 +701,7 @@ export function FloorPlanViewer({
             >
               <PinBadge
                 label={p.label}
-                size={pinSize}
+                size={effectivePinSize}
                 isActive={activePinId === p.id || hoveredPin === p.id}
                 isGrey={!!moveMode && moveMode !== p.id}
                 onClick={e => handlePinClick(e, p)}

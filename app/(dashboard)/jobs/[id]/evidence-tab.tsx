@@ -8,9 +8,12 @@ import {
   deletePenetration,
   deletePenetrationPhoto,
 } from '@/lib/services/penetrations'
+import { getTemplateFields, type EvidenceTemplateField } from '@/lib/services/evidence-categories'
+import { getLevelDrawings, getDrawingUrl } from '@/lib/services/level-drawings'
+import { FloorPlanViewer } from '@/components/floor-plan-pin'
 import {
   Building2, ChevronDown, MapPin,
-  ImageIcon, X, Layers, Trash2,
+  ImageIcon, X, Layers, Trash2, Map,
 } from 'lucide-react'
 
 interface Photo {
@@ -21,10 +24,14 @@ interface Photo {
 
 interface Penetration {
   id: string
+  evidence_subcategory_id: string | null
   field_values: Record<string, string>
   created_at: string
   room_id: string | null
   level_id: string | null
+  floorplan_x: number | null
+  floorplan_y: number | null
+  floorplan_label: string | null
   photos: Photo[]
 }
 
@@ -62,6 +69,8 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
   const [buildings, setBuildings] = useState<Building[]>([])
   const [penetrations, setPenetrations] = useState<Penetration[]>([])
   const [evidenceFields, setEvidenceFields] = useState<EvidenceField[]>([])
+  const [templateFieldMap, setTemplateFieldMap] = useState<Record<string, string>>({})
+  const [subcategoryNames, setSubcategoryNames] = useState<Record<string, string>>({})
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [expandedBuildings, setExpandedBuildings] = useState<Set<string>>(new Set())
@@ -70,6 +79,9 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [deletingPen, setDeletingPen] = useState<string | null>(null)
   const [deletingPhoto, setDeletingPhoto] = useState<string | null>(null)
+  const [levelDrawingUrls, setLevelDrawingUrls] = useState<Record<string, string>>({})
+  const [showFloorPlan, setShowFloorPlan] = useState<Record<string, boolean>>({})
+  const [activePinId, setActivePinId] = useState<string | null>(null)
 
   const isAdmin = userRole === 'admin' || userRole === 'manager'
 
@@ -84,7 +96,8 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
         supabase
           .from('penetrations')
           .select(`
-            id, field_values, created_at, room_id, level_id,
+            id, evidence_subcategory_id, field_values, created_at, room_id, level_id,
+            floorplan_x, floorplan_y, floorplan_label,
             photos:penetration_photos(id, storage_path, caption)
           `)
           .eq('job_id', jobId)
@@ -115,6 +128,31 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
       setPenetrations(pens)
       setEvidenceFields((fieldsResult.data || []) as EvidenceField[])
 
+      // Fetch template field labels for subcategories used by penetrations
+      const uniqueSubcategoryIds = [...new Set(
+        pens.map(p => p.evidence_subcategory_id).filter(Boolean) as string[]
+      )]
+      if (uniqueSubcategoryIds.length > 0) {
+        // Fetch subcategory names
+        const { data: subNames } = await supabase
+          .from('evidence_subcategories')
+          .select('id, name')
+          .in('id', uniqueSubcategoryIds)
+        const nameMap: Record<string, string> = {}
+        for (const s of (subNames || [])) nameMap[s.id] = s.name
+        setSubcategoryNames(nameMap)
+
+        // Fetch template fields for all subcategories
+        const allTemplateFields = await Promise.all(
+          uniqueSubcategoryIds.map(id => getTemplateFields(id))
+        )
+        const tfMap: Record<string, string> = {}
+        for (const fields of allTemplateFields) {
+          for (const f of fields) tfMap[f.id] = f.label
+        }
+        setTemplateFieldMap(tfMap)
+      }
+
       // Load signed URLs for all photos
       const allPhotos = pens.flatMap(p => p.photos)
       const urlMap: Record<string, string> = {}
@@ -125,6 +163,26 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
         })
       )
       setPhotoUrls(urlMap)
+
+      // Load floor plan drawings for levels that have pinned penetrations
+      const levelsWithPins = new Set(
+        pens.filter(p => p.level_id && p.floorplan_x != null).map(p => p.level_id!)
+      )
+      const drawingUrlMap: Record<string, string> = {}
+      await Promise.all(
+        Array.from(levelsWithPins).map(async levelId => {
+          try {
+            const drawings = await getLevelDrawings(levelId)
+            if (drawings.length > 0) {
+              const url = await getDrawingUrl(drawings[0].file_url)
+              if (url) drawingUrlMap[levelId] = url
+            }
+          } catch {
+            // Non-critical
+          }
+        })
+      )
+      setLevelDrawingUrls(drawingUrlMap)
     } finally {
       setLoading(false)
     }
@@ -252,6 +310,22 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
                           <span className="flex-1 text-sm font-medium text-slate-700 ml-2">
                             {level.name}
                           </span>
+                          {levelDrawingUrls[level.id] && (
+                            <button
+                              onClick={e => {
+                                e.stopPropagation()
+                                setShowFloorPlan(prev => ({ ...prev, [level.id]: !prev[level.id] }))
+                              }}
+                              className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full transition-colors ${
+                                showFloorPlan[level.id]
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600'
+                              }`}
+                            >
+                              <Map className="w-3 h-3" />
+                              Floor Plan
+                            </button>
+                          )}
                           <span className="text-xs text-slate-400 mr-1">
                             {levelPenCount} penetrations
                           </span>
@@ -259,6 +333,40 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
                             levelExpanded ? 'rotate-0' : '-rotate-90'
                           }`} />
                         </div>
+
+                        {/* Floor Plan Viewer */}
+                        {showFloorPlan[level.id] && levelDrawingUrls[level.id] && (() => {
+                          const levelRoomIds = new Set(level.rooms.map(r => r.id))
+                          const levelPins = penetrations
+                            .filter(p => p.level_id === level.id && p.floorplan_x != null && p.floorplan_y != null)
+                            .map(p => ({
+                              id: p.id,
+                              x: p.floorplan_x!,
+                              y: p.floorplan_y!,
+                              label: p.floorplan_label || '',
+                            }))
+                          return (
+                            <div className="px-4 py-3 bg-slate-50 border-t border-slate-100"
+                              style={{ borderLeft: `3px solid ${colour}` }}>
+                              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                {levelPins.length} pinned penetration{levelPins.length !== 1 ? 's' : ''} on floor plan
+                              </p>
+                              <FloorPlanViewer
+                                imageUrl={levelDrawingUrls[level.id]}
+                                pins={levelPins}
+                                activePinId={activePinId}
+                                onPinClick={id => {
+                                  setActivePinId(prev => prev === id ? null : id)
+                                  // Expand the room containing this penetration
+                                  const pen = penetrations.find(p => p.id === id)
+                                  if (pen?.room_id) {
+                                    setExpandedRooms(prev => new Set([...prev, pen.room_id!]))
+                                  }
+                                }}
+                              />
+                            </div>
+                          )
+                        })()}
 
                         {levelExpanded && (
                           <div style={{ borderLeft: `3px solid ${colour}` }}>
@@ -292,6 +400,8 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
                                           pen={pen}
                                           index={i + 1}
                                           evidenceFields={evidenceFields}
+                                          templateFieldMap={templateFieldMap}
+                                          subcategoryName={pen.evidence_subcategory_id ? subcategoryNames[pen.evidence_subcategory_id] : null}
                                           photoUrls={photoUrls}
                                           isAdmin={isAdmin}
                                           deletingPen={deletingPen}
@@ -339,6 +449,8 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
                     pen={pen}
                     index={i + 1}
                     evidenceFields={evidenceFields}
+                    templateFieldMap={templateFieldMap}
+                    subcategoryName={pen.evidence_subcategory_id ? subcategoryNames[pen.evidence_subcategory_id] : null}
                     photoUrls={photoUrls}
                     isAdmin={isAdmin}
                     deletingPen={deletingPen}
@@ -377,6 +489,8 @@ function PenetrationCard({
   pen,
   index,
   evidenceFields,
+  templateFieldMap,
+  subcategoryName,
   photoUrls,
   isAdmin,
   deletingPen,
@@ -388,6 +502,8 @@ function PenetrationCard({
   pen: Penetration
   index: number
   evidenceFields: EvidenceField[]
+  templateFieldMap: Record<string, string>
+  subcategoryName: string | null
   photoUrls: Record<string, string>
   isAdmin: boolean
   deletingPen: string | null
@@ -399,26 +515,22 @@ function PenetrationCard({
   const createdAt = new Date(pen.created_at).toLocaleString('en-AU', {
     day: 'numeric', month: 'short',
     hour: '2-digit', minute: '2-digit',
+    timeZone: 'Australia/Sydney',
   })
 
-  // Build a lookup map from field ID → label
-  const fieldLabelMap = Object.fromEntries(evidenceFields.map(f => [f.id, f.label]))
+  // Build a combined lookup map from field ID → label (custom fields + template fields)
+  const fieldLabelMap: Record<string, string> = {
+    ...templateFieldMap,
+    ...Object.fromEntries(evidenceFields.map(f => [f.id, f.label])),
+  }
 
   // Resolve field values: use label as key, skip unknown IDs and empty values
   const resolvedFields: { label: string; value: string }[] = []
   for (const [fieldId, value] of Object.entries(pen.field_values || {})) {
     if (!value) continue
     const label = fieldLabelMap[fieldId]
-    // If we have a label, use it; if not (e.g. deleted field), show value only
     resolvedFields.push({ label: label || 'Field', value })
   }
-
-  // Sort by evidence field order_index
-  resolvedFields.sort((a, b) => {
-    const aIdx = evidenceFields.findIndex(f => f.label === a.label)
-    const bIdx = evidenceFields.findIndex(f => f.label === b.label)
-    return aIdx - bIdx
-  })
 
   return (
     <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
@@ -427,6 +539,11 @@ function PenetrationCard({
         <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
           {index}
         </div>
+        {subcategoryName && (
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-violet-50 text-violet-700">
+            {subcategoryName}
+          </span>
+        )}
         <p className="text-xs text-slate-500 flex-1">{createdAt}</p>
         {isAdmin && (
           <button

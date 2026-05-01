@@ -13,6 +13,7 @@ export interface Penetration {
   job_id: string
   company_id: string
   created_by: string
+  evidence_subcategory_id: string | null
   field_values: Record<string, string>
   location_level: string | null
   location_room: string | null
@@ -20,6 +21,7 @@ export interface Penetration {
   room_id: string | null
   floorplan_x: number | null
   floorplan_y: number | null
+  floorplan_label: string | null
   created_at: string
   updated_at: string
   photos: PenetrationPhoto[]
@@ -43,6 +45,23 @@ export async function getPenetrations(jobId: string, roomId?: string): Promise<P
   }
 
   const { data, error } = await query
+  if (error) throw error
+  return (data || []) as Penetration[]
+}
+
+/** Fetch all penetrations for a given level (used for cumulative pin display) */
+export async function getPenetrationsByLevel(jobId: string, levelId: string): Promise<Penetration[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('penetrations')
+    .select(`
+      *,
+      creator:users!created_by(full_name),
+      photos:penetration_photos(id, storage_path, caption, uploaded_at, uploaded_by)
+    `)
+    .eq('job_id', jobId)
+    .eq('level_id', levelId)
+    .order('created_at', { ascending: true })
   if (error) throw error
   return (data || []) as Penetration[]
 }
@@ -75,6 +94,8 @@ export async function createPenetration(
   roomId?: string,
   floorplanX?: number,
   floorplanY?: number,
+  floorplanLabel?: string,
+  evidenceSubcategoryId?: string,
 ): Promise<Penetration> {
   const supabase = createClient()
   const { data, error } = await supabase
@@ -90,6 +111,8 @@ export async function createPenetration(
       room_id: roomId || null,
       floorplan_x: floorplanX ?? null,
       floorplan_y: floorplanY ?? null,
+      floorplan_label: floorplanLabel || null,
+      evidence_subcategory_id: evidenceSubcategoryId || null,
     })
     .select()
     .single()
@@ -106,6 +129,30 @@ export async function updatePenetrationPin(
   const { error } = await supabase
     .from('penetrations')
     .update({ floorplan_x: floorplanX, floorplan_y: floorplanY })
+    .eq('id', penetrationId)
+  if (error) throw error
+}
+
+export async function updatePenetrationLabel(
+  penetrationId: string,
+  floorplanLabel: string,
+): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('penetrations')
+    .update({ floorplan_label: floorplanLabel })
+    .eq('id', penetrationId)
+  if (error) throw error
+}
+
+export async function updatePenetrationFields(
+  penetrationId: string,
+  fieldValues: Record<string, string>,
+): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('penetrations')
+    .update({ field_values: fieldValues })
     .eq('id', penetrationId)
   if (error) throw error
 }

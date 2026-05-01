@@ -1,14 +1,38 @@
 import Link from 'next/link'
-import { Package, ChevronRight, Calculator } from 'lucide-react'
+import { Package, ChevronRight, Calculator, Layers, Plug, Webhook, Building2, ClipboardList } from 'lucide-react'
 
 const SETTINGS_SECTIONS = [
   {
-    href: '/settings/materials',
+    href: '/settings/company',
+    icon: Building2,
+    iconBg: 'bg-purple-50',
+    iconColor: 'text-purple-600',
+    title: 'Company Profile',
+    description: 'Company details, logo, ABN, and brand colours.',
+  },
+  {
+    href: '/settings/evidence',
+    icon: ClipboardList,
+    iconBg: 'bg-orange-50',
+    iconColor: 'text-orange-600',
+    title: 'Evidence Categories',
+    description: 'Configure job categories, subcategories, and default evidence questions.',
+  },
+  {
+    href: '/settings/parts',
     icon: Package,
     iconBg: 'bg-blue-50',
     iconColor: 'text-blue-600',
-    title: 'Materials Catalogue',
-    description: 'Manage materials and prices for job costing.',
+    title: 'Parts Catalogue',
+    description: 'Manage individual parts — buy cost, sell price, margin, supplier.',
+  },
+  {
+    href: '/settings/products',
+    icon: Layers,
+    iconBg: 'bg-indigo-50',
+    iconColor: 'text-indigo-600',
+    title: 'Products',
+    description: 'Create bundles of parts with auto-calculated costs and margins.',
   },
   {
     href: '/settings/pay-rules',
@@ -18,13 +42,29 @@ const SETTINGS_SECTIONS = [
     title: 'Pay Rules',
     description: 'Configure your award package and overtime calculation rules.',
   },
+  {
+    href: '/settings/integrations',
+    icon: Plug,
+    iconBg: 'bg-emerald-50',
+    iconColor: 'text-emerald-600',
+    title: 'Integrations',
+    description: 'Connect Xero for timesheets, invoices, and payroll sync.',
+  },
+  {
+    href: '/settings/webhooks',
+    icon: Webhook,
+    iconBg: 'bg-amber-50',
+    iconColor: 'text-amber-600',
+    title: 'Webhooks & API',
+    description: 'Send real-time events to n8n, Zapier, or Make and manage API keys.',
+  },
 ]
 
 export default function SettingsPage() {
   return (
     <div className="w-full">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Settings</h1>
         <p className="text-sm text-slate-500 mt-1">Manage your company settings and preferences.</p>
       </div>
 

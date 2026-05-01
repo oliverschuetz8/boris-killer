@@ -1,6 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { getDashboardStats, getRecentJobs } from '@/lib/services/dashboard'
+import {
+  getDashboardStats,
+  getRecentJobs,
+  getJobStatusBreakdown,
+  getCompletionOverTime,
+  getRevenueSummary,
+  getJobsPerWorker,
+} from '@/lib/services/dashboard'
 import DashboardView from './dashboard-view'
 
 export default async function DashboardPage() {
@@ -17,9 +24,13 @@ export default async function DashboardPage() {
   if (!profile?.company_id) redirect('/onboarding')
   if (profile.role === 'worker') redirect('/today')
 
-  const [stats, recentJobs] = await Promise.all([
+  const [stats, recentJobs, statusBreakdown, completionOverTime, revenueSummary, jobsPerWorker] = await Promise.all([
     getDashboardStats(profile.company_id),
     getRecentJobs(profile.company_id),
+    getJobStatusBreakdown(profile.company_id),
+    getCompletionOverTime(profile.company_id),
+    getRevenueSummary(profile.company_id),
+    getJobsPerWorker(profile.company_id),
   ])
 
   const companyName = (profile.companies as any)?.name ?? 'your company'
@@ -31,6 +42,10 @@ export default async function DashboardPage() {
       companyName={companyName}
       stats={stats}
       recentJobs={recentJobs}
+      statusBreakdown={statusBreakdown}
+      completionOverTime={completionOverTime}
+      revenueSummary={revenueSummary}
+      jobsPerWorker={jobsPerWorker}
     />
   )
 }

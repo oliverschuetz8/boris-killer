@@ -151,7 +151,7 @@ export default function TeamManager({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Team</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Team</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Manage your team members and invite new workers.
           </p>

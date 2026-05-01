@@ -8,6 +8,8 @@ export interface EvidenceField {
   options: string[] | null
   required: boolean
   order_index: number
+  default_value: string | null
+  template_field_id: string | null
 }
 
 export async function getEvidenceFields(jobId: string): Promise<EvidenceField[]> {
@@ -28,7 +30,8 @@ export async function createEvidenceField(
   fieldType: 'dropdown' | 'text' | 'structure_level',
   options: string[],
   required: boolean,
-  orderIndex: number
+  orderIndex: number,
+  defaultValue?: string | null,
 ): Promise<EvidenceField> {
   const supabase = createClient()
   const { data, error } = await supabase
@@ -41,6 +44,7 @@ export async function createEvidenceField(
       options: fieldType === 'dropdown' ? options : null,
       required,
       order_index: orderIndex,
+      default_value: defaultValue || null,
     })
     .select()
     .single()
@@ -50,7 +54,7 @@ export async function createEvidenceField(
 
 export async function updateEvidenceField(
   id: string,
-  updates: Partial<Pick<EvidenceField, 'label' | 'field_type' | 'options' | 'required' | 'order_index'>>
+  updates: Partial<Pick<EvidenceField, 'label' | 'field_type' | 'options' | 'required' | 'order_index' | 'default_value'>>
 ): Promise<void> {
   const supabase = createClient()
   const { error } = await supabase

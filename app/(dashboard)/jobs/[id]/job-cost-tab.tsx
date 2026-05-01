@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Package, Clock, DollarSign, User, FileText, Loader2 } from 'lucide-react'
+import { Package, Clock, DollarSign, User, FileText, Loader2, TrendingUp } from 'lucide-react'
 import { getJobCostBreakdown, type JobCostBreakdown } from '@/lib/services/job-cost'
 import { createInvoiceFromJob } from '@/lib/services/invoices'
 
@@ -59,23 +59,36 @@ export default function JobCostTab({ jobId }: { jobId: string }) {
     </div>
   )
 
-  const hasData = data.materialTotal > 0 || data.totalMinutes > 0
+  const hasData = data.materialSellTotal > 0 || data.totalMinutes > 0
 
   return (
     <div className="space-y-6 mt-4">
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
               <Package className="w-4 h-4 text-orange-600" />
             </div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Materials</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Materials (Sell)</p>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{currency(data.materialTotal)}</p>
+          <p className="text-2xl font-bold text-slate-900">{currency(data.materialSellTotal)}</p>
           <p className="text-xs text-slate-500 mt-0.5">
             {data.materials.length} item{data.materials.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="w-4 h-4 text-purple-600" />
+            </div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Materials (Cost)</p>
+          </div>
+          <p className="text-2xl font-bold text-slate-900">{currency(data.materialBuyTotal)}</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {data.materialMargin > 0 ? `${data.materialMargin.toFixed(1)}% margin` : 'No cost data'}
           </p>
         </div>
 
@@ -121,14 +134,14 @@ export default function JobCostTab({ jobId }: { jobId: string }) {
                     <p className="text-sm font-medium text-slate-800">{entry.full_name}</p>
                     <p className="text-xs text-slate-500">
                       {entry.trade && `${entry.trade} · `}
-                      {entry.duration_minutes
-                        ? `${formatMinutes(entry.duration_minutes)} × ${currency(entry.hourly_rate)}/hr`
-                        : 'In progress'}
+                      {entry.hours
+                        ? `${entry.hours}h × ${currency(entry.hourly_rate)}/hr`
+                        : 'No hours'}
                     </p>
                   </div>
                 </div>
                 <p className="text-sm font-semibold text-slate-700">
-                  {entry.duration_minutes ? currency(entry.cost) : '—'}
+                  {entry.hours ? currency(entry.cost) : '—'}
                 </p>
               </div>
             ))}
@@ -151,8 +164,9 @@ export default function JobCostTab({ jobId }: { jobId: string }) {
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Material</th>
                 <th className="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Qty</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit Price</th>
-                <th className="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</th>
+                <th className="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Buy Cost</th>
+                <th className="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Sell Price</th>
+                <th className="text-right px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Total (Sell)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -162,20 +176,37 @@ export default function JobCostTab({ jobId }: { jobId: string }) {
                   <td className="px-6 py-3 text-right text-slate-600">
                     {mat.quantity}{mat.unit ? ` ${mat.unit}` : ''}
                   </td>
-                  <td className="px-6 py-3 text-right text-slate-600">{currency(mat.unit_price)}</td>
-                  <td className="px-6 py-3 text-right font-semibold text-slate-700">{currency(mat.total_cost)}</td>
+                  <td className="px-6 py-3 text-right text-slate-500">
+                    {mat.buy_cost > 0 ? currency(mat.buy_cost) : '—'}
+                  </td>
+                  <td className="px-6 py-3 text-right text-slate-600">{currency(mat.sell_price)}</td>
+                  <td className="px-6 py-3 text-right font-semibold text-slate-700">{currency(mat.total_sell)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className="bg-slate-50 border-t border-slate-200">
-                <td colSpan={3} className="px-6 py-3 text-sm font-semibold text-slate-600 text-right">
+                <td colSpan={2} className="px-6 py-3 text-sm font-semibold text-slate-600 text-right">
                   Materials Total
                 </td>
+                <td className="px-6 py-3 text-right text-sm text-slate-500">
+                  {data.materialBuyTotal > 0 ? currency(data.materialBuyTotal) : '—'}
+                </td>
+                <td className="px-6 py-3"></td>
                 <td className="px-6 py-3 text-right text-sm font-bold text-slate-800">
-                  {currency(data.materialTotal)}
+                  {currency(data.materialSellTotal)}
                 </td>
               </tr>
+              {data.materialMargin > 0 && (
+                <tr className="bg-green-50 border-t border-green-100">
+                  <td colSpan={4} className="px-6 py-2 text-xs font-medium text-green-700 text-right">
+                    Margin
+                  </td>
+                  <td className="px-6 py-2 text-right text-xs font-bold text-green-700">
+                    {data.materialMargin.toFixed(1)}% ({currency(data.materialSellTotal - data.materialBuyTotal)})
+                  </td>
+                </tr>
+              )}
             </tfoot>
           </table>
         </div>
