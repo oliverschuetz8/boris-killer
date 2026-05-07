@@ -159,6 +159,37 @@ Inspection defects → auto defect report + remediation quote → customer appro
 
 ---
 
+## 💬 IN-APP MESSAGING & NOTIFICATIONS — PRE-LAUNCH MVP
+
+### In-App Messaging & Notifications
+A chat interface inside the app so users can talk to each other and receive system events without relying on email.
+
+**Two-way conversations:**
+- Workers ↔ admins/managers — workers ask questions on the fly ("which sealant for this penetration?"), admins reply from the dashboard
+- Admins ↔ clients (optional) — opt-in chat surface inside the customer portal for clients who want it
+- Conversations scoped per job where relevant (chat thread visible from job detail page) and a separate "general" inbox
+
+**System notifications inside the app (replaces worker emails):**
+- job.assigned — "You've been assigned to [job]"
+- job.reminder — day-before reminder for scheduled jobs
+- job.updated — admin changes scheduled time, location, or evidence requirements
+- New chat message indicator
+
+**UX:**
+- Notification bell in top nav with unread badge
+- Workers get the same surface on mobile (worker bottom-nav inbox)
+- Once the app is on the App Store, push notifications hook into this same channel — no separate plumbing
+- Read/unread tracking per user
+
+**Why this exists separately from email:**
+- Workers don't open email; they live in the work app
+- Customers/admins still get email for invoice events; workers get in-app notifications instead
+- Sets up for App Store push notifications as a single delivery layer
+
+**Status: Not started**
+
+---
+
 ## 🚀 AI FEATURES — POST-LAUNCH (Build during growth phase)
 
 ### 6. AI Customer Portal Assistant
@@ -198,10 +229,9 @@ Worker records 60-second video. AI identifies penetrations, maps to rooms, gener
 
 | Phase | What |
 |-------|------|
-| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc/interactive HTML), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom, Drawing Prefix System, Partial/Progress Invoicing, Standalone Interactive Drawing Export |
+| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc/interactive HTML), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom, Drawing Prefix System, Partial/Progress Invoicing, Standalone Interactive Drawing Export, Email Notifications (admin/customer events) |
 | Now | Scheduling/calendar |
-| Next | Stripe billing, Email notifications |
-| Next (parallel) | Email notifications |
+| Next | In-app messaging & notifications, Stripe billing |
 | Pre-launch AI | Voice entry, Photo checker, Natural language BI, Defect-to-quote, In-app AI assistant |
 | Post-launch | AI portal assistant, Predictive materials, Profitability coach |
 | Post-launch | Smart scheduling AI, Compliance risk score, AI site walk |

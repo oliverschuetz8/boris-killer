@@ -344,7 +344,8 @@ Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations
 - ~~**Company settings & branding**~~ ✅ DONE — Company logo, brand colours, name, address, ABN, credentials/licences. Applied to PDF reports (footer). Invoices, portal, emails still to be branded.
 - **Scheduling/calendar** — Calendar view with drag-and-drop, day/week/month views, worker availability.
 - **Stripe billing** — Starter/Pro/Business/Enterprise tiers, per-seat pricing, 30-day trial.
-- **Email notifications** — Job completed, assigned, created, reminders, overdue invoices.
+- ~~**Email notifications**~~ ✅ DONE — Resend integration with branded templates (job.created, job.completed, invoice.sent/paid/overdue). Per-company preferences at /settings/notifications. Email branding (logo, reply-to, signature) under Company Profile. Daily Vercel cron checks overdue invoices. Worker-facing events (job.assigned, job.reminder) deferred to In-app messaging.
+- **In-app messaging & notifications** — Chat interface inside the app for two-way conversations between users: workers ↔ admins/managers (workers ask questions, admins assign work), admins ↔ clients (optional, via customer portal). Also delivers worker-facing system events (job.assigned, job.reminder day-before, job updated) as in-app messages instead of emails — once the app is on the App Store, push notifications hook into this. Notification bell with unread badge in top nav. Conversations grouped per job where relevant.
 - **In-app AI help assistant** — AI chat icon (bottom-right) trained on our app, helps admins navigate and find features.
 
 ## Known Issues / Technical Debt

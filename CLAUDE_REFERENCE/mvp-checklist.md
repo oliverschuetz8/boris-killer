@@ -125,6 +125,15 @@
 
 ---
 
+## Communication
+
+- [ ] In-app messaging (chat between workers ↔ admin/manager so workers can ask questions; admin ↔ client option via customer portal)
+- [ ] In-app system notifications for workers (job.assigned, job.reminder day-before, job updated) — replaces worker emails
+- [ ] Notification bell + unread badge in top nav
+- [ ] Conversations scoped per job where relevant (chat thread inside a job)
+
+---
+
 ## AI Features (pre-launch)
 
 - [ ] In-app AI help assistant (bottom-right chat icon, trained on our app, helps admins navigate)
