@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 30 April 2026 (pin scaling + zoom-to-cursor + drawings pin detail) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~95% complete)
+Last Updated: 7 May 2026 (partial/progress invoicing + period-aware billing) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~97% complete)
 
 ---
 
@@ -223,6 +223,34 @@ Last Updated: 30 April 2026 (pin scaling + zoom-to-cursor + drawings pin detail)
 - Scroll-to-zoom captures scroll event: mouse wheel only zooms when cursor is over the drawing, page does not scroll simultaneously
 - Pin detail panel: clicking a pin on the Drawings tab shows full penetration details below the floor plan — evidence field question/answer pairs, all photos (clickable lightbox), subcategory badge, room name, timestamp
 
+### Partial/Progress Invoicing + Invoice Creation from Invoices Page
+- Multiple invoices per job over time (progress billing for big jobs that need monthly invoicing instead of one giant final invoice)
+- "+ New Invoice" button on `/invoices` page (was previously only generatable from inside a job's Cost tab — both paths now coexist)
+- Modal with two-stage flow: Stage 1 pick-a-job (searchable list with job number, title, customer, total job value, amount already invoiced, count, remaining), Stage 2 scope tabs (Full job / Partial — progress)
+- Full job path: same auto-pull as before (materials + labour). Shows amber double-billing warning if prior invoices exist; admin must confirm.
+- Partial / progress path: scope label (e.g. "First month", "Progress to 30 April"), date range picker ("Bill from / Bill to") with smart defaults, "Pull billables for this period" button auto-fills line items from materials + labour logged in that period, admin can edit/add/remove rows, live GST totals
+- Smart defaults: suggested start = day after last invoice's period end (or job start if no prior invoices), suggested end = today
+- Job timeline panel in the partial form: shows scheduled start → scheduled end (or actual_start/actual_end if available with "Started/Completed" labels) so admin/worker doesn't have to look up the job
+- Pull billables: materials filtered by `created_at` in date range (Sydney TZ-aware bounds), labour from `job_time_entries.date` (assigned status only); uses parts/products sell_price for materials and labour-rate-part sell_price for labour (matches what `createInvoiceFromJob` produces for full invoices)
+- Validation: scope label required, at least one valid line (description + qty > 0 + unit_price ≥ 0), confirmation prompt before pull replaces existing user-entered rows
+- Invoicing progress panel on job cost tab: invoiced / remaining (ex-GST), thin progress bar, list of prior invoices linkable to detail page, dual buttons "Generate Full Invoice" + "New Partial Invoice" (partial opens same form in a modal)
+- Display: partial invoices show `[Progress: First month]` pill on invoices list; invoice detail shows "Covers 1 Apr → 30 Apr" under the heading
+- Webhook: `invoice.created` payload now includes `scope_label`, `is_partial`, `period_start_date`, `period_end_date`
+- Database: `scope_label text`, `is_partial boolean default false`, `period_start_date date`, `period_end_date date` columns added to `invoices` (no new tables — same `job_id` groups progress invoices)
+- Service layer (`lib/services/invoices.ts`): `getInvoicedTotalForJob`, `getInvoicesForJob`, `getJobsWithInvoiceTotals` (batch-fetched, no N+1), `getPartialInvoiceContext`, `getJobBillablesForPeriod`, updated `createInvoiceFromJob(jobId, options)` with `scopeLabel`, `isPartial`, `customLineItems`, `periodStartDate`, `periodEndDate`
+- Comparison basis: ex-GST on both sides (job total ex-GST vs invoice subtotals ex-GST) — matches AU progress-claim convention and how Xero/MYOB report internally
+
+### Drawing Prefix System
+- Each level can have a configurable `drawing_prefix` text (e.g. "L1-", "GF-", "B2-") set by admin in the Structure tab
+- Admin UI: collapsed by default — shows badge `[L1-]` (or "No drawing prefix" if unset) with a small pencil edit icon. Clicking the pencil opens an inline edit row with Save/Cancel buttons (Enter to save, Escape to cancel). Prefix badge also shows on collapsed level header.
+- New level form: optional prefix field alongside name input
+- Worker experience UNCHANGED — pin label remains plain free-text input; worker has zero awareness of the prefix system
+- Service layer silently prepends the level's `drawing_prefix` when saving a penetration: worker types "001" on Level 1 (prefix "L1-") → stored `floorplan_label` = "L1-001"
+- Levels with no prefix → label saved as worker typed it (current behaviour preserved)
+- All existing displays (Drawings tab, Evidence tab, reports, customer portal) automatically show prefixed labels since they already read `floorplan_label`
+- Enables admin to filter/group exports by level (e.g. one spreadsheet per level based on prefix)
+- Database: `drawing_prefix text` and `auto_number_counter integer` columns added to `levels` table (counter currently unused — kept for potential future auto-numbering)
+
 ### Report Overhaul (PDF + Spreadsheet + Document Export)
 - PDF report overhauled: 2×2 grid layout (4 penetrations per page), each card shows photo + evidence fields + cropped floor plan close-up with pin location
 - Penetrations grouped by building → level → room with group headers
@@ -246,7 +274,7 @@ Last Updated: 30 April 2026 (pin scaling + zoom-to-cursor + drawings pin detail)
 | jobs | Core job entity with full site details |
 | customers | Customer records |
 | buildings | Job site buildings (site_id = job.id) |
-| levels | Levels within buildings |
+| levels | Levels within buildings (drawing_prefix for label prepending) |
 | rooms | Rooms within levels (is_done boolean) |
 | penetrations | Evidence records — room_id, level_id, field_values JSONB |
 | penetration_photos | Photos attached to penetrations |
@@ -259,7 +287,7 @@ Last Updated: 30 April 2026 (pin scaling + zoom-to-cursor + drawings pin detail)
 | product_parts | Join table: parts within products with quantities |
 | job_assignments | Worker → job assignments |
 | company_pay_rules | Award package + overtime rules per company |
-| invoices | Invoice records |
+| invoices | Invoice records (scope_label, is_partial, period_start_date, period_end_date for progress billing) |
 | invoice_line_items | Line items per invoice |
 | portal_links | Magic link tokens for customer portal access |
 | level_drawings | Floor plan drawing uploads per level |
@@ -294,9 +322,9 @@ Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations
 ## Not Yet Built (Must-Have for MVP)
 
 - ~~**Report overhaul**~~ ✅ DONE — PDF overhauled (2×2 grid, 4 per page, floor plan crops, grouped by location), spreadsheet export (.xlsx), document export (.docx). Standalone interactive drawing export still TODO.
-- **Drawing prefix system** — Each level gets a prefix (e.g. "L1-"), auto-applied to penetration labels. Enables filtering exports by level.
+- ~~**Drawing prefix system**~~ ✅ DONE — Each level gets a prefix (e.g. "L1-"), silently prepended to penetration labels at save time. Worker UX unchanged. Enables filtering exports by level.
 - ~~**Evidence field categories & default questions**~~ ✅ DONE — Two main job categories (Certification / Inspection) with subcategories. Worker picks subcategory per penetration. Template questions load dynamically. Admin can add custom questions on top.
-- **Partial/progress invoicing + invoice creation from invoices page** — Multiple invoices per job (monthly billing). "New Invoice" button on /invoices page: select job, choose full or partial scope. Track total invoiced vs total job value. Keep existing generate button on job cost tab too.
+- ~~**Partial/progress invoicing + invoice creation from invoices page**~~ ✅ DONE — Multiple invoices per job (monthly billing). "New Invoice" button on /invoices page: select job, choose full or partial scope. Smart period-aware billing: pick a date range, system auto-pulls materials + labour from that period at sell prices, admin edits as needed. Job timeline shown in form. Tracks invoiced vs remaining ex-GST. Existing generate button on job cost tab preserved.
 - ~~**Dedicated Drawings tab**~~ ✅ DONE — Drawings moved to own tab, structure tab focused on building/level/room only. Zoom constrained (min 1x, pan boundaries).
 - ~~**Pin scaling on zoom**~~ ✅ DONE — Pins scale inversely with zoom, zoom-to-cursor with atomic state, pin detail panel on Drawings tab. Still TODO: pin scaling in exported drawings/reports.
 - ~~**Company settings & branding**~~ ✅ DONE — Company logo, brand colours, name, address, ABN, credentials/licences. Applied to PDF reports (footer). Invoices, portal, emails still to be branded.

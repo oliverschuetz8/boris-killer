@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { getInvoices } from '@/lib/services/invoices'
+import { getInvoices, getJobsWithInvoiceTotals } from '@/lib/services/invoices'
 import InvoicesList from './invoices-list'
 
 export default async function InvoicesPage() {
@@ -16,7 +16,10 @@ export default async function InvoicesPage() {
 
   if (profile?.role === 'worker') redirect('/today')
 
-  const invoices = await getInvoices()
+  const [invoices, jobs] = await Promise.all([
+    getInvoices(),
+    getJobsWithInvoiceTotals(),
+  ])
 
-  return <InvoicesList invoices={invoices} />
+  return <InvoicesList invoices={invoices} jobs={jobs} />
 }

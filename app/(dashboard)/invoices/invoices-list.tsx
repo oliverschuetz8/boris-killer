@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { FileText } from 'lucide-react'
-import type { Invoice } from '@/lib/services/invoices'
+import { FileText, Plus } from 'lucide-react'
+import type { Invoice, JobWithInvoiceTotals } from '@/lib/services/invoices'
+import NewInvoiceModal from './new-invoice-modal'
 
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-600',
@@ -17,9 +18,15 @@ function currency(amount: number) {
   return `A$${Number(amount).toFixed(2)}`
 }
 
-export default function InvoicesList({ invoices }: { invoices: Invoice[] }) {
+interface InvoicesListProps {
+  invoices: Invoice[]
+  jobs: JobWithInvoiceTotals[]
+}
+
+export default function InvoicesList({ invoices, jobs }: InvoicesListProps) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [modalOpen, setModalOpen] = useState(false)
 
   const filtered = invoices.filter(inv => {
     const matchesSearch =
@@ -46,6 +53,13 @@ export default function InvoicesList({ invoices }: { invoices: Invoice[] }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-slate-900">Invoices</h1>
+        <button
+          onClick={() => setModalOpen(true)}
+          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          New Invoice
+        </button>
       </div>
 
       {/* Summary Cards */}
@@ -66,7 +80,7 @@ export default function InvoicesList({ invoices }: { invoices: Invoice[] }) {
       {/* Filters */}
       <div className="flex items-center gap-3 mb-4">
 
-        {/* Search — no icon, inline style forces padding past browser overrides */}
+        {/* Search */}
         <input
           type="text"
           placeholder="Search invoices..."
@@ -76,7 +90,7 @@ export default function InvoicesList({ invoices }: { invoices: Invoice[] }) {
           className="flex-1 max-w-sm pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
         />
 
-        {/* Status filter — no chevron, inline style forces padding past browser overrides */}
+        {/* Status filter */}
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
@@ -103,7 +117,7 @@ export default function InvoicesList({ invoices }: { invoices: Invoice[] }) {
             </p>
             {invoices.length === 0 && (
               <p className="text-xs text-slate-400 mt-1">
-                Generate an invoice from a job&apos;s Cost tab.
+                Click &ldquo;New Invoice&rdquo; above to create one.
               </p>
             )}
           </div>
@@ -125,9 +139,16 @@ export default function InvoicesList({ invoices }: { invoices: Invoice[] }) {
                 {filtered.map(inv => (
                   <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-3">
-                      <Link href={`/invoices/${inv.id}`} className="text-blue-600 font-medium hover:underline">
-                        {inv.invoice_number}
-                      </Link>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link href={`/invoices/${inv.id}`} className="text-blue-600 font-medium hover:underline">
+                          {inv.invoice_number}
+                        </Link>
+                        {inv.is_partial && inv.scope_label && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-purple-50 text-purple-700">
+                            Progress: {inv.scope_label}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-3 text-slate-800">
                       {inv.customer?.name ?? <span className="text-slate-400">—</span>}
@@ -174,6 +195,10 @@ export default function InvoicesList({ invoices }: { invoices: Invoice[] }) {
           </div>
         )}
       </div>
+
+      {modalOpen && (
+        <NewInvoiceModal jobs={jobs} onClose={() => setModalOpen(false)} />
+      )}
     </div>
   )
 }

@@ -66,15 +66,15 @@
 
 ## Invoicing Enhancements
 
-- [ ] Partial/progress invoicing (multiple invoices per job, monthly billing for large jobs)
-- [ ] Create invoices from /invoices page (select job, choose full or partial scope) — not only from job detail
+- [x] Partial/progress invoicing (multiple invoices per job, monthly billing for large jobs)
+- [x] Create invoices from /invoices page (select job, choose full or partial scope) — not only from job detail
 
 ---
 
 ## Drawings & Pins
 
 - [x] Dedicated Drawings tab on job detail page (moved from Structure tab)
-- [ ] Drawing prefix system (auto-label penetrations per level, e.g. "L1-001")
+- [x] Drawing prefix system (auto-label penetrations per level, e.g. "L1-001")
 - [x] Pin scaling on zoom (pins scale with drawing, zoom-to-cursor, pin detail panel on Drawings tab)
 
 ---

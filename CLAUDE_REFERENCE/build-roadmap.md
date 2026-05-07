@@ -1,6 +1,6 @@
 # AUTONYX — What We're Building Next
 
-> Last updated: 30 April 2026 (Pin scaling on zoom + zoom-to-cursor + Drawings pin detail completed)
+> Last updated: 7 May 2026 (Partial/Progress invoicing + invoice creation from invoices page completed)
 > This document covers the full build order from current state through launch and beyond.
 
 ---
@@ -35,6 +35,8 @@
 - Dedicated Drawings Tab (moved from Structure tab to own tab, zoom constrained: min 1x with symmetric pan boundaries, scroll-to-zoom captures page scroll)
 - Pin Scaling on Zoom (pins scale inversely with zoom, zoom-to-cursor with atomic state, badge/label text scales proportionally, pin detail panel on Drawings tab with evidence fields + photos + lightbox)
 - Evidence Field Categories & Default Questions (Certification/Inspection categories, subcategories per category, worker picks subcategory per penetration, template questions load dynamically, admin custom fields still supported, per-penetration subcategory stored in DB)
+- Drawing Prefix System (admin sets per-level prefix in Structure tab via collapsed badge + pencil edit UI, service layer silently prepends prefix to worker's pin label at save time, worker UX unchanged, enables export filtering by level)
+- Partial/Progress Invoicing + Invoice Creation from Invoices Page (multiple invoices per job for monthly progress billing, "+ New Invoice" button on `/invoices` page with two-stage modal — pick job then pick scope (Full/Partial), partial form has scope label + date range picker with smart defaults + "Pull billables for this period" button that auto-fills line items from materials/labour in that period at sell prices, job timeline panel shows scheduled/actual start→end, invoicing progress panel on job cost tab with invoiced/remaining bar and prior-invoice list, dual buttons "Generate Full Invoice" + "New Partial Invoice", scope label + period range displayed on invoice list/detail, double-billing confirmation when full-invoicing a job that already has prior invoices, ex-GST progress tracking matches AU progress-claim standard, webhook payload includes scope_label/is_partial/period dates)
 
 ---
 
@@ -46,11 +48,11 @@
 - Interactive — viewer can zoom in
 - Pins must scale when zooming (not stay oversized) so exact placement is visible
 
-### Drawing Prefix System
-- Each level/drawing gets a configurable **prefix** (e.g. "L1-", "L2-", "GF-")
-- When a worker logs a penetration on that level, the penetration label **automatically gets the prefix** applied
-- Enables filtering/grouping exports by level — one spreadsheet per level based on prefix
-- Prefix is set by admin when configuring levels in the building structure
+### ~~Drawing Prefix System~~ ✅ DONE
+- Admin sets per-level prefix (e.g. "L1-") in Structure tab via collapsed badge + pencil edit UI with Save/Cancel buttons
+- Service layer silently prepends the level's prefix to worker's pin label at save time (worker types "001", stored as "L1-001")
+- Worker UX unchanged — pin label remains plain free-text
+- Enables admin to filter/group exports by level prefix
 
 ### ~~Evidence Field Categories & Default Questions~~ ✅ DONE
 - Two main job categories: Certification and Inspection
@@ -60,14 +62,14 @@
 - Admin can still add custom questions via Setup tab
 - Different penetrations in same job can have different subcategories
 
-### Partial/Progress Invoicing + Invoice Creation from Invoices Page
-- Big jobs need monthly invoices instead of one invoice at the end
-- Multiple invoices against the same job over time (progress billing)
-- Track total invoiced vs total job value
-- **Create invoices from the /invoices page** (not only from inside the job detail page)
-- "New Invoice" button on invoices list page → select a job → choose scope: full job or partial (e.g. "first month", "work completed so far")
-- Job selection shows job title, job number, customer, and how much has already been invoiced
-- Keep the existing "Generate Invoice" button on the job cost tab as well (both paths work)
+### ~~Partial/Progress Invoicing + Invoice Creation from Invoices Page~~ ✅ DONE
+- Multiple invoices per job for monthly progress billing
+- "+ New Invoice" button on `/invoices` page with two-stage modal (pick job → pick scope)
+- Smart period-aware partial billing: pick a date range, system auto-pulls materials + labour at sell prices, admin edits as needed
+- Job timeline panel shows scheduled/actual start → end so admin doesn't have to look it up
+- Invoicing progress panel on job cost tab with invoiced/remaining bar and prior invoice list
+- Existing "Generate Invoice" button on job cost tab preserved (renamed "Generate Full Invoice", with double-billing warning when prior invoices exist)
+- Ex-GST tracking on both sides (matches AU progress-claim standard)
 
 ### ~~Dedicated Drawings Tab~~ ✅ DONE
 - Drawings moved to own tab on job detail page
@@ -195,10 +197,9 @@ Worker records 60-second video. AI identifies penetrations, maps to rooms, gener
 
 | Phase | What |
 |-------|------|
-| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom |
+| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom, Drawing Prefix System, Partial/Progress Invoicing |
 | Now | Standalone drawing export |
-| Now (parallel) | Drawing prefix system |
-| Next | Partial invoicing, Scheduling/calendar, Stripe billing |
+| Next | Scheduling/calendar, Stripe billing |
 | Next (parallel) | Email notifications |
 | Pre-launch AI | Voice entry, Photo checker, Natural language BI, Defect-to-quote, In-app AI assistant |
 | Post-launch | AI portal assistant, Predictive materials, Profitability coach |

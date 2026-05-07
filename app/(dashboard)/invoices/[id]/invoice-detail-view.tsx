@@ -88,6 +88,36 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">{invoice.invoice_number}</h1>
+                {invoice.scope_label && (
+                  <p className="text-sm text-slate-500 mt-1">
+                    {invoice.is_partial ? (
+                      <>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-purple-50 text-purple-700 mr-2">
+                          Progress
+                        </span>
+                        {invoice.scope_label}
+                      </>
+                    ) : (
+                      invoice.scope_label
+                    )}
+                  </p>
+                )}
+                {invoice.is_partial && (invoice.period_start_date || invoice.period_end_date) && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Covers{' '}
+                    {invoice.period_start_date
+                      ? new Date(invoice.period_start_date).toLocaleDateString('en-AU', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                        })
+                      : '—'}
+                    {' → '}
+                    {invoice.period_end_date
+                      ? new Date(invoice.period_end_date).toLocaleDateString('en-AU', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                        })
+                      : '—'}
+                  </p>
+                )}
                 <div className="flex items-center gap-3 mt-2">
                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${STATUS_STYLES[invoice.status]}`}>
                     {invoice.status}
