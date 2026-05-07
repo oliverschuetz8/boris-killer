@@ -22,6 +22,9 @@ export interface CompanySettings {
   primary_color: string | null
   secondary_color: string | null
   website: string | null
+  email_signature: string | null
+  email_reply_to: string | null
+  email_show_logo: boolean
 }
 
 export interface CompanyCredential {
@@ -66,7 +69,7 @@ export async function getCompanySettings(): Promise<CompanySettings> {
 
   const { data, error } = await supabase
     .from('companies')
-    .select('id, name, email, phone, address_line1, address_line2, city, state, postcode, country, abn, logo_url, primary_color, secondary_color, website')
+    .select('id, name, email, phone, address_line1, address_line2, city, state, postcode, country, abn, logo_url, primary_color, secondary_color, website, email_signature, email_reply_to, email_show_logo')
     .eq('id', company_id)
     .single()
 
@@ -92,6 +95,9 @@ export async function updateCompanySettings(data: {
   primary_color?: string
   secondary_color?: string
   website?: string
+  email_signature?: string | null
+  email_reply_to?: string | null
+  email_show_logo?: boolean
 }): Promise<void> {
   const { supabase, company_id, role } = await getProfile()
   if (role !== 'admin') throw new Error('Admin only')

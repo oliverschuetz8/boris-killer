@@ -71,6 +71,33 @@ export default function CompanySettingsView({ settings, logoUrl, credentials, us
   const [brandingSaving, setBrandingSaving] = useState(false)
   const [brandingMsg, setBrandingMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  // Email branding state
+  const [emailBranding, setEmailBranding] = useState({
+    email_signature: settings.email_signature || '',
+    email_reply_to: settings.email_reply_to || '',
+    email_show_logo: settings.email_show_logo ?? true,
+  })
+  const [emailBrandingSaving, setEmailBrandingSaving] = useState(false)
+  const [emailBrandingMsg, setEmailBrandingMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  async function handleEmailBrandingSave() {
+    setEmailBrandingSaving(true)
+    setEmailBrandingMsg(null)
+    try {
+      await updateCompanySettings({
+        email_signature: emailBranding.email_signature.trim() || null,
+        email_reply_to: emailBranding.email_reply_to.trim() || null,
+        email_show_logo: emailBranding.email_show_logo,
+      })
+      setEmailBrandingMsg({ type: 'success', text: 'Email branding updated.' })
+      router.refresh()
+    } catch (e: any) {
+      setEmailBrandingMsg({ type: 'error', text: e.message })
+    } finally {
+      setEmailBrandingSaving(false)
+    }
+  }
+
   // ─── Profile Save ─────────────────────────────────────────
   async function handleProfileSave() {
     setProfileSaving(true)
@@ -668,6 +695,78 @@ export default function CompanySettingsView({ settings, logoUrl, credentials, us
               <span className={`flex items-center gap-1.5 text-sm ${brandingMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
                 {brandingMsg.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                 {brandingMsg.text}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Email Branding Section ── */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">Email Branding</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Controls how your transactional emails (job notifications, invoices) look. Logo and brand colours are pulled from the section above. Configure individual email events under <Link href="/settings/notifications" className="text-blue-600 hover:underline">Email Notifications</Link>.
+          </p>
+        </div>
+
+        <label className="flex items-center gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={emailBranding.email_show_logo}
+            onChange={(e) => setEmailBranding(b => ({ ...b, email_show_logo: e.target.checked }))}
+            disabled={!isAdmin}
+            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+          />
+          <div>
+            <div className="text-sm text-slate-800">Show logo in emails</div>
+            <div className="text-xs text-slate-500">If turned off, the company name appears in the email header instead.</div>
+          </div>
+        </label>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">Reply-to email</label>
+          <input
+            type="email"
+            value={emailBranding.email_reply_to}
+            onChange={(e) => setEmailBranding(b => ({ ...b, email_reply_to: e.target.value }))}
+            disabled={!isAdmin}
+            placeholder={profile.email || 'replies@yourcompany.com.au'}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            When customers hit "reply" on an email, this address receives it. Defaults to your company email.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">Email signature</label>
+          <textarea
+            value={emailBranding.email_signature}
+            onChange={(e) => setEmailBranding(b => ({ ...b, email_signature: e.target.value }))}
+            disabled={!isAdmin}
+            rows={4}
+            placeholder="Thanks for choosing Acme Fire — call us on 03 1234 5678 anytime."
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 font-mono text-xs"
+          />
+          <p className="text-xs text-slate-500 mt-1">
+            Shown at the bottom of every email above the contact footer. Leave empty to skip.
+          </p>
+        </div>
+
+        {isAdmin && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleEmailBrandingSave}
+              disabled={emailBrandingSaving}
+              className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
+            >
+              {emailBrandingSaving ? 'Saving…' : 'Save Email Branding'}
+            </button>
+            {emailBrandingMsg && (
+              <span className={`flex items-center gap-1.5 text-sm ${emailBrandingMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                {emailBrandingMsg.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                {emailBrandingMsg.text}
               </span>
             )}
           </div>

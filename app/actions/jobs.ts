@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Job, JobWithRelations } from '@/lib/types/database'
 import { fireWebhookEvent } from '@/lib/services/webhooks'
+import { fireEmailEvent } from '@/lib/services/email'
 
 export async function getJobs(): Promise<JobWithRelations[]> {
   const supabase = await createClient()
@@ -143,7 +144,10 @@ export async function createJob(formData: FormData) {
   const { data, error } = await supabase
     .from('jobs')
     .insert(jobData)
-    .select()
+    .select(`
+      *,
+      customer:customers!jobs_customer_id_fkey(name)
+    `)
     .single()
 
   if (error) {
@@ -157,6 +161,21 @@ export async function createJob(formData: FormData) {
     job_number: data.job_number,
     title: data.title,
     status: data.status,
+  }).catch(() => {})
+
+  // Fire email (non-blocking)
+  const customerForJob = Array.isArray(data.customer) ? data.customer[0] : data.customer
+  const siteAddressBits = [
+    data.site_address_line1,
+    [data.site_city, data.site_state, data.site_postcode].filter(Boolean).join(' '),
+  ].filter(Boolean) as string[]
+  fireEmailEvent(userProfile.company_id, 'job.created', {
+    job_id: data.id,
+    job_number: data.job_number,
+    title: data.title,
+    customer_name: customerForJob?.name ?? null,
+    scheduled_start: data.scheduled_start ?? null,
+    site_address: siteAddressBits.length > 0 ? siteAddressBits.join(', ') : null,
   }).catch(() => {})
 
   revalidatePath('/jobs')
@@ -228,10 +247,13 @@ export async function updateJobStatus(id: string, status: string) {
     updates.completed_by = user?.id
   }
 
-  // Get job details for webhook payload before updating
+  // Get job details for webhook + email payload before updating
   const { data: job } = await supabase
     .from('jobs')
-    .select('company_id, job_number, title, status')
+    .select(`
+      company_id, job_number, title, status,
+      customer:customers!jobs_customer_id_fkey(name)
+    `)
     .eq('id', id)
     .single()
 
@@ -245,7 +267,7 @@ export async function updateJobStatus(id: string, status: string) {
     throw new Error('Failed to update job status')
   }
 
-  // Fire webhooks (non-blocking)
+  // Fire webhooks + emails (non-blocking)
   if (job) {
     const payload = {
       job_id: id,
@@ -259,6 +281,30 @@ export async function updateJobStatus(id: string, status: string) {
 
     if (status === 'completed') {
       fireWebhookEvent(job.company_id, 'job.completed', payload).catch(() => {})
+
+      // Lookup name of user who completed it
+      let completedByName: string | null = null
+      if (user?.id) {
+        const { data: actor } = await supabase
+          .from('users')
+          .select('full_name')
+          .eq('id', user.id)
+          .single()
+        completedByName = actor?.full_name ?? null
+      }
+
+      const customerForJob = Array.isArray((job as any).customer)
+        ? (job as any).customer[0]
+        : (job as any).customer
+
+      fireEmailEvent(job.company_id, 'job.completed', {
+        job_id: id,
+        job_number: job.job_number,
+        title: job.title,
+        customer_name: customerForJob?.name ?? null,
+        completed_by_name: completedByName,
+        completed_at: updates.completed_at ?? new Date().toISOString(),
+      }).catch(() => {})
     }
   }
 

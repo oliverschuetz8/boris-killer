@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Package, ChevronRight, Calculator, Layers, Plug, Webhook, Building2, ClipboardList } from 'lucide-react'
+import { Package, ChevronRight, Calculator, Layers, Plug, Webhook, Building2, ClipboardList, Mail } from 'lucide-react'
 
 const SETTINGS_SECTIONS = [
   {
@@ -51,10 +51,18 @@ const SETTINGS_SECTIONS = [
     description: 'Connect Xero for timesheets, invoices, and payroll sync.',
   },
   {
-    href: '/settings/webhooks',
-    icon: Webhook,
+    href: '/settings/notifications',
+    icon: Mail,
     iconBg: 'bg-amber-50',
     iconColor: 'text-amber-600',
+    title: 'Email Notifications',
+    description: 'Choose which events trigger emails and who receives them.',
+  },
+  {
+    href: '/settings/webhooks',
+    icon: Webhook,
+    iconBg: 'bg-yellow-50',
+    iconColor: 'text-yellow-700',
     title: 'Webhooks & API',
     description: 'Send real-time events to n8n, Zapier, or Make and manage API keys.',
   },
@@ -62,7 +70,7 @@ const SETTINGS_SECTIONS = [
 
 export default function SettingsPage() {
   return (
-    <div className="w-full">
+    <div className="w-full p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900">Settings</h1>
         <p className="text-sm text-slate-500 mt-1">Manage your company settings and preferences.</p>

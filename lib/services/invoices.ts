@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { fireWebhookEvent } from '@/lib/services/webhooks'
+import { fireEmailEvent } from '@/lib/services/email'
 
 export interface InvoiceLineItem {
   id: string
@@ -728,10 +729,14 @@ export async function updateInvoiceStatus(
     if (paymentData?.payment_reference) updates.payment_reference = paymentData.payment_reference
   }
 
-  // Get invoice details for webhook payload before updating
+  // Get invoice details for webhook + email payload before updating
   const { data: invoice } = await supabase
     .from('invoices')
-    .select('company_id, invoice_number, status, total')
+    .select(`
+      company_id, invoice_number, status, total, issued_date, due_date,
+      customer:customers(name, email),
+      job:jobs(job_number)
+    `)
     .eq('id', id)
     .single()
 
@@ -742,7 +747,7 @@ export async function updateInvoiceStatus(
 
   if (error) throw new Error(`Failed to update invoice: ${error.message}`)
 
-  // Fire webhook (non-blocking)
+  // Fire webhook + email (non-blocking)
   if (invoice) {
     const payload = {
       invoice_id: id,
@@ -756,6 +761,36 @@ export async function updateInvoiceStatus(
 
     if (status === 'overdue') {
       fireWebhookEvent(invoice.company_id, 'invoice.overdue', payload).catch(() => {})
+    }
+
+    const customer = Array.isArray((invoice as any).customer)
+      ? (invoice as any).customer[0]
+      : (invoice as any).customer
+    const job = Array.isArray((invoice as any).job)
+      ? (invoice as any).job[0]
+      : (invoice as any).job
+
+    if (status === 'sent') {
+      fireEmailEvent(invoice.company_id, 'invoice.sent', {
+        invoice_id: id,
+        invoice_number: invoice.invoice_number,
+        customer_name: customer?.name ?? null,
+        customer_email: customer?.email ?? null,
+        job_number: job?.job_number ?? null,
+        total_amount: invoice.total,
+        issued_date: invoice.issued_date,
+        due_date: invoice.due_date,
+      }).catch(() => {})
+    }
+
+    if (status === 'paid') {
+      fireEmailEvent(invoice.company_id, 'invoice.paid', {
+        invoice_id: id,
+        invoice_number: invoice.invoice_number,
+        customer_name: customer?.name ?? null,
+        total_amount: invoice.total,
+        paid_at: updates.paid_date ?? new Date().toISOString(),
+      }).catch(() => {})
     }
   }
 
