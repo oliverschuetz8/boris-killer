@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { FileDown, Loader2, CheckCircle, AlertCircle, FileSpreadsheet, FileText } from 'lucide-react'
+import { FileDown, Loader2, CheckCircle, AlertCircle, FileSpreadsheet, FileText, Map } from 'lucide-react'
 
-type ExportFormat = 'pdf' | 'spreadsheet' | 'document'
+type ExportFormat = 'pdf' | 'spreadsheet' | 'document' | 'drawings'
 type DownloadStatus = 'idle' | 'loading' | 'success' | 'error'
 
 interface Props {
@@ -36,6 +36,14 @@ const EXPORTS: { id: ExportFormat; label: string; description: string; endpoint:
     filename: '-report.docx',
     icon: FileText,
   },
+  {
+    id: 'drawings',
+    label: 'Download Interactive Drawings',
+    description: 'Self-contained HTML file — full floor plans with clickable pins, opens in any browser offline',
+    endpoint: '/drawings',
+    filename: '-drawings.html',
+    icon: Map,
+  },
 ]
 
 export default function ReportTab({ jobId, jobNumber }: Props) {
@@ -43,11 +51,13 @@ export default function ReportTab({ jobId, jobNumber }: Props) {
     pdf: 'idle',
     spreadsheet: 'idle',
     document: 'idle',
+    drawings: 'idle',
   })
   const [errors, setErrors] = useState<Record<ExportFormat, string>>({
     pdf: '',
     spreadsheet: '',
     document: '',
+    drawings: '',
   })
 
   async function handleDownload(format: ExportFormat) {
@@ -104,7 +114,7 @@ export default function ReportTab({ jobId, jobNumber }: Props) {
         </p>
 
         {/* Export buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {EXPORTS.map(exp => {
             const Icon = exp.icon
             const status = statuses[exp.id]

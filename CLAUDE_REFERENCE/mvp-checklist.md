@@ -31,7 +31,7 @@
 - [ ] Evidence -> Report automation (auto-generate branded report with photos + timestamps + signatures)
 - [x] Report overhaul: 4 penetrations per page, photo + evidence data + cropped floor plan close-up per penetration
 - [x] Multiple export formats: PDF, spreadsheet (Excel/CSV), document (.docx for Google Docs)
-- [ ] Standalone drawing export: interactive, zoomable pins, grouped by building
+- [x] Standalone drawing export: interactive, zoomable pins, grouped by building
 - [ ] Automatic status updates (email/SMS: booked -> on-site -> completed -> report ready)
 - [x] Floor plan drawings with pin mapping (LEGALLY REQUIRED for AS1851 — admin uploads drawings per level, workers pin evidence locations, report includes annotated drawings)
 

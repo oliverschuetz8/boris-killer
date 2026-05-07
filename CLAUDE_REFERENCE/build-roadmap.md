@@ -1,6 +1,6 @@
 # AUTONYX — What We're Building Next
 
-> Last updated: 7 May 2026 (Partial/Progress invoicing + invoice creation from invoices page completed)
+> Last updated: 7 May 2026 (Standalone interactive drawing export completed)
 > This document covers the full build order from current state through launch and beyond.
 
 ---
@@ -37,16 +37,17 @@
 - Evidence Field Categories & Default Questions (Certification/Inspection categories, subcategories per category, worker picks subcategory per penetration, template questions load dynamically, admin custom fields still supported, per-penetration subcategory stored in DB)
 - Drawing Prefix System (admin sets per-level prefix in Structure tab via collapsed badge + pencil edit UI, service layer silently prepends prefix to worker's pin label at save time, worker UX unchanged, enables export filtering by level)
 - Partial/Progress Invoicing + Invoice Creation from Invoices Page (multiple invoices per job for monthly progress billing, "+ New Invoice" button on `/invoices` page with two-stage modal — pick job then pick scope (Full/Partial), partial form has scope label + date range picker with smart defaults + "Pull billables for this period" button that auto-fills line items from materials/labour in that period at sell prices, job timeline panel shows scheduled/actual start→end, invoicing progress panel on job cost tab with invoiced/remaining bar and prior-invoice list, dual buttons "Generate Full Invoice" + "New Partial Invoice", scope label + period range displayed on invoice list/detail, double-billing confirmation when full-invoicing a job that already has prior invoices, ex-GST progress tracking matches AU progress-claim standard, webhook payload includes scope_label/is_partial/period dates)
+- Standalone Interactive Drawing Export (4th export format on Report tab — single self-contained `.html` file with all level drawings + pins; logo, drawings and photos embedded as base64 data URIs so it works offline; click any pin → side panel with subcategory/room/level badges, evidence Q&A, photo grid, click-to-zoom lightbox; full zoom/pan inside the export mirroring admin Drawings tab math — wheel zoom-to-cursor, click-drag pan, pinch on touch, +/−/reset controls, MIN_SCALE=1 MAX_SCALE=5; inverse pin scaling via `--pin-eff` CSS var with 8px floor and 0.38 font multiplier for clean 2-3 char labels; HTML generator at `lib/html/drawings-export.ts`, route at `/api/jobs/[id]/report/drawings`)
 
 ---
 
 ## 🔨 IMMEDIATE NEXT (Pre-Launch Core)
 
-### Standalone Drawing Export
-- Separate export of just floor plan drawings with pins (not part of the main report)
-- Grouped by building, one drawing per level
-- Interactive — viewer can zoom in
-- Pins must scale when zooming (not stay oversized) so exact placement is visible
+### ~~Standalone Drawing Export~~ ✅ DONE
+- Single self-contained `.html` export, all drawings with pins, fully interactive (zoom/pan + clickable pins → details panel)
+- Inverse pin scaling so pins shrink with zoom (8px floor) — exact placement remains visible in dense clusters
+- Embedded base64 data URIs for logo, drawings, photos — file works offline, no expiring signed URLs
+- Brand-styled header/footer using company primary colour, ABN, credentials
 
 ### ~~Drawing Prefix System~~ ✅ DONE
 - Admin sets per-level prefix (e.g. "L1-") in Structure tab via collapsed badge + pencil edit UI with Save/Cancel buttons
@@ -80,7 +81,7 @@
 - Badge text and label also scale proportionally (lowered internal Math.max floors)
 - Zoom-to-cursor: refactored useZoomPan to single atomic state (scale + x + y in one useState) — eliminates React batching drift
 - Pin detail panel on Drawings tab: clicking a pin shows full penetration details (evidence fields, photos with lightbox, subcategory, room, timestamp)
-- Still TODO: pin scaling in exported drawings/reports (standalone drawing export)
+- Pin scaling now also applied in the standalone HTML drawing export (same math)
 
 ### ~~Company Settings & Branding~~ ✅ DONE
 - Company settings page, logo upload, brand colours, company details, credentials/licences
@@ -197,9 +198,9 @@ Worker records 60-second video. AI identifies penetrations, maps to rooms, gener
 
 | Phase | What |
 |-------|------|
-| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom, Drawing Prefix System, Partial/Progress Invoicing |
-| Now | Standalone drawing export |
-| Next | Scheduling/calendar, Stripe billing |
+| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc/interactive HTML), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom, Drawing Prefix System, Partial/Progress Invoicing, Standalone Interactive Drawing Export |
+| Now | Scheduling/calendar |
+| Next | Stripe billing, Email notifications |
 | Next (parallel) | Email notifications |
 | Pre-launch AI | Voice entry, Photo checker, Natural language BI, Defect-to-quote, In-app AI assistant |
 | Post-launch | AI portal assistant, Predictive materials, Profitability coach |

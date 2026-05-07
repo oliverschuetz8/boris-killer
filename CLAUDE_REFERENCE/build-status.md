@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 7 May 2026 (partial/progress invoicing + period-aware billing) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~97% complete)
+Last Updated: 7 May 2026 (standalone interactive drawing export) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~97% complete)
 
 ---
 
@@ -263,6 +263,20 @@ Last Updated: 7 May 2026 (partial/progress invoicing + period-aware billing) | P
 - Signed URL generation for all photos, level drawings, and company logo in PDF and document routes
 - API routes: /api/jobs/[id]/report (PDF), /api/jobs/[id]/report/spreadsheet (xlsx), /api/jobs/[id]/report/document (docx)
 
+### Standalone Interactive Drawing Export
+- 4th export format on Report tab: a single self-contained `.html` file with every level drawing and all penetration pins
+- Self-contained: company logo, all floor plan drawings, and all penetration photos are embedded as base64 data URIs at generation time — file works offline, no signed URLs to expire
+- Branded header (logo, company name, job number, customer, generation date) and footer (credentials, ABN, email, phone, website)
+- Buildings → levels grouped, only levels with a drawing render
+- Click any pin → side panel slides in with full penetration details: subcategory badge, room badge, level/timestamp pills, evidence-field Q&A grid, photo grid; click photo → full-screen lightbox; Escape closes both
+- Zoom/pan inside the export (mirrors the admin Drawings tab math): wheel zoom-toward-cursor with atomic transform updates, click-drag pan with 20% boundary clamp, pinch-to-zoom on touch, +/− and reset controls overlaid bottom-right of each drawing, MIN_SCALE=1, MAX_SCALE=5
+- Inverse pin scaling via `--pin-eff` CSS variable: `effectivePinSize = max(8px, 24/scale)`, font-size, border thickness all derive from it (font multiplier 0.38 so 2-3 char labels like "0.1" sit cleanly inside the circle)
+- Image rendering hint (`image-rendering: high-quality` / `-webkit-optimize-contrast`) for marginal scaling improvement; true sharpness still depends on uploaded source resolution
+- Each level zooms independently; drag-vs-click suppression so pin click after pan doesn't open panel
+- HTML generator lives in `lib/html/drawings-export.ts` (pure function — takes data, returns HTML string); API route at `/api/jobs/[id]/report/drawings` orchestrates fetching + base64 conversion
+- Vanilla JS only inside the export — no external dependencies, opens in any modern browser
+- File size scales with photo count (base64 inflates by ~33%); for jobs with hundreds of photos the file can grow large — flagged for future server-side downscaling
+
 ---
 
 ## Database Tables (all with RLS enabled)
@@ -321,12 +335,12 @@ Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations
 
 ## Not Yet Built (Must-Have for MVP)
 
-- ~~**Report overhaul**~~ ✅ DONE — PDF overhauled (2×2 grid, 4 per page, floor plan crops, grouped by location), spreadsheet export (.xlsx), document export (.docx). Standalone interactive drawing export still TODO.
+- ~~**Report overhaul**~~ ✅ DONE — PDF overhauled (2×2 grid, 4 per page, floor plan crops, grouped by location), spreadsheet export (.xlsx), document export (.docx), standalone interactive drawing export (.html with zoom/pan and clickable pins).
 - ~~**Drawing prefix system**~~ ✅ DONE — Each level gets a prefix (e.g. "L1-"), silently prepended to penetration labels at save time. Worker UX unchanged. Enables filtering exports by level.
 - ~~**Evidence field categories & default questions**~~ ✅ DONE — Two main job categories (Certification / Inspection) with subcategories. Worker picks subcategory per penetration. Template questions load dynamically. Admin can add custom questions on top.
 - ~~**Partial/progress invoicing + invoice creation from invoices page**~~ ✅ DONE — Multiple invoices per job (monthly billing). "New Invoice" button on /invoices page: select job, choose full or partial scope. Smart period-aware billing: pick a date range, system auto-pulls materials + labour from that period at sell prices, admin edits as needed. Job timeline shown in form. Tracks invoiced vs remaining ex-GST. Existing generate button on job cost tab preserved.
 - ~~**Dedicated Drawings tab**~~ ✅ DONE — Drawings moved to own tab, structure tab focused on building/level/room only. Zoom constrained (min 1x, pan boundaries).
-- ~~**Pin scaling on zoom**~~ ✅ DONE — Pins scale inversely with zoom, zoom-to-cursor with atomic state, pin detail panel on Drawings tab. Still TODO: pin scaling in exported drawings/reports.
+- ~~**Pin scaling on zoom**~~ ✅ DONE — Pins scale inversely with zoom (admin Drawings tab + standalone HTML export), zoom-to-cursor with atomic state, pin detail panel on Drawings tab.
 - ~~**Company settings & branding**~~ ✅ DONE — Company logo, brand colours, name, address, ABN, credentials/licences. Applied to PDF reports (footer). Invoices, portal, emails still to be branded.
 - **Scheduling/calendar** — Calendar view with drag-and-drop, day/week/month views, worker availability.
 - **Stripe billing** — Starter/Pro/Business/Enterprise tiers, per-seat pricing, 30-day trial.
