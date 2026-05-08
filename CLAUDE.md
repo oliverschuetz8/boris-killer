@@ -55,6 +55,7 @@ Only after this orientation should you start writing code.
 
 **When to read these files:**
 - **Before every coding task** — check `recurring-failures.md` and `build-status.md` at minimum
+- **Before writing ANY user-facing copy** — voice, tone, vocab, microcopy patterns are in `brand.md`
 - **When unsure about anything** — schema, table names, column names, UI patterns, RLS, routing
 - **Before writing SQL migrations** — check `database-schema.md` for exact table/column names
 - **Before writing UI code** — check `design-rules.md` for padding, layout, and component standards
@@ -63,6 +64,7 @@ Only after this orientation should you start writing code.
 | File | What it covers |
 |---|---|
 | [`recurring-failures.md`](CLAUDE_REFERENCE/recurring-failures.md) | **READ FIRST EVERY SESSION.** 20 documented failure patterns with wrong vs correct code |
+| [`brand.md`](CLAUDE_REFERENCE/brand.md) | **READ BEFORE WRITING ANY USER-FACING COPY.** Voice, tone, vocabulary, visual identity, microcopy patterns, AI prompting block. Single source of truth for brand. |
 | [`build-status.md`](CLAUDE_REFERENCE/build-status.md) | What's complete (~65% MVP), what's remaining, database tables list, architecture rules |
 | [`database-schema.md`](CLAUDE_REFERENCE/database-schema.md) | Table structure, exact column names, relationship rules, RLS policies |
 | [`technical-stack.md`](CLAUDE_REFERENCE/technical-stack.md) | Tech stack, Supabase config, auth details, project structure |

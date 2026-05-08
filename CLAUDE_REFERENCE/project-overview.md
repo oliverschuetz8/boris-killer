@@ -49,10 +49,17 @@ A modern construction job management SaaS positioned as a simpler, more user-fri
 
 ## Target Market
 
-- **Primary:** Small to medium construction companies (2-20 employees)
+- **Beachhead segment (PFP-only until ~50 clients):** Australian Passive Fire Protection contractors, 2-20 employees
 - **Geographic:** Australia (initially)
-- **Current Software:** Using BORIS Software or spreadsheets
-- **Pain Points:** Struggling with BORIS complexity or outgrowing spreadsheets
+- **Current Software:** Using BORIS Software, simPRO, or spreadsheets
+- **Pain Points:** AS1851 compliance reporting friction, evidence/photo organisation, manual report assembly, generic FSM tools that don't speak passive fire
+- **Estimated AU TAM (PFP):** ~200-400 specialised contractors total; ~80-200 are the "right size" target
+
+**Expansion sequence after PFP** (see [`expansion-strategy.md`](expansion-strategy.md) for full reasoning):
+1. Active Fire Services (sprinklers, alarms, hydrants) — same buildings, same compliance, ~85% workflow reuse
+2. Asbestos remediation — workflow twin of PFP, side expansion
+3. HVAC commercial service
+4. Electrical / Plumbing — only after brand and cash, to avoid simPRO/AroFlo knife fight
 
 ---
 
@@ -69,17 +76,28 @@ A modern construction job management SaaS positioned as a simpler, more user-fri
 
 ## Success Metrics
 
-**Phase 1 (MVP):**
+**Phase 1 — PFP validation (~10 paying clients):**
 - Build core job management features
-- Get 5-10 beta customers
-- Validate product-market fit
+- Land first 5-10 beta + paying PFP customers
+- Validate product-market fit; case studies usable; referral engine starting
 
-**Phase 2 (Growth):**
-- 50+ paying customers
-- Positive unit economics
-- Customer referrals and word-of-mouth
+**Phase 2 — PFP category leadership (~30 paying clients):**
+- Become *the* software for passive fire in AU
+- Word-of-mouth dominant
+- Hire dedicated salesperson; Oliver moves out of every demo
+- Quietly start building Active Fire Services pack in parallel
 
-**Exit Strategy:** Build a strong product that could attract acquisition interest from larger construction software companies
+**Phase 3 — Saturation + first expansion (~50 paying clients):**
+- Category dominance in PFP
+- Launch Active Fire Services pack publicly
+- DO NOT expand earlier — premature expansion dilutes positioning
+
+**Phase 4 — Multi-trade (post-AFS):**
+- Asbestos as side expansion (workflow twin of PFP)
+- HVAC after AFS is stable
+- Electrical/Plumbing only after brand and cash (knife fight with simPRO/AroFlo)
+
+**Exit Strategy:** Build a strong product that could attract acquisition interest from larger construction software companies. See [`expansion-strategy.md`](expansion-strategy.md) for full sequencing reasoning.
 
 ---
 
