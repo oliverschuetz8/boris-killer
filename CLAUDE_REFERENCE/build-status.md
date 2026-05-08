@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 7 May 2026 (Schedule/Calendar Work Hub: mixed jobs+events, soft chip styling, today panel, recurring jobs, iCal feed, email digests) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete)
+Last Updated: 8 May 2026 (Unified search & filter UX across admin list pages: Customers, Jobs, Team, Parts, Products; Email Notifications header consistency fix) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete)
 
 ---
 
@@ -28,7 +28,7 @@ Last Updated: 7 May 2026 (Schedule/Calendar Work Hub: mixed jobs+events, soft ch
 - Job type field: installation, maintenance, inspection (default: installation) — badge on detail page and worker today view
 - Status: draft, scheduled, in_progress, on_hold, completed, cancelled
 - Priority: low, normal, high, urgent
-- Jobs list with search and status filter
+- Jobs list with unified search + filter popover (status, priority, customer, scheduled bucket — Today/This week/Upcoming/Past/Unscheduled); old status pill row replaced
 
 ### Worker Execute Page
 - Start Job with timestamp
@@ -98,7 +98,7 @@ Last Updated: 7 May 2026 (Schedule/Calendar Work Hub: mixed jobs+events, soft ch
 
 ### Parts Catalogue (/settings/parts)
 - Admin CRUD for individual parts with buy cost, sell price, margin, supplier, part number, subcategory
-- Search by name, filter by subcategory and supplier dropdowns
+- Search across name / SKU / supplier / subcategory + filter popover (subcategory + supplier) via shared `<SearchFilter>` component
 - Bulk edit: select multiple parts → change margin, sell price, or supplier for all selected
 - Smart naming suggestions when adding new parts
 - Import from Legacy button migrates old materials table rows to parts
@@ -335,6 +335,23 @@ Last Updated: 7 May 2026 (Schedule/Calendar Work Hub: mixed jobs+events, soft ch
 - HTML generator lives in `lib/html/drawings-export.ts` (pure function — takes data, returns HTML string); API route at `/api/jobs/[id]/report/drawings` orchestrates fetching + base64 conversion
 - Vanilla JS only inside the export — no external dependencies, opens in any modern browser
 - File size scales with photo count (base64 inflates by ~33%); for jobs with hundreds of photos the file can grow large — flagged for future server-side downscaling
+
+### Unified Search & Filter UX (Admin List Pages)
+- Single reusable `<SearchFilter>` component at `components/ui/search-filter.tsx` — search input on the left + filter icon button on the right that opens a popover with field-specific dropdowns; active-filter pills with individual remove + "Clear all"; closes on outside click or Escape; count badge on filter button when filters are applied
+- Wired into 5 admin list pages with contextual per-page filters:
+  - **Customers** — search across name / email / phone / city / billing address / all site cities & addresses; filters: City (dynamically built from billing city + every site city), Sites (Any / With sites / No sites yet); page split into client `customers-list.tsx` so server `page.tsx` only fetches and passes data
+  - **Jobs** (admin view) — search across title / job number / customer / site city / site address / site manager; filters: Status, Priority, Customer (dynamic), Scheduled bucket (Today / This week / Upcoming / Past / Unscheduled); old status pill row removed in favour of one consistent filter mechanism
+  - **Team** (`/settings/team`) — search across full name / email / phone / trade / role; filters: Role (dynamic), Trade (dynamic)
+  - **Parts** (`/settings/parts`) — search across name / SKU / supplier / subcategory (was name only); inline two-dropdown row replaced with the new popover (subcategory + supplier)
+  - **Products** (`/settings/products`) — search across name + description (was name only); filters: Parts (Any / With parts / No parts yet), Pricing (Any / Has sell price / No sell price)
+- Filtering is client-side on already-fetched data — no service file changes, no extra DB queries, RLS untouched
+- All `<select>` elements inside the popover follow the standard `appearance-none + ChevronDown overlay + pr-10` pattern (failure pattern #3)
+- Result counts ("X of Y") shown on every page so it's obvious when filters are narrowing the list
+
+### Settings Sub-Page Header Consistency Fix
+- Email Notifications page (`/settings/notifications`) header cleaned up to match the canonical sub-page pattern shared by Materials / Parts / Pay-Rules / Webhooks / Integrations / Company
+- Removed: amber rounded `Mail` icon block that previously sat between the back link and the title
+- Title now sits inline with the back link's left edge — `text-xl` (was `text-3xl`), arrow icon `w-3.5 h-3.5` (was `w-4 h-4`), back text "Settings" (was "Back to settings"), `mb-6` header gap (was `mb-8`), `transition-colors` on the back link
 
 ---
 

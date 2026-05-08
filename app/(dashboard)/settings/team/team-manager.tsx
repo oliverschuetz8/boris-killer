@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { UserPlus, Mail, Shield, User, X, Check, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
 
 interface TeamMember {
   id: string
@@ -76,6 +77,59 @@ export default function TeamManager({
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
 
+  // Search + filter state
+  const [search, setSearch] = useState('')
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({
+    role: '',
+    trade: '',
+  })
+
+  // Dynamic options
+  const roleOptions = useMemo(() => {
+    const set = new Set<string>()
+    teamMembers.forEach(m => { if (m.role) set.add(m.role.toLowerCase().trim()) })
+    const sorted = Array.from(set).sort()
+    return [
+      { value: '', label: 'All roles' },
+      ...sorted.map(r => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) })),
+    ]
+  }, [teamMembers])
+
+  const tradeOptions = useMemo(() => {
+    const set = new Set<string>()
+    teamMembers.forEach(m => { if (m.trade) set.add(m.trade.trim()) })
+    const sorted = Array.from(set).sort((a, b) => a.localeCompare(b))
+    return [
+      { value: '', label: 'All trades' },
+      ...sorted.map(t => ({ value: t.toLowerCase(), label: t })),
+    ]
+  }, [teamMembers])
+
+  const filters: FilterDef[] = [
+    { key: 'role', label: 'Role', options: roleOptions },
+    { key: 'trade', label: 'Trade', options: tradeOptions },
+  ]
+
+  const filteredMembers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return teamMembers.filter(m => {
+      if (activeFilters.role && (m.role || '').toLowerCase().trim() !== activeFilters.role) return false
+      if (activeFilters.trade && (m.trade || '').toLowerCase().trim() !== activeFilters.trade) return false
+      if (q) {
+        const haystack = [m.full_name, m.email, m.phone, m.trade, m.role]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        if (!haystack.includes(q)) return false
+      }
+      return true
+    })
+  }, [teamMembers, search, activeFilters])
+
+  function handleFilterChange(key: string, value: string) {
+    setActiveFilters(prev => ({ ...prev, [key]: value }))
+  }
+
   const [form, setForm] = useState({
     email: '',
     full_name: '',
@@ -146,7 +200,7 @@ export default function TeamManager({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full p-8">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -252,12 +306,28 @@ export default function TeamManager({
         </div>
       )}
 
+      {/* Search + filter */}
+      {teamMembers.length > 0 && (
+        <div className="mb-4">
+          <SearchFilter
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search team by name, email, trade…"
+            filters={filters}
+            activeFilters={activeFilters}
+            onFilterChange={handleFilterChange}
+          />
+        </div>
+      )}
+
       {/* Team list */}
       <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
         <div className="px-4 py-3 flex items-center gap-2">
           <Shield className="w-4 h-4 text-slate-400" />
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            {teamMembers.length} Member{teamMembers.length !== 1 ? 's' : ''}
+            {filteredMembers.length === teamMembers.length
+              ? `${teamMembers.length} Member${teamMembers.length !== 1 ? 's' : ''}`
+              : `${filteredMembers.length} of ${teamMembers.length} Member${teamMembers.length !== 1 ? 's' : ''}`}
           </p>
         </div>
 
@@ -266,8 +336,13 @@ export default function TeamManager({
             <User className="w-8 h-8 text-slate-300 mx-auto mb-2" />
             <p className="text-sm text-slate-500">No team members yet.</p>
           </div>
+        ) : filteredMembers.length === 0 ? (
+          <div className="px-4 py-12 text-center">
+            <User className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm text-slate-500">No team members match your search or filters.</p>
+          </div>
         ) : (
-          teamMembers.map(member => (
+          filteredMembers.map(member => (
             <div key={member.id} className="px-4 py-4">
               {editingId === member.id ? (
 

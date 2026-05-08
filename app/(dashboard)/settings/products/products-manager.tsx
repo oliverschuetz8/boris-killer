@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import {
   getProducts,
@@ -16,14 +16,19 @@ import {
 import { getParts, type Part } from '@/lib/services/parts'
 import {
   Layers, Plus, Pencil, Trash2, Check, X, ChevronDown,
-  ArrowLeft, Search, Loader2, Package,
+  ArrowLeft, Loader2, Package,
 } from 'lucide-react'
+import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
 
 export default function ProductsManager() {
   const [products, setProducts] = useState<Product[]>([])
   const [parts, setParts] = useState<Part[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({
+    parts: '',
+    pricing: '',
+  })
 
   // Add product
   const [showAdd, setShowAdd] = useState(false)
@@ -62,9 +67,52 @@ export default function ProductsManager() {
     }
   }
 
-  const filtered = products.filter(p =>
-    !search || p.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const productFilters: FilterDef[] = [
+    {
+      key: 'parts',
+      label: 'Parts',
+      options: [
+        { value: '', label: 'Any' },
+        { value: 'with', label: 'With parts' },
+        { value: 'empty', label: 'No parts yet' },
+      ],
+    },
+    {
+      key: 'pricing',
+      label: 'Pricing',
+      options: [
+        { value: '', label: 'Any' },
+        { value: 'priced', label: 'Has sell price' },
+        { value: 'unpriced', label: 'No sell price' },
+      ],
+    },
+  ]
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return products.filter(p => {
+      const partCount = (p.product_parts || []).length
+
+      if (activeFilters.parts === 'with' && partCount === 0) return false
+      if (activeFilters.parts === 'empty' && partCount > 0) return false
+
+      if (activeFilters.pricing === 'priced' && p.total_sell_price == null) return false
+      if (activeFilters.pricing === 'unpriced' && p.total_sell_price != null) return false
+
+      if (q) {
+        const haystack = [p.name, p.description]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        if (!haystack.includes(q)) return false
+      }
+      return true
+    })
+  }, [products, search, activeFilters])
+
+  function handleFilterChange(key: string, value: string) {
+    setActiveFilters(prev => ({ ...prev, [key]: value }))
+  }
 
   // ─── Create product ───────────────────────────────────
   async function handleCreate() {
@@ -200,15 +248,15 @@ export default function ProductsManager() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search products…"
-          className="w-full pl-10 pr-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      {/* Search + filter */}
+      <div className="mb-4">
+        <SearchFilter
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search products by name or description…"
+          filters={productFilters}
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
         />
       </div>
 

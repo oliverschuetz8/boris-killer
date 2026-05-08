@@ -16,9 +16,10 @@ import {
 } from '@/lib/services/parts'
 import {
   Package, Plus, Pencil, Trash2, Check, X, ChevronDown,
-  ArrowLeft, Search, Filter, CheckSquare, Square, Loader2,
+  ArrowLeft, Filter, CheckSquare, Square, Loader2,
   ArrowUpDown,
 } from 'lucide-react'
+import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
 
 const UNITS = ['each', 'box', 'tube', 'metre', 'litre', 'bag', 'roll', 'sheet', 'hour']
 
@@ -41,8 +42,10 @@ export default function PartsManager() {
 
   // Filters
   const [search, setSearch] = useState('')
-  const [filterSubcategory, setFilterSubcategory] = useState('')
-  const [filterSupplier, setFilterSupplier] = useState('')
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({
+    subcategory: '',
+    supplier: '',
+  })
 
   // Add form
   const [showAdd, setShowAdd] = useState(false)
@@ -86,15 +89,46 @@ export default function PartsManager() {
     }
   }
 
+  // Filter definitions
+  const partFilters: FilterDef[] = useMemo(() => [
+    {
+      key: 'subcategory',
+      label: 'Subcategory',
+      options: [
+        { value: '', label: 'All subcategories' },
+        ...subcategories.map(s => ({ value: s, label: s })),
+      ],
+    },
+    {
+      key: 'supplier',
+      label: 'Supplier',
+      options: [
+        { value: '', label: 'All suppliers' },
+        ...suppliers.map(s => ({ value: s, label: s })),
+      ],
+    },
+  ], [subcategories, suppliers])
+
   // Filtered list
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
     return parts.filter(p => {
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
-      if (filterSubcategory && p.subcategory !== filterSubcategory) return false
-      if (filterSupplier && p.supplier !== filterSupplier) return false
+      if (activeFilters.subcategory && p.subcategory !== activeFilters.subcategory) return false
+      if (activeFilters.supplier && p.supplier !== activeFilters.supplier) return false
+      if (q) {
+        const haystack = [p.name, p.part_number, p.supplier, p.subcategory]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        if (!haystack.includes(q)) return false
+      }
       return true
     })
-  }, [parts, search, filterSubcategory, filterSupplier])
+  }, [parts, search, activeFilters])
+
+  function handleFilterChange(key: string, value: string) {
+    setActiveFilters(prev => ({ ...prev, [key]: value }))
+  }
 
   // Name suggestion debounce
   useEffect(() => {
@@ -304,39 +338,17 @@ export default function PartsManager() {
         </div>
       )}
 
-      {/* Search + Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search parts…"
-            className="w-full pl-10 pr-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      {/* Search + Filter */}
+      <div className="mb-4 flex flex-wrap items-start gap-3">
+        <div className="flex-1 min-w-[260px]">
+          <SearchFilter
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search parts by name, SKU, supplier…"
+            filters={partFilters}
+            activeFilters={activeFilters}
+            onFilterChange={handleFilterChange}
           />
-        </div>
-        <div className="relative">
-          <select
-            value={filterSubcategory}
-            onChange={e => setFilterSubcategory(e.target.value)}
-            className="pl-3 pr-10 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All subcategories</option>
-            {subcategories.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-        </div>
-        <div className="relative">
-          <select
-            value={filterSupplier}
-            onChange={e => setFilterSupplier(e.target.value)}
-            className="pl-3 pr-10 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All suppliers</option>
-            {suppliers.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
         {selectedIds.size > 0 && (
           <button

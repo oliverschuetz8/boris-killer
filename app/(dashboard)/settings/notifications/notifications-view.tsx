@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import {
-  ArrowLeft, Mail, Loader2, Send, CheckCircle2, XCircle,
+  ArrowLeft, Loader2, Send, CheckCircle2, XCircle,
   AlertCircle, Plus, X, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import {
@@ -112,19 +112,16 @@ export default function NotificationsView({
     <div className="w-full p-8">
       <Link
         href="/settings"
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" />
-        Back to settings
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Settings
       </Link>
 
-      <div className="mb-8 flex items-start gap-4">
-        <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-          <Mail className="w-6 h-6 text-amber-600" />
-        </div>
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Email Notifications</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-xl font-bold text-slate-900">Email Notifications</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
             Choose which events trigger emails and who receives them. Branding for emails is configured under <Link href="/settings/company" className="text-amber-700 hover:underline">Company Profile</Link>.
           </p>
         </div>
