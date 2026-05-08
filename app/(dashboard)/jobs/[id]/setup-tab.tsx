@@ -217,7 +217,7 @@ function AssignmentsSection({
                   onChange={e => setSelectedUserId(e.target.value)}
                   className="w-full px-3 h-10 pr-10 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select worker...</option>
+                  <option value="">Select worker…</option>
                   {availableWorkers.map(w => (
                     <option key={w.id} value={w.id}>
                       {w.full_name || w.email}{w.trade ? ` — ${w.trade}` : ''}
@@ -233,7 +233,7 @@ function AssignmentsSection({
               className="flex items-center gap-1.5 px-4 h-10 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors flex-shrink-0"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              {assigning ? 'Adding...' : 'Assign'}
+              {assigning ? 'Adding…' : 'Assign'}
             </button>
           </div>
         </div>
@@ -533,7 +533,7 @@ function EvidenceFieldsSection({
           <div className="flex gap-2">
             <button type="button" onClick={handleAdd} disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-              {saving ? 'Adding...' : 'Add Field'}
+              {saving ? 'Adding…' : 'Add Field'}
             </button>
             <button type="button" onClick={resetAddForm}
               className="px-4 py-2 text-slate-500 text-sm hover:text-slate-700 transition-colors">
@@ -791,7 +791,7 @@ function MaterialDefaultsSection({
               <div className="relative">
                 <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
                   className="w-full px-3 py-2 pr-10 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Select part...</option>
+                  <option value="">Select part…</option>
                   {availableParts.map(p => (
                     <option key={p.id} value={p.id}>
                       {p.name}{p.subcategory ? ` (${p.subcategory})` : ''}{p.unit ? ` — ${p.unit}` : ''}
@@ -811,7 +811,7 @@ function MaterialDefaultsSection({
               <div className="relative">
                 <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
                   className="w-full px-3 py-2 pr-10 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Select product...</option>
+                  <option value="">Select product…</option>
                   {availableProducts.map(p => (
                     <option key={p.id} value={p.id}>
                       {p.name}{p.description ? ` — ${p.description}` : ''}
@@ -831,7 +831,7 @@ function MaterialDefaultsSection({
               <div className="relative">
                 <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
                   className="w-full px-3 py-2 pr-10 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Select material...</option>
+                  <option value="">Select material…</option>
                   {availableMaterials.map(m => (
                     <option key={m.id} value={m.id}>
                       {m.name}{m.unit ? ` (${m.unit})` : ''}
@@ -881,7 +881,7 @@ function MaterialDefaultsSection({
           <div className="flex gap-2">
             <button type="button" onClick={handleAdd} disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-              {saving ? 'Adding...' : 'Add Item'}
+              {saving ? 'Adding…' : 'Add Item'}
             </button>
             <button type="button" onClick={resetAddForm}
               className="px-4 py-2 text-slate-500 text-sm hover:text-slate-700 transition-colors">

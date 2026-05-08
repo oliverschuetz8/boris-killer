@@ -258,7 +258,7 @@ export default function PenetrationForm({
                 }}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
               >
-                <option value="">Select type...</option>
+                <option value="">Select type…</option>
                 {subcategories.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -272,7 +272,7 @@ export default function PenetrationForm({
         {loadingTemplates && (
           <div className="flex items-center gap-2 py-2 text-xs text-slate-500">
             <Loader2 className="w-3 h-3 animate-spin" />
-            Loading questions...
+            Loading questions…
           </div>
         )}
 
@@ -302,7 +302,7 @@ export default function PenetrationForm({
                 <div className="relative">
                   <select value={value} onChange={e => setField(field.id, e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10">
-                    <option value="">Select...</option>
+                    <option value="">Select…</option>
                     {(field.options || []).map(opt => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
@@ -385,7 +385,7 @@ export default function PenetrationForm({
           <button onClick={handleSave} disabled={saving}
             className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold text-sm rounded-xl transition-colors">
             {saving
-              ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+              ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</>
               : <><CheckCircle2 className="w-4 h-4" />Save Penetration</>
             }
           </button>

@@ -178,7 +178,7 @@ export default function EvidenceSettingsView({ companyId }: Props) {
           </Link>
           <h1 className="text-2xl font-bold text-slate-900">Evidence Categories</h1>
         </div>
-        <div className="text-sm text-slate-400 py-12 text-center">Loading...</div>
+        <div className="text-sm text-slate-400 py-12 text-center">Loading…</div>
       </div>
     )
   }
@@ -456,13 +456,13 @@ function AddSubcategoryRow({
         type="text"
         value={name}
         onChange={e => setName(e.target.value)}
-        placeholder="Subcategory name..."
+        placeholder="Subcategory name…"
         autoFocus
         onKeyDown={e => e.key === 'Enter' && handleAdd()}
         className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       <button onClick={handleAdd} disabled={saving} className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-        {saving ? 'Adding...' : 'Add'}
+        {saving ? 'Adding…' : 'Add'}
       </button>
       <button onClick={() => { setShowForm(false); setName('') }} className="px-3 py-1.5 text-slate-500 text-xs hover:text-slate-700 transition-colors">
         Cancel
@@ -721,7 +721,7 @@ function TemplateFieldsEditor({
           <div className="flex gap-2">
             <button type="button" onClick={handleAdd} disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-              {saving ? 'Adding...' : 'Add Field'}
+              {saving ? 'Adding…' : 'Add Field'}
             </button>
             <button type="button" onClick={resetForm}
               className="px-4 py-2 text-slate-500 text-sm hover:text-slate-700 transition-colors">

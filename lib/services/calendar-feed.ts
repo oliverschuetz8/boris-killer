@@ -124,7 +124,7 @@ function buildIcs(events: IcsEvent[], calendarName: string): string {
   const lines: string[] = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//AUTONYX//Boris Killer//EN',
+    'PRODID:-//AUTONYX//Field Service//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     foldLine(`X-WR-CALNAME:${escapeIcs(calendarName)} — Jobs`),

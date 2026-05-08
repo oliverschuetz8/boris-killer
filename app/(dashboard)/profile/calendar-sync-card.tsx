@@ -88,7 +88,7 @@ export function CalendarSyncCard({ initialToken }: CalendarSyncCardProps) {
           disabled={isPending}
           className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
         >
-          {isPending ? 'Generating...' : 'Enable calendar sync'}
+          {isPending ? 'Generating…' : 'Enable calendar sync'}
         </button>
       ) : (
         <div className="space-y-3">

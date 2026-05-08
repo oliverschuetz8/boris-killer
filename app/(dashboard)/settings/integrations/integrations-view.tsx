@@ -320,7 +320,7 @@ export default function IntegrationsView({
                             onChange={e => setSelectedJobId(e.target.value)}
                             className="appearance-none text-sm border border-slate-300 rounded-lg px-3 py-1.5 pr-10 bg-white"
                           >
-                            <option value="">Select job...</option>
+                            <option value="">Select job…</option>
                             {jobs.map(j => (
                               <option key={j.id} value={j.id}>
                                 {j.job_number} — {j.title}

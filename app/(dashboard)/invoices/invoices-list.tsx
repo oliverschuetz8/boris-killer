@@ -83,7 +83,7 @@ export default function InvoicesList({ invoices, jobs }: InvoicesListProps) {
         {/* Search */}
         <input
           type="text"
-          placeholder="Search invoices..."
+          placeholder="Search invoices…"
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ paddingLeft: '14px', textAlign: 'left' }}

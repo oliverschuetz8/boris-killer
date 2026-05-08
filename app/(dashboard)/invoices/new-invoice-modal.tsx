@@ -132,7 +132,7 @@ export default function NewInvoiceModal({ jobs, onClose, initialJobId }: NewInvo
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search by job number, title, or customer..."
+                  placeholder="Search by job number, title, or customer…"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"

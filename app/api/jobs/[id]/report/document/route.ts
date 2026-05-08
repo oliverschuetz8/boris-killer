@@ -189,7 +189,7 @@ export async function GET(
   sections.push(
     new Paragraph({
       children: [
-        new TextRun({ text: job.company?.name || 'AUTONYX', bold: true, size: 32, font: 'Helvetica' }),
+        new TextRun({ text: job.company?.name || '', bold: true, size: 32, font: 'Helvetica' }),
       ],
       spacing: { after: 100 },
     }),
@@ -445,7 +445,7 @@ export async function GET(
 
   allChildren.push(
     new Paragraph({
-      children: [new TextRun({ text: job.company?.name || 'AUTONYX', bold: true, size: 32 })],
+      children: [new TextRun({ text: job.company?.name || '', bold: true, size: 32 })],
       spacing: { after: 100 },
     }),
     new Paragraph({

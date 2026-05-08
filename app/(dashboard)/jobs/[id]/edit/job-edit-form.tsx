@@ -201,7 +201,7 @@ export default function JobEditForm({ job, customers }: Props) {
                   <option value="6">Every 6 months</option>
                   <option value="12">Every 12 months</option>
                   <option value="24">Every 24 months</option>
-                  <option value="custom">Custom...</option>
+                  <option value="custom">Custom…</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
@@ -250,7 +250,7 @@ export default function JobEditForm({ job, customers }: Props) {
                 <div className="relative">
                   <select name="site_state" defaultValue={job.site_state ?? ''}
                     className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none pr-10">
-                  <option value="">Select...</option>
+                  <option value="">Select…</option>
                   {STATE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -288,7 +288,7 @@ export default function JobEditForm({ job, customers }: Props) {
           <Button variant="outline" type="button">Cancel</Button>
         </Link>
         <Button type="submit" form="job-edit-form" disabled={loading}>
-          {loading ? 'Saving...' : 'Save Changes'}
+          {loading ? 'Saving…' : 'Save Changes'}
         </Button>
       </div>
     </div>

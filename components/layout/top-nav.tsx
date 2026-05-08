@@ -72,7 +72,7 @@ export default function TopNav({ user, upcomingCount = 0 }: TopNavProps) {
     router.refresh()
   }
 
-  const companyName = user?.companies?.name ?? 'AUTONYX'
+  const companyName = user?.companies?.name ?? ''
   const userName = user?.full_name ?? 'User'
   const userEmail = user?.email ?? ''
 

@@ -590,7 +590,7 @@ export function JobReportDocument({
             {companyLogoUrl && (
               <Image src={companyLogoUrl} style={{ width: 20, height: 20, objectFit: 'contain' }} />
             )}
-            <Text style={styles.footerCompanyName}>{job.company?.name || 'AUTONYX'}</Text>
+            <Text style={styles.footerCompanyName}>{job.company?.name || ''}</Text>
           </View>
           {job.company?.abn && (
             <Text style={styles.footerDetails}>ABN: {job.company.abn}</Text>
@@ -624,7 +624,7 @@ export function JobReportDocument({
   )
 
   return (
-    <Document title={`${job.job_number} — Completion Report`} author={job.company?.name || 'AUTONYX'}>
+    <Document title={`${job.job_number} — Completion Report`} author={job.company?.name || ''}>
 
       {/* ── Page 1: Header + Job Details + Building Structure + Materials ── */}
       <Page size="A4" style={styles.page}>
@@ -636,7 +636,7 @@ export function JobReportDocument({
               <Image src={companyLogoUrl} style={{ width: 48, height: 48, objectFit: 'contain' }} />
             )}
             <View>
-              <Text style={styles.companyName}>{job.company?.name || 'AUTONYX'}</Text>
+              <Text style={styles.companyName}>{job.company?.name || ''}</Text>
               <Text style={styles.reportLabel}>Job Completion Report</Text>
             </View>
           </View>

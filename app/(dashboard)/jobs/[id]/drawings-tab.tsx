@@ -302,7 +302,7 @@ export default function DrawingsTab({ jobId, companyId, userRole, userId }: Prop
   const totalPins = Object.values(pinsMap).reduce((sum, arr) => sum + arr.length, 0)
 
   if (loading) return (
-    <div className="p-6 text-center text-sm text-slate-400">Loading drawings...</div>
+    <div className="p-6 text-center text-sm text-slate-400">Loading drawings…</div>
   )
 
   if (buildings.length === 0) return (
@@ -400,7 +400,7 @@ export default function DrawingsTab({ jobId, companyId, userRole, userId }: Prop
                             className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 px-2 py-1 rounded-lg hover:bg-blue-50"
                           >
                             <Upload className="w-3 h-3" />
-                            {uploadingLevel === level.id ? 'Uploading...' : 'Upload'}
+                            {uploadingLevel === level.id ? 'Uploading…' : 'Upload'}
                           </button>
                         )}
                         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
