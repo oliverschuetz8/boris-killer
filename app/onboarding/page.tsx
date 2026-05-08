@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { seedMaterialsFromPack } from '@/lib/services/materials'
+import { Flame, Snowflake, Zap, Wrench, Siren, HardHat, Settings2, ClipboardList, type LucideProps } from 'lucide-react'
 
 interface Pack {
   id: string
@@ -11,33 +12,47 @@ interface Pack {
   work_types: string[]
 }
 
-const PACK_DESCRIPTIONS: Record<string, { icon: string; description: string }> = {
+const PACK_DESCRIPTIONS: Record<string, { icon: ComponentType<LucideProps>; iconBg: string; iconColor: string; description: string }> = {
   'Passive Fire Protection': {
-    icon: '🔥',
+    icon: Flame,
+    iconBg: '#fed7aa',
+    iconColor: '#f97316',
     description: 'Firestopping, penetration seals, fire doors. FRL/rating fields, compliance reporting.',
   },
   'HVAC': {
-    icon: '❄️',
+    icon: Snowflake,
+    iconBg: '#d1fae5',
+    iconColor: '#10b981',
     description: 'Service, maintenance, install. Asset tags, fault codes, recurring jobs.',
   },
   'Electrical': {
-    icon: '⚡',
+    icon: Zap,
+    iconBg: '#fef3c7',
+    iconColor: '#f59e0b',
     description: 'Circuits, testing, installs. Circuit IDs, test results, compliance checklists.',
   },
   'Plumbing': {
-    icon: '🔧',
+    icon: Wrench,
+    iconBg: '#e0e7ff',
+    iconColor: '#6366f1',
     description: 'Repairs, installs, maintenance. Fixture IDs, parts tracking, before/after.',
   },
   'Fire Services - Active': {
-    icon: '🚨',
+    icon: Siren,
+    iconBg: '#fce7f3',
+    iconColor: '#ec4899',
     description: 'Alarms, sprinklers, hydrants. Asset IDs, pass/fail, defect severity.',
   },
   'General Construction': {
-    icon: '🏗️',
+    icon: HardHat,
+    iconBg: '#ddd6fe',
+    iconColor: '#8b5cf6',
     description: 'Broad package for mixed trades. Minimal required fields, flexible.',
   },
   'Custom': {
-    icon: '⚙️',
+    icon: Settings2,
+    iconBg: '#e2e8f0',
+    iconColor: '#64748b',
     description: 'Start with a basic list and configure your own work types.',
   },
 }
@@ -59,7 +74,7 @@ export default function OnboardingPage() {
         .order('is_default', { ascending: false })
 
       if (error) {
-        setError('Failed to load industry packs')
+        setError("Couldn't load trade presets. Refresh the page or check your internet connection.")
         return
       }
 
@@ -115,7 +130,7 @@ export default function OnboardingPage() {
         return
       }
 
-      // Set the selected industry pack
+      // Set the selected trade preset
       if (data?.company_id) {
         await supabase
           .from('companies')
@@ -156,9 +171,6 @@ export default function OnboardingPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-xl font-bold">A</span>
-          </div>
           <h1 className="text-2xl font-bold text-gray-900">What's your primary trade?</h1>
           <p className="text-gray-500 mt-2">
             This sets your default work types and photo fields. You can change it anytime in Settings.
@@ -174,7 +186,7 @@ export default function OnboardingPage() {
         {/* Pack grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
           {packs.map(pack => {
-            const meta = PACK_DESCRIPTIONS[pack.name] || { icon: '📋', description: '' }
+            const meta = PACK_DESCRIPTIONS[pack.name] || { icon: ClipboardList, iconBg: '#e2e8f0', iconColor: '#64748b', description: '' }
             const isSelected = selectedPackId === pack.id
 
             return (
@@ -188,7 +200,12 @@ export default function OnboardingPage() {
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl">{meta.icon}</span>
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: meta.iconBg }}
+                  >
+                    <meta.icon className="w-5 h-5" style={{ color: meta.iconColor }} />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className={`font-semibold text-sm ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>
                       {pack.name}
@@ -240,7 +257,7 @@ export default function OnboardingPage() {
         </button>
 
         <p className="text-center text-xs text-gray-400 mt-4">
-          You can change your industry pack anytime in Settings
+          You can change your trade preset anytime in Settings
         </p>
       </div>
     </div>
