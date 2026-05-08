@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 7 May 2026 (standalone interactive drawing export) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~97% complete)
+Last Updated: 7 May 2026 (Schedule/Calendar Work Hub: mixed jobs+events, soft chip styling, today panel, recurring jobs, iCal feed, email digests) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete)
 
 ---
 
@@ -263,6 +263,65 @@ Last Updated: 7 May 2026 (standalone interactive drawing export) | Project: AUTO
 - Signed URL generation for all photos, level drawings, and company logo in PDF and document routes
 - API routes: /api/jobs/[id]/report (PDF), /api/jobs/[id]/report/spreadsheet (xlsx), /api/jobs/[id]/report/document (docx)
 
+### Schedule / Calendar Work Hub
+- Route at `/schedule` (admin/manager only — workers redirected to `/today`); top-nav already has Schedule link
+- **Default view: Month** (was Week — overhauled per Oliver's feedback to look like a real calendar, not a Gantt chart of giant orange bars)
+- Four views available: Month / Week / Day / Agenda — Month shows compact chips, Week+Day show time grid (still available for those who want it)
+- Calendar holds **jobs AND generic events together** — see Generic Calendar Events section below for event types
+- **Soft pastel chip styling**: type-coloured background (jobs slate-blue, meetings mint, calls peach, reminders butter, material deliveries lavender, interviews pink, focus blocks slate, custom indigo); thin coloured left edge communicates job status (saturation); fixed-height chips regardless of duration; type icon + time + title in chip body; completed items rendered with opacity 0.55 + line-through
+- **Today panel** (right-side aside, ~280px wide): persistent on Day view, toggleable on Week/Month via "Today" button in toolbar; shows today's items chronologically with type icon + time + title + customer + status dot, plus footer counts for Tomorrow + Next 7 days
+- **Reminder dot in top nav**: small red dot on bell icon when admin has jobs starting within 1 hour OR currently in-progress (workers stay on /today, no dot for them); count fetched server-side in dashboard layout via `getUpcomingSummary`
+- **Drag-drop reschedule**: grab any chip → drop on new slot → optimistic local update + server action; preserves duration; falls back on error
+- **Drag-resize duration**: drag bottom edge of event in time views → updates `scheduled_end` (jobs) or `end_time` (events)
+- **Conflict warning**: non-blocking yellow toast when a drag puts a worker into overlapping job times (only fires for jobs with assignments; client-side check on loaded events)
+- **By-worker resource view**: toggle in toolbar switches Day view to row-per-worker layout (à la AroFlo dispatcher view); jobs explode by assignment (one chip per worker per job, plus "Unassigned" lane); drag a job between worker lanes → calls `reassignJobToWorker` (removes old assignment, adds new); calendar events skipped in this mode (no assignments)
+- **Filter bar**: search (matches job title/number, event title, customer), Type multi-select (job + 8 event types), Status multi-select (jobs only), Workers multi-select (jobs only), Customer single-select; "Clear filters" link when any active; live count "X total"
+- **EventPanel slide-over** on chip click: dispatches by item kind — Job body shows job number/title/status/customer/site/scheduled times/assignments/recurrence/parent-job-link/description with "Open job" + "Edit schedule" buttons; Event body shows type icon/title (strikethrough if completed)/when/location/video link/customer/lead/linked job/creator/visibility/reminder/description with "Mark as done"/"Edit"/"Delete" buttons
+- **Empty-slot click → EventComposer** (form-based create): user picks an empty time on the calendar → composer opens with start/end pre-filled (changed from old job-only modal — now creates events of any type; jobs still created via /jobs/new)
+- **EventComposer modal**: 8-button type picker grid at top (icons + labels); fields adapt per type (defaults: meeting 60min/30min reminder, call 30min/15min, reminder 0min/0min ping, task 0min/no reminder, material_delivery 30min/60min, interview 60min/30min, block 60min/no reminder, custom 60min); inputs for title, start/end (datetime-local), all-day toggle, description, location, video link, linked customer, reminder timing (None/At time/5/15/30/60/120/1day), visibility (private/team/company); same modal handles edit (pre-filled from existing event)
+- **Inline toast system** (bottom-right): success/warning/error toasts auto-dismiss after 4.5s; used for reschedule confirmation, conflict warnings, create/update/delete feedback
+- **Custom CSS** in `app/(dashboard)/schedule/calendar-styles.css`: design-system overrides for react-big-calendar — slate/white palette, blue active button, blue-50 today highlight, soft hover (no transform), 22px chip min-height (20px in Month view)
+- **Tech stack**: react-big-calendar v1.x + react-dnd + react-dnd-html5-backend + date-fns; vanilla CSS overrides; no FullCalendar (commercial license issue with resource view)
+
+### Generic Calendar Events
+- New `calendar_events` table holds everything time-bound that isn't a job
+- 8 event types: `meeting | call | reminder | task | material_delivery | interview | block | custom`
+- Optional links to `job_id`, `customer_id`, `lead_id` so events can be tied to existing entities
+- Visibility levels: `private` (only creator sees) / `team` / `company` (everyone in company sees) — visibility filtered in RLS policy via `created_by = auth.uid() OR visibility IN ('team','company')`
+- Per-event reminder: `reminder_minutes_before` (null=off) + `reminder_sent_at` tracked to prevent duplicate pings
+- All-day toggle, location text, video link, custom color override, description
+- Mark as completed (line-through + opacity dim on calendar)
+- Service layer `lib/services/calendar-events.ts` (read), `app/actions/calendar-events.ts` (CRUD + reschedule + toggle complete)
+- Empty digest-event → calendar fetches both `jobs` (existing) and `calendar_events` for date range, unifies via `CalendarItem` discriminated union (`{kind:'job',data:ScheduleEvent} | {kind:'event',data:CalendarEvent}`); helpers in `app/(dashboard)/schedule/calendar-types.ts` provide `styleForItem`, `itemStart`, `itemEnd`, `itemTitle`, `itemSubtitle`, etc.
+
+### Recurring Jobs (Lightweight)
+- "Repeat this job" section on job edit form: dropdown (No recurrence / 6 / 12 / 24 months / Custom up to 120) — Custom shows number input
+- When job marked completed AND `recurrence_months` set AND `recurrence_spawned = false`: `updateJobStatus` action calls `spawnRecurringDraft` → inserts new draft job with `scheduled_start = original_start + N months`, copies customer/site/description/priority/job_type/evidence_category/evidence_subcategory; preserves duration via `(scheduled_end - scheduled_start)`; sets `parent_job_id = original_id`; flips `recurrence_spawned = true` on original to prevent duplicates if status toggled
+- Spawned draft job appears on calendar immediately (next service date)
+- Job detail panel + EventPanel show "Repeats every N months" badge when set; spawned children show "Created from a recurring job: view original" link
+- Webhook `job.created` fires for the auto-spawned draft with `parent_job_id` in payload
+- Database: `recurrence_months int`, `parent_job_id uuid references jobs(id) on delete set null`, `recurrence_spawned boolean default false` columns added to jobs
+
+### Calendar Sync (iCal feed — one-way)
+- Per-user iCal subscription URL: `/api/calendar/{token}` (public, unauthenticated, token-based)
+- Self-serve enable/regenerate/disable via Calendar Sync card on `/profile` page
+- Token = 64-char hex stored in `users.calendar_token` (unique partial index)
+- Feed includes user's jobs (worker: assigned jobs; admin/manager: all company jobs) + cancelled status excluded; ±90 days lookback / +365 days lookahead
+- `.ics` content generated by `lib/services/calendar-feed.ts` — manual VCALENDAR/VEVENT format, escaped per RFC 5545, line-folded at 75 chars; refresh interval hint `PT15M`
+- Event description includes customer name, status, full URL back to /jobs/{id}
+- Works in Apple Calendar, Google Calendar (incl. Workspace), Outlook (subscribe-by-URL)
+- Read-only: edits in user's calendar app don't push back to us (calendar of record stays in our app); native two-way Google/Outlook OAuth sync deferred to v2.5
+
+### Email Digests & Per-Event Reminders (Cron)
+- **Daily morning digest** at 7:00 AM AEST (Vercel cron `0 21 * * *` UTC) → `/api/cron/daily-digest` → `sendDailyDigestsForAllUsers` iterates active users with `email_notifications_enabled=true`, builds personal digest, skips empty digests
+- Digest content per user: today's items (jobs + visible events) sorted by time, Tomorrow count, Next 7 days count; admins see all company jobs, workers see only assigned jobs; events filtered by visibility (creator OR team/company)
+- **Per-event reminder ping** every 5 min (Vercel cron `*/5 * * * *`) → `/api/cron/event-reminders` → `processPendingEventReminders` finds events with reminder set, not yet sent, starting within next 24h; in-memory window check `minutesUntilStart <= reminder_minutes_before`; sends to event creator only (per-attendee deferred); flips `reminder_sent_at` on success
+- Both crons protected by `Bearer ${CRON_SECRET}` (reuses existing env var from check-overdue-invoices cron)
+- Email templates: `lib/email/templates/daily-digest.ts` (Good morning + items list + Tomorrow/Next 7 days summary + CTA "Open schedule") and `lib/email/templates/event-reminder.ts` (event title + minutesLabel + details table + description blockquote + CTA)
+- Both templates use existing `wrapTemplate` + `getEmailBranding` for consistent header/footer with company logo + brand colours
+- All sends logged to `email_logs` (event = 'daily.digest' or 'event.reminder')
+- Standalone module `lib/services/email-digests.ts` (no 'use server' — called from cron API routes); reuses Resend integration from existing `lib/services/email.ts` plumbing
+
 ### Standalone Interactive Drawing Export
 - 4th export format on Report tab: a single self-contained `.html` file with every level drawing and all penetration pins
 - Self-contained: company logo, all floor plan drawings, and all penetration photos are embedded as base64 data URIs at generation time — file works offline, no signed URLs to expire
@@ -315,6 +374,11 @@ Last Updated: 7 May 2026 (standalone interactive drawing export) | Project: AUTO
 | evidence_categories | Job categories: Certification, Inspection |
 | evidence_subcategories | Subcategories under each category (e.g. Penetration Sealing, Fire Collar) |
 | evidence_template_fields | Default questions per subcategory (loaded dynamically at form time) |
+| calendar_events | Generic time-bound events (meeting, call, reminder, task, material_delivery, interview, block, custom) — links optional to job/customer/lead, visibility private/team/company, reminder_minutes_before + reminder_sent_at for email pings |
+
+**New columns on existing tables:**
+- `jobs.recurrence_months int`, `jobs.parent_job_id uuid`, `jobs.recurrence_spawned boolean` — for lightweight recurring job spawn
+- `users.calendar_token text unique` — per-user iCal feed token (null = sync disabled)
 
 Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations/{penetration_id}/{timestamp}.ext`
 
@@ -342,7 +406,7 @@ Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations
 - ~~**Dedicated Drawings tab**~~ ✅ DONE — Drawings moved to own tab, structure tab focused on building/level/room only. Zoom constrained (min 1x, pan boundaries).
 - ~~**Pin scaling on zoom**~~ ✅ DONE — Pins scale inversely with zoom (admin Drawings tab + standalone HTML export), zoom-to-cursor with atomic state, pin detail panel on Drawings tab.
 - ~~**Company settings & branding**~~ ✅ DONE — Company logo, brand colours, name, address, ABN, credentials/licences. Applied to PDF reports (footer). Invoices, portal, emails still to be branded.
-- **Scheduling/calendar** — Calendar view with drag-and-drop, day/week/month views, worker availability.
+- ~~**Scheduling/calendar**~~ ✅ DONE — Schedule/Calendar Work Hub at `/schedule`. Default Month view with soft pastel chips + type icons. Holds jobs AND generic events (meeting, call, reminder, task, material delivery, interview, focus block, custom). Drag-drop reschedule + resize, by-worker resource view (drag between worker lanes reassigns), filters (type/status/worker/customer/search), Today panel, EventComposer modal for create/edit, EventPanel slide-over with mark-done/edit/delete, lightweight recurring jobs (auto-spawn next draft on completion). One-way iCal sync (Apple/Google/Outlook) via per-user token. Daily morning digest emails + per-event 30-min-before reminder emails via Vercel cron.
 - **Stripe billing** — Starter/Pro/Business/Enterprise tiers, per-seat pricing, 30-day trial.
 - ~~**Email notifications**~~ ✅ DONE — Resend integration with branded templates (job.created, job.completed, invoice.sent/paid/overdue). Per-company preferences at /settings/notifications. Email branding (logo, reply-to, signature) under Company Profile. Daily Vercel cron checks overdue invoices. Worker-facing events (job.assigned, job.reminder) deferred to In-app messaging.
 - **In-app messaging & notifications** — Chat interface inside the app for two-way conversations between users: workers ↔ admins/managers (workers ask questions, admins assign work), admins ↔ clients (optional, via customer portal). Also delivers worker-facing system events (job.assigned, job.reminder day-before, job updated) as in-app messages instead of emails — once the app is on the App Store, push notifications hook into this. Notification bell with unread badge in top nav. Conversations grouped per job where relevant.

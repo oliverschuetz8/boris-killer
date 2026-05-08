@@ -26,6 +26,7 @@ import {
   LogOut,
   Building2,
   Target,
+  Bell,
 } from 'lucide-react'
 
 const adminNavLinks = [
@@ -53,9 +54,10 @@ interface TopNavProps {
       name: string
     } | null
   } | null
+  upcomingCount?: number
 }
 
-export default function TopNav({ user }: TopNavProps) {
+export default function TopNav({ user, upcomingCount = 0 }: TopNavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -113,7 +115,21 @@ export default function TopNav({ user }: TopNavProps) {
             </nav>
           </div>
 
-          {/* Right: User Menu — client-only to avoid Radix ID hydration mismatch */}
+          {/* Right: notifications + user menu */}
+          <div className="flex items-center gap-1">
+            {!isWorker && (
+              <Link
+                href="/schedule"
+                className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors"
+                aria-label={`${upcomingCount} upcoming items`}
+              >
+                <Bell className="w-4 h-4" />
+                {upcomingCount > 0 && (
+                  <span className="absolute top-1 right-1 block w-2 h-2 rounded-full bg-red-500 ring-2 ring-slate-900" />
+                )}
+              </Link>
+            )}
+            {/* User Menu — client-only to avoid Radix ID hydration mismatch */}
           {mounted ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -163,6 +179,7 @@ export default function TopNav({ user }: TopNavProps) {
               <span className="text-sm hidden sm:block">{userName}</span>
             </div>
           )}
+          </div>
 
         </div>
       </div>

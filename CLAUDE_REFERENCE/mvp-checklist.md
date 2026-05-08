@@ -18,7 +18,7 @@
 
 - [ ] Clients + Sites (one client, multiple locations, contacts, history)
 - [ ] Quote builder (services + materials + labor, reusable items, client approval)
-- [ ] Scheduling/dispatch (calendar drag & drop + assign techs)
+- [x] Scheduling/dispatch (calendar drag & drop + assign techs)
 - [ ] Mobile-first job execution (start/finish, checklists, photos, signatures)
 - [ ] Invoice generation from job (time/materials -> invoice draft)
 - [ ] Payment link option (Stripe or similar, even if simple at MVP)
@@ -105,14 +105,14 @@
 
 - [ ] Custom forms builder (mandatory fields, photo required, signature required, logic rules)
 - [ ] Audit log (who did what/when/where; GPS/time stamps)
-- [ ] Recurring inspections/PPM (auto-create future jobs + reminders)
+- [x] Recurring inspections/PPM (auto-create future jobs + reminders)
 
 ---
 
 ## Integrations (must be click-to-connect)
 
 - [x] Xero/MYOB/QuickBooks (at least export + ideally 2-way invoice sync)
-- [ ] Google/Outlook calendar sync
+- [x] Google/Outlook calendar sync
 - [x] Zapier/Make/n8n hook (webhooks + API from day one)
 
 ---

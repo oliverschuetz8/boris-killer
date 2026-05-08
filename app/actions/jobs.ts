@@ -187,6 +187,13 @@ export async function updateJob(id: string, formData: FormData) {
 
   const evidenceCategoryId = formData.get('evidence_category_id') as string || null
 
+  const recurrenceRaw = formData.get('recurrence_months') as string | null
+  let recurrenceMonths: number | null = null
+  if (recurrenceRaw && recurrenceRaw.trim()) {
+    const parsed = parseInt(recurrenceRaw, 10)
+    if (!isNaN(parsed) && parsed > 0 && parsed <= 120) recurrenceMonths = parsed
+  }
+
   const updates = {
     title: formData.get('title') as string,
     description: formData.get('description') as string || null,
@@ -204,6 +211,7 @@ export async function updateJob(id: string, formData: FormData) {
     site_postcode: formData.get('site_postcode') as string || null,
     site_manager: formData.get('site_manager') as string || null,
     site_manager_phone: formData.get('site_manager_phone') as string || null,
+    recurrence_months: recurrenceMonths,
   }
 
   const { error } = await supabase
@@ -251,7 +259,13 @@ export async function updateJobStatus(id: string, status: string) {
   const { data: job } = await supabase
     .from('jobs')
     .select(`
-      company_id, job_number, title, status,
+      company_id, customer_id, job_number, title, description,
+      status, priority, job_type,
+      scheduled_start, scheduled_end,
+      site_name, site_address_line1, site_city, site_state, site_postcode,
+      site_manager, site_manager_phone,
+      evidence_category_id, evidence_subcategory_id,
+      recurrence_months, recurrence_spawned,
       customer:customers!jobs_customer_id_fkey(name)
     `)
     .eq('id', id)
@@ -305,11 +319,93 @@ export async function updateJobStatus(id: string, status: string) {
         completed_by_name: completedByName,
         completed_at: updates.completed_at ?? new Date().toISOString(),
       }).catch(() => {})
+
+      // Spawn next recurring draft if recurrence is set and not yet spawned
+      if (job.recurrence_months && !job.recurrence_spawned) {
+        try {
+          await spawnRecurringDraft(supabase, id, job)
+        } catch (err) {
+          console.error('Failed to spawn recurring draft:', err)
+        }
+      }
     }
   }
 
   revalidatePath('/jobs')
   revalidatePath(`/jobs/${id}`)
+}
+
+async function spawnRecurringDraft(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  parentJobId: string,
+  parentJob: any,
+): Promise<void> {
+  const monthsToAdd: number = parentJob.recurrence_months
+  if (!monthsToAdd) return
+
+  const baseStart = parentJob.scheduled_start
+    ? new Date(parentJob.scheduled_start)
+    : new Date()
+  const nextStart = new Date(baseStart)
+  nextStart.setMonth(nextStart.getMonth() + monthsToAdd)
+
+  let nextEnd: Date
+  if (parentJob.scheduled_end) {
+    const durationMs = new Date(parentJob.scheduled_end).getTime() - baseStart.getTime()
+    nextEnd = new Date(nextStart.getTime() + Math.max(durationMs, 60 * 60 * 1000))
+  } else {
+    nextEnd = new Date(nextStart.getTime() + 2 * 60 * 60 * 1000)
+  }
+
+  const { count } = await supabase
+    .from('jobs')
+    .select('*', { count: 'exact', head: true })
+    .eq('company_id', parentJob.company_id)
+
+  const jobNumber = `JOB-${new Date().getFullYear()}-${String((count || 0) + 1).padStart(3, '0')}`
+
+  const { data: newJob, error } = await supabase
+    .from('jobs')
+    .insert({
+      company_id: parentJob.company_id,
+      customer_id: parentJob.customer_id,
+      job_number: jobNumber,
+      title: parentJob.title,
+      description: parentJob.description,
+      scheduled_start: nextStart.toISOString(),
+      scheduled_end: nextEnd.toISOString(),
+      status: 'draft',
+      priority: parentJob.priority,
+      job_type: parentJob.job_type,
+      site_name: parentJob.site_name,
+      site_address_line1: parentJob.site_address_line1,
+      site_city: parentJob.site_city,
+      site_state: parentJob.site_state,
+      site_postcode: parentJob.site_postcode,
+      site_manager: parentJob.site_manager,
+      site_manager_phone: parentJob.site_manager_phone,
+      evidence_category_id: parentJob.evidence_category_id,
+      evidence_subcategory_id: parentJob.evidence_subcategory_id,
+      parent_job_id: parentJobId,
+      recurrence_months: parentJob.recurrence_months,
+    })
+    .select('id')
+    .single()
+
+  if (error || !newJob) throw new Error(`Failed to insert recurring draft: ${error?.message}`)
+
+  await supabase
+    .from('jobs')
+    .update({ recurrence_spawned: true })
+    .eq('id', parentJobId)
+
+  fireWebhookEvent(parentJob.company_id, 'job.created', {
+    job_id: newJob.id,
+    job_number: jobNumber,
+    title: parentJob.title,
+    status: 'draft',
+    parent_job_id: parentJobId,
+  }).catch(() => {})
 }
 
 export async function getCustomers() {

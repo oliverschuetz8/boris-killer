@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { CalendarSyncCard } from './calendar-sync-card'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -8,7 +9,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('full_name, email, phone, role')
+    .select('full_name, email, phone, role, calendar_token')
     .eq('id', user.id)
     .single()
 
@@ -39,6 +40,8 @@ export default async function ProfilePage() {
           )}
         </div>
       </div>
+
+      <CalendarSyncCard initialToken={profile?.calendar_token ?? null} />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 # AUTONYX — What We're Building Next
 
-> Last updated: 7 May 2026 (Standalone interactive drawing export completed)
+> Last updated: 7 May 2026 (Schedule/Calendar Work Hub: mixed jobs+events, recurring jobs, iCal feed, email digests)
 > This document covers the full build order from current state through launch and beyond.
 
 ---
@@ -38,6 +38,7 @@
 - Drawing Prefix System (admin sets per-level prefix in Structure tab via collapsed badge + pencil edit UI, service layer silently prepends prefix to worker's pin label at save time, worker UX unchanged, enables export filtering by level)
 - Partial/Progress Invoicing + Invoice Creation from Invoices Page (multiple invoices per job for monthly progress billing, "+ New Invoice" button on `/invoices` page with two-stage modal — pick job then pick scope (Full/Partial), partial form has scope label + date range picker with smart defaults + "Pull billables for this period" button that auto-fills line items from materials/labour in that period at sell prices, job timeline panel shows scheduled/actual start→end, invoicing progress panel on job cost tab with invoiced/remaining bar and prior-invoice list, dual buttons "Generate Full Invoice" + "New Partial Invoice", scope label + period range displayed on invoice list/detail, double-billing confirmation when full-invoicing a job that already has prior invoices, ex-GST progress tracking matches AU progress-claim standard, webhook payload includes scope_label/is_partial/period dates)
 - Standalone Interactive Drawing Export (4th export format on Report tab — single self-contained `.html` file with all level drawings + pins; logo, drawings and photos embedded as base64 data URIs so it works offline; click any pin → side panel with subcategory/room/level badges, evidence Q&A, photo grid, click-to-zoom lightbox; full zoom/pan inside the export mirroring admin Drawings tab math — wheel zoom-to-cursor, click-drag pan, pinch on touch, +/−/reset controls, MIN_SCALE=1 MAX_SCALE=5; inverse pin scaling via `--pin-eff` CSS var with 8px floor and 0.38 font multiplier for clean 2-3 char labels; HTML generator at `lib/html/drawings-export.ts`, route at `/api/jobs/[id]/report/drawings`)
+- Schedule / Calendar Work Hub (route at `/schedule`, default Month view with soft pastel chips and type icons — overhauled per Oliver's "no big orange bars" feedback to feel like a real calendar not a Gantt chart; holds jobs AND generic events together — meeting, call, reminder, task, material delivery, interview, focus block, custom; drag-drop reschedule + resize; by-worker resource view with drag-between-lanes reassignment; filters for type/status/worker/customer/search; Today panel right-side aside with chronological list + Tomorrow/Next7 counts; reminder dot in top nav bell; EventComposer modal for create/edit with 8-button type picker; EventPanel slide-over with mark-done/edit/delete; lightweight recurring jobs auto-spawn next draft on completion; one-way iCal feed per user — Apple/Google/Outlook subscribe-by-URL; daily morning email digest at 7am AEST + per-event 30-min-before reminder pings via Vercel cron; new `calendar_events` table; `recurrence_months`/`parent_job_id`/`recurrence_spawned` columns added to jobs; `calendar_token` column added to users)
 
 ---
 
@@ -88,12 +89,15 @@
 - PDF report footer branded with company details + credentials
 - Still TODO: apply branding to invoices, customer portal, email notifications
 
-### Scheduling/Calendar
-- "Schedule" tab already exists as placeholder — needs to be built
-- Calendar view showing jobs by date
-- Drag-and-drop job assignment to workers
-- Day/week/month views
-- Visual indicator for worker availability and conflicts
+### ~~Scheduling/Calendar~~ ✅ DONE — built as Schedule/Calendar Work Hub
+- Schedule/Calendar Work Hub at `/schedule` — Month default with soft pastel chips, holds jobs + generic events together
+- 8 event types beyond jobs: meeting, call, reminder, task, material delivery, interview, focus block, custom
+- Drag-drop reschedule + resize, by-worker resource view (drag between lanes reassigns), filters, Today panel
+- EventComposer for create/edit, EventPanel slide-over with mark-done/edit/delete
+- Lightweight recurring jobs (auto-spawn next draft on completion, configurable months)
+- One-way iCal feed (Apple/Google/Outlook subscribe-by-URL via per-user token)
+- Email digests: morning summary + per-event 30-min-before reminders (Vercel cron)
+- Native two-way Google/Outlook OAuth sync deferred to v2.5
 
 ### Stripe Billing
 - Starter / Pro / Business / Enterprise tiers
@@ -229,9 +233,9 @@ Worker records 60-second video. AI identifies penetrations, maps to rooms, gener
 
 | Phase | What |
 |-------|------|
-| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc/interactive HTML), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom, Drawing Prefix System, Partial/Progress Invoicing, Standalone Interactive Drawing Export, Email Notifications (admin/customer events) |
-| Now | Scheduling/calendar |
-| Next | In-app messaging & notifications, Stripe billing |
+| Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc/interactive HTML), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom, Drawing Prefix System, Partial/Progress Invoicing, Standalone Interactive Drawing Export, Email Notifications (admin/customer events), Schedule/Calendar Work Hub (mixed jobs+events, recurring jobs, iCal feed, email digests) |
+| Now | In-app messaging & notifications |
+| Next | Stripe billing |
 | Pre-launch AI | Voice entry, Photo checker, Natural language BI, Defect-to-quote, In-app AI assistant |
 | Post-launch | AI portal assistant, Predictive materials, Profitability coach |
 | Post-launch | Smart scheduling AI, Compliance risk score, AI site walk |

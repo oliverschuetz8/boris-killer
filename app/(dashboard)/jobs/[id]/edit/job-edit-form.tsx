@@ -25,6 +25,26 @@ export default function JobEditForm({ job, customers }: Props) {
   const [categories, setCategories] = useState<EvidenceCategory[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState(job.evidence_category_id || '')
 
+  const initialRecurrence: number | null = job.recurrence_months ?? null
+  const [recurrencePreset, setRecurrencePreset] = useState<string>(() => {
+    if (initialRecurrence === null) return ''
+    if (initialRecurrence === 6 || initialRecurrence === 12 || initialRecurrence === 24) {
+      return String(initialRecurrence)
+    }
+    return 'custom'
+  })
+  const [customMonths, setCustomMonths] = useState<string>(() => {
+    if (initialRecurrence === null) return ''
+    if (initialRecurrence === 6 || initialRecurrence === 12 || initialRecurrence === 24) return ''
+    return String(initialRecurrence)
+  })
+
+  const computedRecurrenceMonths = (() => {
+    if (!recurrencePreset) return ''
+    if (recurrencePreset === 'custom') return customMonths.trim()
+    return recurrencePreset
+  })()
+
   useEffect(() => {
     getEvidenceCategories().then(setCategories).catch(console.error)
   }, [])
@@ -166,6 +186,44 @@ export default function JobEditForm({ job, customers }: Props) {
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Internal Notes</label>
             <textarea name="notes" rows={2} defaultValue={job.notes || ''}
               className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+          </div>
+
+          <div className="space-y-2 border-t border-slate-100 pt-4">
+            <label className="block text-sm font-medium text-slate-700">Repeat this job</label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative">
+                <select
+                  value={recurrencePreset}
+                  onChange={(e) => setRecurrencePreset(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white appearance-none pr-10"
+                >
+                  <option value="">No recurrence</option>
+                  <option value="6">Every 6 months</option>
+                  <option value="12">Every 12 months</option>
+                  <option value="24">Every 24 months</option>
+                  <option value="custom">Custom...</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+              {recurrencePreset === 'custom' && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={120}
+                    value={customMonths}
+                    onChange={(e) => setCustomMonths(e.target.value)}
+                    placeholder="Months"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-slate-500 whitespace-nowrap">months</span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-slate-500">
+              When this job is completed, a draft for the next service will be auto-created on the calendar.
+            </p>
+            <input type="hidden" name="recurrence_months" value={computedRecurrenceMonths} />
           </div>
 
           {/* Site Details */}

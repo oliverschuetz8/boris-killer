@@ -47,6 +47,9 @@ export interface Database {
           job_type: string | null
           evidence_category_id: string | null
           evidence_subcategory_id: string | null
+          recurrence_months: number | null
+          parent_job_id: string | null
+          recurrence_spawned: boolean
         }
         Insert: Omit<Database['public']['Tables']['jobs']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['jobs']['Insert']>
@@ -76,6 +79,7 @@ export interface Database {
           company_id: string
           full_name: string
           role: string
+          calendar_token: string | null
         }
       }
       job_assignments: {
