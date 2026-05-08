@@ -1,6 +1,6 @@
 # AUTONYX — What We're Building Next
 
-> Last updated: 8 May 2026 (Granular email recipients: per-user picker + reusable distribution groups, additive with role broadcast)
+> Last updated: 8 May 2026 (In-app messaging & notifications parked — not building pre-launch; revisit only on customer demand post-launch)
 > This document covers the full build order from current state through launch and beyond.
 
 ---
@@ -127,7 +127,7 @@
 - Customer chase opt-in for invoice.overdue + free-text extra emails per event
 - Email branding (logo on/off, reply-to, signature) under Company Profile
 - Daily Vercel cron `/api/cron/check-overdue-invoices` flips status + fires emails
-- Worker-facing events (job.assigned, job.reminder) deferred to in-app messaging by design
+- Worker-facing events (job.assigned, job.reminder) intentionally not built — workers rely on Today view + assigned-jobs list + WhatsApp/calls for now; revisit only if launch customers ask
 - Tables: email_preferences, email_logs, email_groups (RLS subquery pattern, additive resolution deduped by email)
 
 ### ~~Website-to-App Lead Tracking~~ ✅ DONE
@@ -168,9 +168,22 @@ Inspection defects → auto defect report + remediation quote → customer appro
 
 ---
 
-## 💬 IN-APP MESSAGING & NOTIFICATIONS — PRE-LAUNCH MVP
+## 💬 IN-APP MESSAGING & NOTIFICATIONS — PARKED (Revisit Post-Launch on Customer Demand)
 
-### In-App Messaging & Notifications
+### In-App Messaging & Notifications — PARKED
+**Status: Parked 8 May 2026. Not building pre-launch. Revisit only if launch customers explicitly ask.**
+
+**Why parked:**
+- Most fire-protection SMBs (10–50 people) already coordinate fine via WhatsApp groups + phone calls; no current customer signal that they want chat or notifications inside the app
+- Real cost is high: 4 new tables, Supabase realtime infra, two new pages, top-nav bell-dropdown rewrite, worker bottom-nav rework, lifecycle wiring across jobs/assignments, daily reminder cron
+- Stripe billing + AI features (voice entry, photo checker) are higher-leverage launch blockers
+- Workers don't open email — true — but they DO open the app; the Today view + assigned-jobs list already surface what they need to see
+- Plan first, then ship — get launch customers using the product before deciding what their second-priority needs actually are
+
+**Trigger to un-park:** explicit ask from ≥2 paying launch customers for in-app chat or worker notifications, OR App Store push-notification rollout needing a notification surface to live in.
+
+**Original spec preserved below for whenever we pick this up again:**
+
 A chat interface inside the app so users can talk to each other and receive system events without relying on email.
 
 **Two-way conversations:**
@@ -190,12 +203,10 @@ A chat interface inside the app so users can talk to each other and receive syst
 - Once the app is on the App Store, push notifications hook into this same channel — no separate plumbing
 - Read/unread tracking per user
 
-**Why this exists separately from email:**
+**Why this would exist separately from email (when we revisit):**
 - Workers don't open email; they live in the work app
 - Customers/admins still get email for invoice events; workers get in-app notifications instead
 - Sets up for App Store push notifications as a single delivery layer
-
-**Status: Not started**
 
 ---
 
@@ -239,12 +250,12 @@ Worker records 60-second video. AI identifies penetrations, maps to rooms, gener
 | Phase | What |
 |-------|------|
 | Done | Parts & Products, Dashboard charts, Xero OAuth, Webhooks + API, Customer Portal, Lead Tracking, Company Branding, Report Overhaul (PDF/spreadsheet/doc/interactive HTML), Drawings Tab, Evidence Field Categories, Pin Scaling on Zoom, Drawing Prefix System, Partial/Progress Invoicing, Standalone Interactive Drawing Export, Email Notifications (admin/customer events), Schedule/Calendar Work Hub (mixed jobs+events, recurring jobs, iCal feed, email digests) |
-| Now | In-app messaging & notifications |
-| Next | Stripe billing |
+| Now | Stripe billing |
 | Pre-launch AI | Voice entry, Photo checker, Natural language BI, Defect-to-quote, In-app AI assistant |
 | Post-launch | AI portal assistant, Predictive materials, Profitability coach |
 | Post-launch | Smart scheduling AI, Compliance risk score, AI site walk |
 | Post-launch (non-AI) | Dark mode, Mobile app, Customer accounts, SMS |
+| Parked | In-app messaging & notifications — revisit only on customer demand post-launch |
 
 ---
 

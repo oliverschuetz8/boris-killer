@@ -1,6 +1,6 @@
 # Better-BORIS App: Must-have Checklist
 
-> Version: 2026-02-16 | Purpose: Non-negotiable features for a simpler BORIS alternative (compliance + customer-friendly).
+> Version: 2026-05-08 | Purpose: Non-negotiable features for a simpler BORIS alternative (compliance + customer-friendly).
 
 ---
 
@@ -125,12 +125,14 @@
 
 ---
 
-## Communication
+## Communication — PARKED (revisit post-launch on customer demand)
 
-- [ ] In-app messaging (chat between workers ↔ admin/manager so workers can ask questions; admin ↔ client option via customer portal)
-- [ ] In-app system notifications for workers (job.assigned, job.reminder day-before, job updated) — replaces worker emails
-- [ ] Notification bell + unread badge in top nav
-- [ ] Conversations scoped per job where relevant (chat thread inside a job)
+> All four items below were de-scoped from MVP on 8 May 2026. Trade companies in our beachhead segment (passive fire SMBs, 10–50 people) already coordinate via WhatsApp + phone calls. Ship without these and revisit only if launch customers explicitly ask, or once App Store push notifications need a surface to live in. Full spec retained in `build-roadmap.md`.
+
+- [ ] In-app messaging — parked (chat between workers ↔ admin/manager; admin ↔ client option via customer portal)
+- [ ] In-app system notifications for workers — parked (job.assigned, job.reminder day-before, job updated)
+- [ ] Notification bell + unread badge in top nav — parked
+- [ ] Conversations scoped per job where relevant — parked
 
 ---
 
