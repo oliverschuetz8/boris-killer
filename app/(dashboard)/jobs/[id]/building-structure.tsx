@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react'
 import {
   Building2, ChevronDown, Plus, Trash2,
-  CheckCircle2, Circle, Layers,
+  CheckCircle2, Circle, Layers, Pencil,
 } from 'lucide-react'
 import {
   getBuildings, createBuilding, deleteBuilding,
-  createLevel, deleteLevel,
+  createLevel, deleteLevel, updateLevelPrefix,
   createRoom, markRoomDone, markRoomUndone, deleteRoom,
 } from '@/lib/services/building-structure'
 
@@ -23,6 +23,7 @@ interface Level {
   id: string
   name: string
   order_index: number
+  drawing_prefix: string | null
   rooms: Room[]
 }
 
@@ -59,9 +60,13 @@ export default function BuildingStructure({
   const [newBuildingName, setNewBuildingName] = useState('')
   const [showNewBuilding, setShowNewBuilding] = useState(false)
   const [newLevelName, setNewLevelName] = useState<Record<string, string>>({})
+  const [newLevelPrefix, setNewLevelPrefix] = useState<Record<string, string>>({})
   const [showNewLevel, setShowNewLevel] = useState<Record<string, boolean>>({})
   const [newRoomName, setNewRoomName] = useState<Record<string, string>>({})
   const [showNewRoom, setShowNewRoom] = useState<Record<string, boolean>>({})
+  // Tracks which level is currently editing its prefix (only one at a time)
+  const [editingPrefixId, setEditingPrefixId] = useState<string | null>(null)
+  const [editingPrefixValue, setEditingPrefixValue] = useState('')
 
   const isAdmin = userRole === 'admin' || userRole === 'manager'
 
@@ -111,14 +116,16 @@ export default function BuildingStructure({
     if (!name) return
     const building = buildings.find(b => b.id === buildingId)
     const orderIndex = building?.levels.length ?? 0
-    const level = await createLevel(buildingId, companyId, name, orderIndex)
+    const prefix = newLevelPrefix[buildingId]?.trim() || undefined
+    const level = await createLevel(buildingId, companyId, name, orderIndex, prefix)
     setBuildings(prev => prev.map(b =>
       b.id === buildingId
-        ? { ...b, levels: [...b.levels, { ...level, rooms: [] }] }
+        ? { ...b, levels: [...b.levels, { ...level, drawing_prefix: prefix || null, rooms: [] }] }
         : b
     ))
     setExpandedLevels(prev => new Set([...prev, level.id]))
     setNewLevelName(prev => ({ ...prev, [buildingId]: '' }))
+    setNewLevelPrefix(prev => ({ ...prev, [buildingId]: '' }))
     setShowNewLevel(prev => ({ ...prev, [buildingId]: false }))
   }
 
@@ -130,6 +137,34 @@ export default function BuildingStructure({
         ? { ...b, levels: b.levels.filter(l => l.id !== levelId) }
         : b
     ))
+  }
+
+  function startEditingPrefix(levelId: string, currentPrefix: string | null) {
+    setEditingPrefixId(levelId)
+    setEditingPrefixValue(currentPrefix || '')
+  }
+
+  function cancelEditingPrefix() {
+    setEditingPrefixId(null)
+    setEditingPrefixValue('')
+  }
+
+  async function handleSavePrefix() {
+    if (!editingPrefixId) return
+    const trimmed = editingPrefixValue.trim() || null
+    try {
+      await updateLevelPrefix(editingPrefixId, trimmed)
+      setBuildings(prev => prev.map(b => ({
+        ...b,
+        levels: b.levels.map(l =>
+          l.id === editingPrefixId ? { ...l, drawing_prefix: trimmed } : l
+        ),
+      })))
+    } catch (err) {
+      console.error('Failed to update prefix:', err)
+    }
+    setEditingPrefixId(null)
+    setEditingPrefixValue('')
   }
 
   async function handleAddRoom(levelId: string) {
@@ -186,7 +221,7 @@ export default function BuildingStructure({
   }
 
   if (loading) return (
-    <div className="p-6 text-center text-sm text-slate-400">Loading structure…</div>
+    <div className="p-6 text-center text-sm text-slate-400">Loading structure...</div>
   )
 
   return (
@@ -233,6 +268,7 @@ export default function BuildingStructure({
                 const colour = LEVEL_COLOURS[levelIndex % LEVEL_COLOURS.length]
                 const doneCount = level.rooms.filter(r => r.is_done).length
                 const isExpanded = expandedLevels.has(level.id)
+                const isEditingThisPrefix = editingPrefixId === level.id
 
                 return (
                   <div key={level.id}>
@@ -241,7 +277,14 @@ export default function BuildingStructure({
                       style={{ borderLeft: `3px solid ${colour}` }}
                       onClick={() => toggleLevel(level.id)}
                     >
-                      <span className="flex-1 text-sm font-medium text-slate-700">{level.name}</span>
+                      <span className="flex-1 text-sm font-medium text-slate-700 flex items-center gap-2">
+                        {level.name}
+                        {level.drawing_prefix && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                            {level.drawing_prefix}
+                          </span>
+                        )}
+                      </span>
                       <span className="text-xs text-slate-400 mr-1">
                         {doneCount}/{level.rooms.length} rooms done
                       </span>
@@ -260,6 +303,59 @@ export default function BuildingStructure({
                     {isExpanded && (
                       <div className="bg-slate-50 px-4 pb-3 pt-2 space-y-3"
                         style={{ borderLeft: `3px solid ${colour}` }}>
+
+                        {/* Drawing Prefix — collapsed badge with edit button (admin only) */}
+                        {isAdmin && (
+                          isEditingThisPrefix ? (
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs font-medium text-slate-500 whitespace-nowrap">Prefix</label>
+                              <input
+                                type="text"
+                                value={editingPrefixValue}
+                                onChange={e => setEditingPrefixValue(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') handleSavePrefix()
+                                  if (e.key === 'Escape') cancelEditingPrefix()
+                                }}
+                                placeholder="e.g. L1-"
+                                autoFocus
+                                className="w-24 px-2 py-1 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-mono"
+                              />
+                              <button
+                                onClick={handleSavePrefix}
+                                className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={cancelEditingPrefix}
+                                className="px-2 py-1 text-slate-400 text-xs hover:text-slate-600 transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              {level.drawing_prefix ? (
+                                <>
+                                  <span className="text-xs text-slate-400">Prefix:</span>
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                    {level.drawing_prefix}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-xs text-slate-400">No drawing prefix</span>
+                              )}
+                              <button
+                                onClick={e => { e.stopPropagation(); startEditingPrefix(level.id, level.drawing_prefix) }}
+                                className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
+                                title={level.drawing_prefix ? 'Edit prefix' : 'Set prefix'}
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )
+                        )}
 
                         {/* Rooms Section */}
                         <div>
@@ -332,24 +428,39 @@ export default function BuildingStructure({
               {isAdmin && (
                 <div className="px-4 py-2">
                   {showNewLevel[building.id] ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={newLevelName[building.id] || ''}
-                        onChange={e => setNewLevelName(prev => ({ ...prev, [building.id]: e.target.value }))}
-                        onKeyDown={e => e.key === 'Enter' && handleAddLevel(building.id)}
-                        placeholder="Level name, e.g. Level 3"
-                        autoFocus
-                        className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                      />
-                      <button onClick={() => handleAddLevel(building.id)}
-                        className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
-                        Add
-                      </button>
-                      <button onClick={() => setShowNewLevel(prev => ({ ...prev, [building.id]: false }))}
-                        className="px-2 py-1.5 text-slate-400 text-xs hover:text-slate-600 transition-colors">
-                        Cancel
-                      </button>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={newLevelName[building.id] || ''}
+                          onChange={e => setNewLevelName(prev => ({ ...prev, [building.id]: e.target.value }))}
+                          onKeyDown={e => e.key === 'Enter' && handleAddLevel(building.id)}
+                          placeholder="Level name, e.g. Level 3"
+                          autoFocus
+                          className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        />
+                        <input
+                          type="text"
+                          value={newLevelPrefix[building.id] || ''}
+                          onChange={e => setNewLevelPrefix(prev => ({ ...prev, [building.id]: e.target.value }))}
+                          onKeyDown={e => e.key === 'Enter' && handleAddLevel(building.id)}
+                          placeholder="Prefix, e.g. L3-"
+                          className="w-28 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-mono"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleAddLevel(building.id)}
+                          className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                          Add
+                        </button>
+                        <button onClick={() => {
+                          setShowNewLevel(prev => ({ ...prev, [building.id]: false }))
+                          setNewLevelPrefix(prev => ({ ...prev, [building.id]: '' }))
+                        }}
+                          className="px-2 py-1.5 text-slate-400 text-xs hover:text-slate-600 transition-colors">
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <button

@@ -62,6 +62,7 @@ interface Building {
     id: string
     name: string
     order_index: number
+    drawing_prefix: string | null
     rooms: { id: string; name: string; is_done: boolean }[]
   }[]
 }
@@ -124,6 +125,7 @@ export default function ExecutionView({
               id: l.id,
               name: l.name,
               order_index: l.order_index,
+              drawing_prefix: l.drawing_prefix || null,
               rooms: l.rooms || [],
             })),
         }))

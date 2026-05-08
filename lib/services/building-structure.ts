@@ -9,7 +9,7 @@ export async function getBuildings(siteId: string) {
     .select(`
       id, name,
       levels (
-        id, name, order_index,
+        id, name, order_index, drawing_prefix,
         rooms (
           id, name, planned_count, done_count, is_done
         )
@@ -38,15 +38,42 @@ export async function deleteBuilding(id: string) {
 
 // ---- Levels ----
 
-export async function createLevel(buildingId: string, companyId: string, name: string, orderIndex: number) {
+export async function createLevel(buildingId: string, companyId: string, name: string, orderIndex: number, drawingPrefix?: string) {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('levels')
-    .insert({ building_id: buildingId, company_id: companyId, name, order_index: orderIndex })
+    .insert({
+      building_id: buildingId,
+      company_id: companyId,
+      name,
+      order_index: orderIndex,
+      drawing_prefix: drawingPrefix || null,
+    })
     .select()
     .single()
   if (error) throw error
   return data
+}
+
+export async function updateLevelPrefix(levelId: string, prefix: string | null): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('levels')
+    .update({ drawing_prefix: prefix || null })
+    .eq('id', levelId)
+  if (error) throw error
+}
+
+/** Get a level's drawing prefix (used by penetrations service when saving) */
+export async function getLevelPrefix(levelId: string): Promise<string | null> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('levels')
+    .select('drawing_prefix')
+    .eq('id', levelId)
+    .single()
+  if (error || !data) return null
+  return data.drawing_prefix || null
 }
 
 export async function deleteLevel(id: string) {
@@ -91,7 +118,7 @@ export async function getRoomsForJob(siteId: string) {
     .select(`
       id, name,
       levels (
-        id, name, order_index,
+        id, name, order_index, drawing_prefix,
         rooms ( id, name, planned_count, done_count, is_done )
       )
     `)

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { getLevelPrefix } from '@/lib/services/building-structure'
 
 export interface PenetrationPhoto {
   id: string
@@ -97,6 +98,15 @@ export async function createPenetration(
   floorplanLabel?: string,
   evidenceSubcategoryId?: string,
 ): Promise<Penetration> {
+  // If the level has a drawing prefix, silently prepend it to the worker's label
+  let finalLabel = floorplanLabel || null
+  if (finalLabel && levelId) {
+    const prefix = await getLevelPrefix(levelId)
+    if (prefix) {
+      finalLabel = `${prefix}${finalLabel}`
+    }
+  }
+
   const supabase = createClient()
   const { data, error } = await supabase
     .from('penetrations')
@@ -111,7 +121,7 @@ export async function createPenetration(
       room_id: roomId || null,
       floorplan_x: floorplanX ?? null,
       floorplan_y: floorplanY ?? null,
-      floorplan_label: floorplanLabel || null,
+      floorplan_label: finalLabel,
       evidence_subcategory_id: evidenceSubcategoryId || null,
     })
     .select()
