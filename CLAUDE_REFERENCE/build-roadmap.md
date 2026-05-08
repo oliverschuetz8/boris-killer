@@ -1,6 +1,6 @@
 # AUTONYX — What We're Building Next
 
-> Last updated: 8 May 2026 (Unified search & filter UX across admin list pages + Email Notifications header consistency fix)
+> Last updated: 8 May 2026 (Granular email recipients: per-user picker + reusable distribution groups, additive with role broadcast)
 > This document covers the full build order from current state through launch and beyond.
 
 ---
@@ -41,6 +41,7 @@
 - Schedule / Calendar Work Hub (route at `/schedule`, default Month view with soft pastel chips and type icons — overhauled per Oliver's "no big orange bars" feedback to feel like a real calendar not a Gantt chart; holds jobs AND generic events together — meeting, call, reminder, task, material delivery, interview, focus block, custom; drag-drop reschedule + resize; by-worker resource view with drag-between-lanes reassignment; filters for type/status/worker/customer/search; Today panel right-side aside with chronological list + Tomorrow/Next7 counts; reminder dot in top nav bell; EventComposer modal for create/edit with 8-button type picker; EventPanel slide-over with mark-done/edit/delete; lightweight recurring jobs auto-spawn next draft on completion; one-way iCal feed per user — Apple/Google/Outlook subscribe-by-URL; daily morning email digest at 7am AEST + per-event 30-min-before reminder pings via Vercel cron; new `calendar_events` table; `recurrence_months`/`parent_job_id`/`recurrence_spawned` columns added to jobs; `calendar_token` column added to users)
 - Unified Search & Filter UX on admin list pages (single reusable `<SearchFilter>` component with search bar + filter icon popover wired into Customers, Jobs, Team, Parts, Products with contextual per-page filters — City/Sites for Customers; Status/Priority/Customer/Scheduled bucket for Jobs with old status pill row replaced; Role/Trade for Team; Subcategory/Supplier for Parts; Parts/Pricing for Products; client-side filtering on already-fetched data, no extra DB queries; result counts on every page; standard appearance-none + ChevronDown pattern on all selects)
 - Settings sub-page header consistency fix (Email Notifications page header brought in line with Materials/Parts/Pay-Rules/Webhooks/Integrations/Company — amber Mail icon block removed, smaller `text-xl` title aligned with back link, arrow `w-3.5 h-3.5`, "Settings" back text, `mb-6` gap)
+- Email Notifications system (Resend + branded templates for job.created, job.completed, invoice.sent/paid/overdue; daily overdue-invoice cron; per-company preferences at /settings/notifications with three additive recipient channels — role broadcast, specific-people picker with search, reusable distribution groups CRUD; customer chase opt-in for overdue; email branding fields on Company Profile — logo on/off, reply-to, signature; tables: email_preferences/email_logs/email_groups; pickers dismiss on outside click)
 
 ---
 
@@ -120,12 +121,14 @@
 - REST API at /api/v1/ (jobs + invoices list/detail)
 - Events fired from jobs, invoices, and Xero sync actions
 
-### Email Notifications
-- Job completed → PDF report + email customer + Xero invoice
-- Job assigned → notify worker
-- New job created → email customer confirmation
-- Job 24hrs away → reminder to customer + worker
-- Invoice overdue → auto payment reminder
+### ~~Email Notifications~~ ✅ DONE
+- Resend integration with branded templates (job.created, job.completed, invoice.sent/paid/overdue)
+- Per-company preferences at /settings/notifications with three additive recipient channels: role-based broadcast, specific-people picker, reusable distribution groups (CRUD section above events)
+- Customer chase opt-in for invoice.overdue + free-text extra emails per event
+- Email branding (logo on/off, reply-to, signature) under Company Profile
+- Daily Vercel cron `/api/cron/check-overdue-invoices` flips status + fires emails
+- Worker-facing events (job.assigned, job.reminder) deferred to in-app messaging by design
+- Tables: email_preferences, email_logs, email_groups (RLS subquery pattern, additive resolution deduped by email)
 
 ### ~~Website-to-App Lead Tracking~~ ✅ DONE
 - Leads table with status lifecycle (new → contacted → qualified → proposal → converted → lost)

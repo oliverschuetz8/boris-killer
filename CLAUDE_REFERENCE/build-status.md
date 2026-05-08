@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 8 May 2026 (Unified search & filter UX across admin list pages: Customers, Jobs, Team, Parts, Products; Email Notifications header consistency fix) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete)
+Last Updated: 8 May 2026 (Granular email recipients: per-user picker + reusable distribution groups, additive with role-based broadcast; click-outside dismissal on pickers) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete)
 
 ---
 
@@ -392,10 +392,15 @@ Last Updated: 8 May 2026 (Unified search & filter UX across admin list pages: Cu
 | evidence_subcategories | Subcategories under each category (e.g. Penetration Sealing, Fire Collar) |
 | evidence_template_fields | Default questions per subcategory (loaded dynamically at form time) |
 | calendar_events | Generic time-bound events (meeting, call, reminder, task, material_delivery, interview, block, custom) — links optional to job/customer/lead, visibility private/team/company, reminder_minutes_before + reminder_sent_at for email pings |
+| email_preferences | Per-company per-event email config (is_enabled, recipient_roles, recipient_user_ids, recipient_group_ids, extra_emails, notify_customer) — unique on (company_id, event) |
+| email_logs | Email delivery log (event, recipient_email, subject, success, error_message, provider_message_id) |
+| email_groups | Reusable distribution lists (name, description, member_user_ids, member_emails) — referenced from email_preferences.recipient_group_ids for "Leadership Team" etc. |
 
 **New columns on existing tables:**
 - `jobs.recurrence_months int`, `jobs.parent_job_id uuid`, `jobs.recurrence_spawned boolean` — for lightweight recurring job spawn
 - `users.calendar_token text unique` — per-user iCal feed token (null = sync disabled)
+- `users.email_notifications_enabled boolean default true` — per-user opt-out of all transactional emails
+- `companies.email_signature text`, `companies.email_reply_to text`, `companies.email_show_logo boolean default true` — email branding overrides shown in Company Profile
 
 Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations/{penetration_id}/{timestamp}.ext`
 
@@ -425,7 +430,7 @@ Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations
 - ~~**Company settings & branding**~~ ✅ DONE — Company logo, brand colours, name, address, ABN, credentials/licences. Applied to PDF reports (footer). Invoices, portal, emails still to be branded.
 - ~~**Scheduling/calendar**~~ ✅ DONE — Schedule/Calendar Work Hub at `/schedule`. Default Month view with soft pastel chips + type icons. Holds jobs AND generic events (meeting, call, reminder, task, material delivery, interview, focus block, custom). Drag-drop reschedule + resize, by-worker resource view (drag between worker lanes reassigns), filters (type/status/worker/customer/search), Today panel, EventComposer modal for create/edit, EventPanel slide-over with mark-done/edit/delete, lightweight recurring jobs (auto-spawn next draft on completion). One-way iCal sync (Apple/Google/Outlook) via per-user token. Daily morning digest emails + per-event 30-min-before reminder emails via Vercel cron.
 - **Stripe billing** — Starter/Pro/Business/Enterprise tiers, per-seat pricing, 30-day trial.
-- ~~**Email notifications**~~ ✅ DONE — Resend integration with branded templates (job.created, job.completed, invoice.sent/paid/overdue). Per-company preferences at /settings/notifications. Email branding (logo, reply-to, signature) under Company Profile. Daily Vercel cron checks overdue invoices. Worker-facing events (job.assigned, job.reminder) deferred to In-app messaging.
+- ~~**Email notifications**~~ ✅ DONE — Resend integration with branded templates (job.created, job.completed, invoice.sent/paid/overdue). Per-company preferences at /settings/notifications with **three additive recipient channels**: (1) role-based broadcast (admin/manager/worker chips with member counts), (2) specific people picker (searchable, scoped to active company users), (3) reusable distribution groups (CRUD section above events — "Leadership", "Operations", etc., each with team members + external emails, deduped at send time). Plus free-text additional emails and customer chase opt-in for invoice.overdue. Email branding (logo, reply-to, signature) under Company Profile. Daily Vercel cron checks overdue invoices. Worker-facing events (job.assigned, job.reminder) deferred to In-app messaging. Both pickers close on outside click for standard popover UX.
 - **In-app messaging & notifications** — Chat interface inside the app for two-way conversations between users: workers ↔ admins/managers (workers ask questions, admins assign work), admins ↔ clients (optional, via customer portal). Also delivers worker-facing system events (job.assigned, job.reminder day-before, job updated) as in-app messages instead of emails — once the app is on the App Store, push notifications hook into this. Notification bell with unread badge in top nav. Conversations grouped per job where relevant.
 - **In-app AI help assistant** — AI chat icon (bottom-right) trained on our app, helps admins navigate and find features.
 
