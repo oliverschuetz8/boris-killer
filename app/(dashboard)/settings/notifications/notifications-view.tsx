@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, Loader2, Send, CheckCircle2, XCircle,
@@ -415,6 +415,19 @@ function PeoplePicker({
 }) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handle(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setSearch('')
+      }
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [open])
 
   const selectedUsers = users.filter(u => selectedIds.includes(u.id))
   const availableUsers = useMemo(() => {
@@ -434,7 +447,7 @@ function PeoplePicker({
   }
 
   return (
-    <div>
+    <div ref={wrapperRef}>
       <label className="block text-xs font-medium text-slate-700 mb-2">
         Specific people (additive — these always receive it)
       </label>
@@ -523,6 +536,19 @@ function GroupsPicker({
   onChange: (ids: string[]) => void
 }) {
   const [open, setOpen] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handle(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [open])
+
   const selected = groups.filter(g => selectedIds.includes(g.id))
   const available = groups.filter(g => !selectedIds.includes(g.id))
 
@@ -549,7 +575,7 @@ function GroupsPicker({
   }
 
   return (
-    <div>
+    <div ref={wrapperRef}>
       <label className="block text-xs font-medium text-slate-700 mb-2">
         Distribution groups
       </label>
