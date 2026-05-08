@@ -231,6 +231,39 @@ export async function updateJob(id: string, formData: FormData) {
 export async function deleteJob(id: string) {
   const supabase = await createClient()
 
+  const [invoicesResult, jobTimeEntriesResult, timeEntriesResult] = await Promise.all([
+    supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('job_id', id),
+    supabase.from('job_time_entries').select('id', { count: 'exact', head: true }).eq('job_id', id),
+    supabase.from('time_entries').select('id', { count: 'exact', head: true }).eq('job_id', id),
+  ])
+
+  const invoiceCount = invoicesResult.count ?? 0
+  const timesheetCount = (jobTimeEntriesResult.count ?? 0) + (timeEntriesResult.count ?? 0)
+
+  if (invoiceCount > 0 || timesheetCount > 0) {
+    const blockers: string[] = []
+    if (invoiceCount > 0) {
+      blockers.push(`${invoiceCount} ${invoiceCount === 1 ? 'invoice' : 'invoices'}`)
+    }
+    if (timesheetCount > 0) {
+      blockers.push(`${timesheetCount} ${timesheetCount === 1 ? 'timesheet entry' : 'timesheet entries'}`)
+    }
+    const blockersText = blockers.length === 1 ? blockers[0] : `${blockers.slice(0, -1).join(', ')} and ${blockers[blockers.length - 1]}`
+
+    const fixSteps: string[] = []
+    if (invoiceCount > 0) {
+      fixSteps.push('cancel or delete the linked invoices on the Invoices page')
+    }
+    if (timesheetCount > 0) {
+      fixSteps.push('reassign or remove the timesheet entries from Settings → Integrations')
+    }
+
+    throw new Error(
+      `This job can't be deleted because it has ${blockersText} linked to it. ` +
+      `To delete this job, first ${fixSteps.join(', then ')}, then try again.`
+    )
+  }
+
   const { error } = await supabase
     .from('jobs')
     .delete()
@@ -238,7 +271,7 @@ export async function deleteJob(id: string) {
 
   if (error) {
     console.error('Error deleting job:', error)
-    throw new Error('Failed to delete job')
+    throw new Error(`Couldn't delete this job: ${error.message}. If this keeps happening, contact support.`)
   }
 
   revalidatePath('/jobs')

@@ -195,7 +195,8 @@ export function JobsList({ initialJobs }: JobsListProps) {
       await deleteJob(id)
       setJobs(jobs.filter(job => job.id !== id))
     } catch (error) {
-      alert('Failed to delete job')
+      const message = error instanceof Error ? error.message : "Couldn't delete this job. Refresh the page and try again, or contact support if it keeps happening."
+      alert(message)
     }
   }
 

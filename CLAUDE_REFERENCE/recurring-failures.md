@@ -423,6 +423,55 @@ The Complete Job button was showing on the worker execution page. Job completion
 
 ---
 
+## Failure #21 — Generic Error Messages — User Has No Idea What Failed or How to Fix It
+
+The app has been littered with messages like `alert('Failed to delete job')`, `throw new Error('Failed to delete X')`, `alert('An error occurred')`. These tell the user nothing. The user can't fix the problem because they don't know what the problem is.
+
+**Real example that triggered this rule:** Deleting a job failed silently with "Failed to delete job". The actual cause was that the job had linked invoices and timesheets, which Postgres FK constraints (NO ACTION) blocked. The user had no way of knowing this from the message.
+
+**THE STANDARD — every user-facing error message must answer all three:**
+
+1. **What** failed (the action they were trying to do)
+2. **Why** it failed (the actual reason, in plain English — never raw SQL or stack traces)
+3. **How** they can fix it (the next concrete step they can take)
+
+**WRONG:**
+```ts
+alert('Failed to delete job')
+throw new Error('Failed to delete X')
+alert('An error occurred')
+```
+
+**CORRECT:**
+```ts
+// Server action: pre-check for known blockers and throw a specific message
+if (invoiceCount > 0) {
+  throw new Error(
+    `This job can't be deleted because it has ${invoiceCount} invoices linked to it. ` +
+    `To delete this job, first cancel or delete the linked invoices on the Invoices page, then try again.`
+  )
+}
+
+// UI: surface the real error message, never swallow it
+catch (error) {
+  const message = error instanceof Error ? error.message : "Couldn't delete this job. Refresh the page and try again, or contact support if it keeps happening."
+  alert(message)
+}
+```
+
+**Rules:**
+- **Server actions:** before destructive operations, run pre-checks for known blockers (FK constraints, business rules, permission gates) and throw specific actionable errors. Never let raw Postgres errors reach the user.
+- **UI handlers:** always surface `error.message` from caught errors via `error instanceof Error ? error.message : <fallback>`. The fallback itself must follow the what/why/how rule (e.g. "Couldn't save changes. Check your internet connection and try again.").
+- **Never** show: `Failed to X`, `An error occurred`, `Something went wrong`, `Error`, raw stack traces, raw Postgres error codes (`23503`, etc.), or any message that ends in just the action verb.
+- **Always include a next step.** Even if the next step is "contact support" — that's still better than nothing.
+- **Tone:** plain English, no jargon. Treat the user like a tradie, not a developer.
+
+**Why this matters:** the user is a busy admin or worker on a job site. If the app fails silently or unhelpfully, they lose trust and time. Every error is an opportunity to be helpful instead of confusing.
+
+This rule applies to: alerts, toasts, error pages, form validation, server action throws, API responses — every surface where an error reaches the user.
+
+---
+
 ## Quick Reference — Most Common Mistakes
 
 | Mistake | Correct Pattern |
@@ -438,3 +487,4 @@ The Complete Job button was showing on the worker execution page. Job completion
 | Logic in `page.tsx` | Move to `lib/services/` |
 | URL with `?` unquoted in zsh | Wrap entire URL in double quotes |
 | `pb-4` on worker pages | `pb-24` to clear fixed bottom nav |
+| `alert('Failed to X')` | What failed + why + how to fix it (plain English) |

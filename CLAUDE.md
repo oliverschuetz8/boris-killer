@@ -38,7 +38,7 @@ Only after this orientation should you start writing code.
 
 **What this app does:** Field service and job management SaaS for Australian SMB construction and trade companies. Direct competitor to BORIS Software.
 
-**Go-to-market:** Passive fire protection first (penetration sealing, fire collars, mastic, fire boards). We have real industry experience, existing contacts, and AS1851 compliance workflows deep enough that generic tools can't compete. 10 happy fire clients = strong referral engine, then expand to HVAC → plumbing/electrical → general construction.
+**Go-to-market:** Passive fire protection first (penetration sealing, fire collars, mastic, fire boards). We have real industry experience, existing contacts, and AS1851 compliance workflows deep enough that generic tools can't compete. PFP-only until ~50 paying clients (milestones: ~10 = validated, ~30 = category leader, ~50 = ready to expand). Then expansion sequence: **Active Fire Services → Asbestos (side) → HVAC → eventually Electrical/Plumbing**. Order is by workflow overlap, referral channel, and SaaS competitive density — not raw market size. Full reasoning + dormant-trade-pack policy in [`CLAUDE_REFERENCE/expansion-strategy.md`](CLAUDE_REFERENCE/expansion-strategy.md).
 
 **What this means for building:**
 - Architecture stays **trade-agnostic** (buildings, levels, rooms, evidence fields, materials — all work for any trade, don't change that)
@@ -73,6 +73,7 @@ Only after this orientation should you start writing code.
 | [`build-roadmap.md`](CLAUDE_REFERENCE/build-roadmap.md) | Build sequence and implementation roadmap |
 | [`ai-features-roadmap.md`](CLAUDE_REFERENCE/ai-features-roadmap.md) | Planned AI features and automation capabilities |
 | [`competitor-analysis-boris.md`](CLAUDE_REFERENCE/competitor-analysis-boris.md) | Detailed BORIS Software competitor analysis |
+| [`expansion-strategy.md`](CLAUDE_REFERENCE/expansion-strategy.md) | Trade sequencing post-PFP (AFS → Asbestos → HVAC → Elec/Plumb), milestones, dormant pack policy |
 | [`project-overview.md`](CLAUDE_REFERENCE/project-overview.md) | High-level project context, company info, GTM strategy |
 | [`project-knowledge-base.md`](CLAUDE_REFERENCE/project-knowledge-base.md) | Accumulated project knowledge and decisions |
 
@@ -99,6 +100,7 @@ Only after this orientation should you start writing code.
 | 15 | zsh fails on `?` in terminal URLs | Wrap URLs with `?` in double quotes |
 | 16 | Bottom nav overlaps content | Worker pages: `pb-24` on main content wrapper |
 | 17 | Insert into `line_items` JSONB | This column was never created — do not use it |
+| 18 | Generic error messages (`alert('Failed to X')`) | Every error must say WHAT failed + WHY + HOW to fix it. Pre-check known blockers in server actions; surface `error.message` in UI handlers. See failure #21. |
 
 ---
 
@@ -162,6 +164,7 @@ Oliver says which feature. Then:
    - **mvp-checklist.md**: Change `- [ ]` to `- [x]` for completed items
    - **build-roadmap.md**: Move items from "IMMEDIATE NEXT" to "ALREADY COMPLETE", update build order table, update date
 4. Summarise changes for Oliver to verify
+5. Commit and push: `git add .` → `git commit -m "Update reference files: ..."` → `git push`
 
 ### PRE-COMMIT (run before every commit)
 

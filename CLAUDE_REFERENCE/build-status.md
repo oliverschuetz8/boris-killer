@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 8 May 2026 (In-app messaging & notifications parked — not building pre-launch; revisit only on customer demand) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete, launch-ready feature set)
+Last Updated: 8 May 2026 (Job delete fix — pre-checks invoices/timesheets and surfaces actionable errors; new app-wide error-message standard locked into recurring-failures.md) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete, launch-ready feature set)
 
 ---
 
@@ -416,6 +416,7 @@ Storage bucket: `job-photos` | Path pattern: `{company_id}/{job_id}/penetrations
 - All dropdowns: `appearance-none` on select + ChevronDown icon overlay at `right-3 top-1/2 -translate-y-1/2`
 - Use plain `<img>` tag for blob: URLs and Supabase signed URLs — NOT Next.js Image component
 - RLS required on every new table with company_id isolation policy
+- Every user-facing error must say WHAT failed + WHY + HOW to fix it. Server actions pre-check known blockers (FK constraints, business rules) and throw specific messages with next steps; UI handlers surface `error.message` via `error instanceof Error ? error.message : <fallback>`. No generic `alert('Failed to X')`. See recurring-failures.md #21.
 
 ---
 
