@@ -67,10 +67,31 @@ export interface EmailPreference {
   event: EmailEvent
   is_enabled: boolean
   recipient_roles: string[]
+  recipient_user_ids: string[]
+  recipient_group_ids: string[]
   extra_emails: string[]
   notify_customer: boolean
   created_at: string
   updated_at: string
+}
+
+export interface EmailGroup {
+  id: string
+  company_id: string
+  name: string
+  description: string | null
+  member_user_ids: string[]
+  member_emails: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface CompanyUserSlim {
+  id: string
+  full_name: string
+  email: string
+  role: string
+  is_active: boolean
 }
 
 export interface EmailLog {

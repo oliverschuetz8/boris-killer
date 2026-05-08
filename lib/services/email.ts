@@ -9,7 +9,7 @@ import { renderJobCompletedEmail, type JobCompletedData } from '@/lib/email/temp
 import { renderInvoiceSentEmail, type InvoiceSentData } from '@/lib/email/templates/invoice-sent'
 import { renderInvoicePaidEmail, type InvoicePaidData } from '@/lib/email/templates/invoice-paid'
 import { renderInvoiceOverdueEmail, type InvoiceOverdueData } from '@/lib/email/templates/invoice-overdue'
-import type { EmailBranding, EmailEvent, EmailLog, EmailPreference, RenderedEmail } from '@/lib/email/types'
+import type { CompanyUserSlim, EmailBranding, EmailEvent, EmailLog, EmailPreference, RenderedEmail } from '@/lib/email/types'
 
 // ---------------------------------------------------------------------------
 // Event payload shapes
@@ -66,6 +66,8 @@ export async function upsertEmailPreference(
   updates: {
     is_enabled?: boolean
     recipient_roles?: string[]
+    recipient_user_ids?: string[]
+    recipient_group_ids?: string[]
     extra_emails?: string[]
     notify_customer?: boolean
   },
@@ -92,6 +94,8 @@ export async function upsertEmailPreference(
         event,
         is_enabled: updates.is_enabled ?? true,
         recipient_roles: updates.recipient_roles ?? ['admin', 'manager'],
+        recipient_user_ids: updates.recipient_user_ids ?? [],
+        recipient_group_ids: updates.recipient_group_ids ?? [],
         extra_emails: updates.extra_emails ?? [],
         notify_customer: updates.notify_customer ?? false,
       },
@@ -102,6 +106,32 @@ export async function upsertEmailPreference(
 
   if (error) throw new Error(`Failed to save preference: ${error.message}`)
   return data as EmailPreference
+}
+
+export async function getCompanyUsers(): Promise<CompanyUserSlim[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('company_id, role')
+    .eq('id', user.id)
+    .single()
+  if (!profile?.company_id) throw new Error('Company not found')
+  if (profile.role !== 'admin' && profile.role !== 'manager') {
+    throw new Error('Admin or manager only')
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, full_name, email, role, is_active')
+    .eq('company_id', profile.company_id)
+    .eq('is_active', true)
+    .order('full_name')
+
+  if (error) throw new Error(`Failed to load users: ${error.message}`)
+  return (data || []) as CompanyUserSlim[]
 }
 
 export async function getEmailLogs(limit: number = 50): Promise<EmailLog[]> {
@@ -273,6 +303,8 @@ async function loadPreference(companyId: string, event: EmailEvent): Promise<Ema
     event,
     is_enabled: true,
     recipient_roles: isCustomerEvent ? [] : ['admin', 'manager'],
+    recipient_user_ids: [],
+    recipient_group_ids: [],
     extra_emails: [],
     notify_customer: false,
     created_at: new Date().toISOString(),
@@ -299,8 +331,10 @@ async function resolveRecipients(
     out.push({ email: email.trim(), kind })
   }
 
+  const isCustomerOnly = event === 'invoice.sent'
+
   // Role-based recipients (skip for invoice.sent — it's customer-only)
-  if (event !== 'invoice.sent' && pref.recipient_roles.length > 0) {
+  if (!isCustomerOnly && pref.recipient_roles.length > 0) {
     const { data: users } = await admin
       .from('users')
       .select('email, role, is_active, email_notifications_enabled')
@@ -314,8 +348,52 @@ async function resolveRecipients(
     }
   }
 
-  // Extra emails (always honoured, except for invoice.sent which goes to customer only)
-  if (event !== 'invoice.sent') {
+  // Specific user picks (additive — Stage 1)
+  if (!isCustomerOnly && pref.recipient_user_ids.length > 0) {
+    const { data: pickedUsers } = await admin
+      .from('users')
+      .select('email, is_active, email_notifications_enabled')
+      .eq('company_id', companyId)
+      .in('id', pref.recipient_user_ids)
+
+    for (const u of pickedUsers || []) {
+      if (u.is_active === false) continue
+      if (u.email_notifications_enabled === false) continue
+      add(u.email, 'user')
+    }
+  }
+
+  // Group-based recipients (Stage 2)
+  if (!isCustomerOnly && pref.recipient_group_ids.length > 0) {
+    const { data: groups } = await admin
+      .from('email_groups')
+      .select('member_user_ids, member_emails')
+      .eq('company_id', companyId)
+      .in('id', pref.recipient_group_ids)
+
+    const groupUserIds = new Set<string>()
+    for (const g of groups || []) {
+      for (const uid of (g.member_user_ids || [])) groupUserIds.add(uid)
+      for (const e of (g.member_emails || [])) add(e, 'extra')
+    }
+
+    if (groupUserIds.size > 0) {
+      const { data: groupMembers } = await admin
+        .from('users')
+        .select('email, is_active, email_notifications_enabled')
+        .eq('company_id', companyId)
+        .in('id', Array.from(groupUserIds))
+
+      for (const u of groupMembers || []) {
+        if (u.is_active === false) continue
+        if (u.email_notifications_enabled === false) continue
+        add(u.email, 'user')
+      }
+    }
+  }
+
+  // Extra emails (free-text addresses on the preference)
+  if (!isCustomerOnly) {
     for (const e of pref.extra_emails) add(e, 'extra')
   }
 

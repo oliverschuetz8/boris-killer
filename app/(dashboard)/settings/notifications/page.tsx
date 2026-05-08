@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { getEmailPreferences, getEmailLogs } from '@/lib/services/email'
+import { getEmailPreferences, getEmailLogs, getCompanyUsers } from '@/lib/services/email'
+import { getEmailGroups } from '@/lib/services/email-groups'
 import NotificationsView from './notifications-view'
 
 export default async function NotificationsPage() {
@@ -17,15 +18,19 @@ export default async function NotificationsPage() {
   if (!profile?.company_id) redirect('/login')
   if (profile.role !== 'admin' && profile.role !== 'manager') redirect('/dashboard')
 
-  const [preferences, logs] = await Promise.all([
+  const [preferences, logs, users, groups] = await Promise.all([
     getEmailPreferences(),
     getEmailLogs(50),
+    getCompanyUsers(),
+    getEmailGroups(),
   ])
 
   return (
     <NotificationsView
       initialPreferences={preferences}
       initialLogs={logs}
+      initialUsers={users}
+      initialGroups={groups}
       currentUserEmail={user.email || ''}
     />
   )
