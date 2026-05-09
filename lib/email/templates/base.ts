@@ -96,6 +96,7 @@ ${preheaderBlock}
     <tr>
       <td style="padding:20px 28px;background-color:#f8fafc;color:#64748b;font-size:11px;line-height:1.5;border-top:1px solid #e2e8f0;">
         ${footerHtml}
+        <div style="margin:8px 0 0;color:#94a3b8;font-size:11px;">Powered by AUTONYX</div>
       </td>
     </tr>
   </table>
@@ -132,5 +133,6 @@ export function plainTextFooter(branding: EmailBranding): string {
   if (branding.website) contactBits.push(branding.website)
   if (contactBits.length) lines.push(contactBits.join(' | '))
   if (branding.abn) lines.push(`ABN: ${branding.abn}`)
+  lines.push('', 'Powered by AUTONYX')
   return lines.join('\n')
 }

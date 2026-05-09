@@ -10,7 +10,7 @@ export async function getMaterials() {
     .select('*')
     .eq('is_active', true)
     .order('name')
-  if (error) throw new Error('Failed to fetch materials')
+  if (error) throw new Error("Couldn't load materials. Refresh the page or check your connection.")
   return data || []
 }
 
@@ -21,7 +21,7 @@ export async function createMaterial(formData: {
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: profile } = await supabase
     .from('users')
@@ -40,7 +40,7 @@ export async function createMaterial(formData: {
       unit_price: formData.unit_price,
     })
 
-  if (error) throw new Error('Failed to create material')
+  if (error) throw new Error("Couldn't create the material. Check the form and try again.")
   revalidatePath('/settings/materials')
 }
 
@@ -54,7 +54,7 @@ export async function updateMaterial(id: string, formData: {
     .from('materials')
     .update(formData)
     .eq('id', id)
-  if (error) throw new Error('Failed to update material')
+  if (error) throw new Error("Couldn't save changes to the material. Try again or refresh the page.")
   revalidatePath('/settings/materials')
 }
 
@@ -64,7 +64,7 @@ export async function deleteMaterial(id: string) {
     .from('materials')
     .update({ is_active: false })
     .eq('id', id)
-  if (error) throw new Error('Failed to delete material')
+  if (error) throw new Error("Couldn't delete the material. It may be linked to jobs — remove those first, then try again.")
   revalidatePath('/settings/materials')
 }
 
@@ -75,7 +75,7 @@ export async function getJobMaterials(jobId: string) {
     .select('*, logger:logged_by(full_name)')
     .eq('job_id', jobId)
     .order('logged_at', { ascending: false })
-  if (error) throw new Error('Failed to fetch job materials')
+  if (error) throw new Error("Couldn't load this job's materials. Refresh the page or check your connection.")
   return data || []
 }
 
@@ -89,7 +89,7 @@ export async function logJobMaterial(jobId: string, entries: Array<{
 }>) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: profile } = await supabase
     .from('users')
@@ -114,7 +114,7 @@ export async function logJobMaterial(jobId: string, entries: Array<{
   const { error } = await supabase.from('job_materials').insert(rows)
   if (error) {
     console.error('Log materials error:', JSON.stringify(error))
-    throw new Error('Failed to log materials')
+    throw new Error("Couldn't log the materials. Try again or refresh the page.")
   }
 
   revalidatePath(`/jobs/${jobId}`)
@@ -127,7 +127,7 @@ export async function deleteJobMaterial(id: string, jobId: string) {
     .from('job_materials')
     .delete()
     .eq('id', id)
-  if (error) throw new Error('Failed to delete material entry')
+  if (error) throw new Error("Couldn't delete the material entry. Try again or refresh the page.")
   revalidatePath(`/jobs/${jobId}`)
   revalidatePath(`/jobs/${jobId}/execute`)
 }

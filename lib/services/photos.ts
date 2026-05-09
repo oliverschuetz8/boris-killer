@@ -9,7 +9,7 @@ export async function uploadJobPhoto(formData: FormData) {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const jobId = formData.get('job_id') as string
   const file = formData.get('photo') as File
@@ -20,7 +20,7 @@ export async function uploadJobPhoto(formData: FormData) {
   const beforeAfter = formData.get('before_after') as string || null
   const caption = (formData.get('caption') as string)?.trim() || null
 
-  if (!file || file.size === 0) throw new Error('No file provided')
+  if (!file || file.size === 0) throw new Error("No file was selected. Choose a photo and try again.")
 
   const { data: profile } = await supabase
     .from('users')
@@ -28,7 +28,7 @@ export async function uploadJobPhoto(formData: FormData) {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.company_id) throw new Error('Company not found')
+  if (!profile?.company_id) throw new Error("We couldn't find your company. Refresh the page or contact support if this keeps happening.")
 
   const ext = file.name.split('.').pop()
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
@@ -38,7 +38,7 @@ export async function uploadJobPhoto(formData: FormData) {
     .from('job-photos')
     .upload(storagePath, file, { contentType: file.type })
 
-  if (uploadError) throw new Error('Failed to upload photo')
+  if (uploadError) throw new Error("Couldn't upload the photo. Check your internet and try again.")
 
   // Normalized grouping key
   const spaceKey = spaceIdentifier
@@ -72,7 +72,7 @@ export async function uploadJobPhoto(formData: FormData) {
 
   if (dbError) {
     console.error('DB Error:', JSON.stringify(dbError))
-    throw new Error('Failed to save photo metadata')
+    throw new Error("Couldn't save the photo. Try uploading again.")
   }
 
   // Audit log
@@ -102,7 +102,7 @@ export async function getJobPhotos(jobId: string) {
     .is('deleted_at', null)
     .order('uploaded_at', { ascending: false })
 
-  if (error) throw new Error('Failed to fetch photos')
+  if (error) throw new Error("Couldn't load photos. Refresh the page or check your connection.")
   return data || []
 }
 
@@ -144,7 +144,7 @@ export async function deleteJobPhoto(photoId: string) {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: userProfile } = await supabase
     .from('users')
@@ -158,14 +158,14 @@ export async function deleteJobPhoto(photoId: string) {
     .eq('id', photoId)
     .single()
 
-  if (!photo) throw new Error('Photo not found')
+  if (!photo) throw new Error("This photo no longer exists. Refresh the page.")
 
   const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'manager'
   const isOwner = photo.uploaded_by === user.id
   const withinWindow = photo.edit_deadline && new Date() < new Date(photo.edit_deadline)
 
   if (!isAdmin && !(isOwner && withinWindow)) {
-    throw new Error('Not permitted to delete this photo')
+    throw new Error("You don't have permission to delete this photo. Ask an admin if you need it removed.")
   }
 
   const { error } = await supabase
@@ -173,7 +173,7 @@ export async function deleteJobPhoto(photoId: string) {
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', photoId)
 
-  if (error) throw new Error('Failed to delete photo')
+  if (error) throw new Error("Couldn't delete the photo. Try again or refresh the page.")
 
   await supabase.from('audit_logs').insert({
     company_id: photo.company_id,
@@ -210,7 +210,7 @@ export async function editPhotoMetadata(
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: userProfile } = await supabase
     .from('users')
@@ -224,14 +224,14 @@ export async function editPhotoMetadata(
     .eq('id', photoId)
     .single()
 
-  if (!photo) throw new Error('Photo not found')
+  if (!photo) throw new Error("This photo no longer exists. Refresh the page.")
 
   const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'manager'
   const isOwner = photo.uploaded_by === user.id
   const withinWindow = photo.edit_deadline && new Date() < new Date(photo.edit_deadline)
 
   if (!isAdmin && !(isOwner && withinWindow)) {
-    throw new Error('Edit window has expired')
+    throw new Error("This photo can only be edited shortly after upload. Ask an admin to make the change.")
   }
 
   // Rebuild space_key if location changed
@@ -246,7 +246,7 @@ export async function editPhotoMetadata(
     .update({ ...updates, space_key: spaceKey })
     .eq('id', photoId)
 
-  if (error) throw new Error('Failed to update photo')
+  if (error) throw new Error("Couldn't save the changes. Try again or refresh the page.")
 
   // Audit: log each changed field
   const changedFields: Record<string, { old: unknown; new: unknown }> = {}
@@ -321,7 +321,7 @@ export async function getPhotoById(photoId: string) {
     .select('*, uploader:uploaded_by(full_name)')
     .eq('id', photoId)
     .single()
-  if (error) throw new Error('Photo not found')
+  if (error) throw new Error("This photo no longer exists. Refresh the page.")
   return data
 }
 
@@ -339,7 +339,7 @@ export async function updatePhotoMetadata(
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: userProfile } = await supabase
     .from('users').select('role, company_id').eq('id', user.id).single()
@@ -349,13 +349,13 @@ export async function updatePhotoMetadata(
     .select('uploaded_by, edit_deadline, job_id, company_id')
     .eq('id', photoId).single()
 
-  if (!photo) throw new Error('Photo not found')
+  if (!photo) throw new Error("This photo no longer exists. Refresh the page.")
 
   const isAdmin = ['admin', 'manager'].includes(userProfile?.role)
   const isOwner = photo.uploaded_by === user.id
   const withinWindow = photo.edit_deadline && new Date() < new Date(photo.edit_deadline)
 
-  if (!isAdmin && !(isOwner && withinWindow)) throw new Error('Edit window expired')
+  if (!isAdmin && !(isOwner && withinWindow)) throw new Error("This photo can only be edited shortly after upload. Ask an admin to make the change.")
 
   const newSpaceType = updates.space_type
   const newSpaceIdentifier = updates.space_identifier
@@ -368,7 +368,7 @@ export async function updatePhotoMetadata(
     .update({ ...updates, ...(spaceKey ? { space_key: spaceKey } : {}) })
     .eq('id', photoId)
 
-  if (error) throw new Error('Failed to update photo')
+  if (error) throw new Error("Couldn't save the changes. Try again or refresh the page.")
 
   await supabase.from('audit_logs').insert({
     company_id: photo.company_id,

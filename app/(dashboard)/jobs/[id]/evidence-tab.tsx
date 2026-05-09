@@ -197,13 +197,16 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
   }
 
   async function handleDeletePenetration(penId: string) {
-    if (!confirm('Delete this penetration and all its photos? This cannot be undone.')) return
+    if (!confirm('Delete this entry and all its photos? This cannot be undone.')) return
     setDeletingPen(penId)
     try {
       await deletePenetration(penId)
       setPenetrations(prev => prev.filter(p => p.id !== penId))
-    } catch {
-      alert('Failed to delete penetration')
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "Couldn't delete this entry. Refresh the page and try again, or contact support if it keeps happening."
+      alert(message)
     } finally {
       setDeletingPen(null)
     }
@@ -220,7 +223,7 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
           : p
       ))
     } catch {
-      alert('Failed to delete photo')
+      alert("Couldn't delete this photo. Try again or refresh the page.")
     } finally {
       setDeletingPhoto(null)
     }
@@ -247,9 +250,9 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
   if (penetrations.length === 0) return (
     <div className="px-4 py-12 text-center">
       <ImageIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-      <p className="text-sm text-slate-500">No penetrations logged yet.</p>
+      <p className="text-sm text-slate-500">No evidence logged yet.</p>
       <p className="text-xs text-slate-400 mt-1">
-        Evidence will appear here once workers start logging penetrations.
+        Evidence will appear here once tradies start logging on site.
       </p>
     </div>
   )
@@ -260,8 +263,8 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
       <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
         <Layers className="w-4 h-4 text-slate-400" />
         <p className="text-xs text-slate-500">
-          <span className="font-semibold text-slate-700">{penetrations.length}</span> penetrations ·{' '}
-          <span className="font-semibold text-slate-700">{totalPhotos}</span> photos
+          <span className="font-semibold text-slate-700">{penetrations.length}</span> {penetrations.length === 1 ? 'entry' : 'entries'} ·{' '}
+          <span className="font-semibold text-slate-700">{totalPhotos}</span> {totalPhotos === 1 ? 'photo' : 'photos'}
         </p>
       </div>
 
@@ -284,7 +287,7 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
               >
                 <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <span className="flex-1 text-sm font-semibold text-slate-800">{building.name}</span>
-                <span className="text-xs text-slate-400 mr-1">{buildingPenCount} penetrations</span>
+                <span className="text-xs text-slate-400 mr-1">{buildingPenCount} {buildingPenCount === 1 ? 'entry' : 'entries'}</span>
                 <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
                   buildingExpanded ? 'rotate-0' : '-rotate-90'
                 }`} />
@@ -349,7 +352,7 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
                             <div className="px-4 py-3 bg-slate-50 border-t border-slate-100"
                               style={{ borderLeft: `3px solid ${colour}` }}>
                               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                                {levelPins.length} pinned penetration{levelPins.length !== 1 ? 's' : ''} on floor plan
+                                {levelPins.length} {levelPins.length === 1 ? 'entry' : 'entries'} pinned on floor plan
                               </p>
                               <FloorPlanViewer
                                 imageUrl={levelDrawingUrls[level.id]}
@@ -357,7 +360,6 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
                                 activePinId={activePinId}
                                 onPinClick={id => {
                                   setActivePinId(prev => prev === id ? null : id)
-                                  // Expand the room containing this penetration
                                   const pen = penetrations.find(p => p.id === id)
                                   if (pen?.room_id) {
                                     setExpandedRooms(prev => new Set([...prev, pen.room_id!]))
@@ -384,7 +386,7 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
                                     <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                                     <span className="flex-1 text-sm text-slate-700">{room.name}</span>
                                     <span className="text-xs text-slate-400 mr-1">
-                                      {roomPens.length} penetration{roomPens.length !== 1 ? 's' : ''} ·{' '}
+                                      {roomPens.length} {roomPens.length === 1 ? 'entry' : 'entries'} ·{' '}
                                       {roomPens.reduce((s, p) => s + p.photos.length, 0)} photos
                                     </span>
                                     <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
@@ -436,7 +438,7 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
             >
               <MapPin className="w-4 h-4 text-slate-300 flex-shrink-0" />
               <span className="flex-1 text-sm font-medium text-slate-500">Unassigned</span>
-              <span className="text-xs text-slate-400 mr-1">{unassigned.length} penetrations</span>
+              <span className="text-xs text-slate-400 mr-1">{unassigned.length} {unassigned.length === 1 ? 'entry' : 'entries'}</span>
               <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
                 expandedBuildings.has('__unassigned__') ? 'rotate-0' : '-rotate-90'
               }`} />
@@ -550,7 +552,7 @@ function PenetrationCard({
             onClick={() => onDeletePen(pen.id)}
             disabled={deletingPen === pen.id}
             className="p-1.5 text-slate-300 hover:text-red-500 transition-colors disabled:opacity-50 flex-shrink-0"
-            title="Delete penetration"
+            title="Delete entry"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -580,7 +582,7 @@ function PenetrationCard({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={photoUrls[photo.id]}
-                    alt={photo.caption || 'Penetration photo'}
+                    alt={photo.caption || 'Evidence photo'}
                     className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                     onClick={() => onLightbox(photoUrls[photo.id])}
                   />

@@ -316,7 +316,7 @@ export function ScheduleView({
                 : ev,
             ),
           )
-          pushToast('error', err?.message || 'Failed to update job.')
+          pushToast('error', err?.message || "Couldn't update the job. Try again or refresh the page.")
         }
       })
     },
@@ -348,7 +348,7 @@ export function ScheduleView({
                 : ev,
             ),
           )
-          pushToast('error', err?.message || 'Failed to update event.')
+          pushToast('error', err?.message || "Couldn't update the event. Try again or refresh the page.")
         }
       })
     },

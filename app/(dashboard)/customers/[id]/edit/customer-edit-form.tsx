@@ -23,7 +23,7 @@ export default function CustomerEditForm({ customer }: { customer: any }) {
       router.push(`/customers/${customer.id}`)
       router.refresh()
     } catch (err) {
-      setError('Failed to update customer. Please try again.')
+      setError("Couldn't save changes to this customer. Check your connection and try again.")
       setLoading(false)
     }
   }

@@ -26,7 +26,7 @@ export async function getParts(): Promise<Part[]> {
     .select('*')
     .eq('is_active', true)
     .order('name')
-  if (error) throw new Error('Failed to fetch parts')
+  if (error) throw new Error("Couldn't load parts. Refresh the page or check your connection.")
   return data || []
 }
 
@@ -53,14 +53,14 @@ export async function createPart(formData: {
 }): Promise<Part> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: profile } = await supabase
     .from('users')
     .select('company_id')
     .eq('id', user.id)
     .single()
-  if (!profile?.company_id) throw new Error('Company not found')
+  if (!profile?.company_id) throw new Error("We couldn't find your company. Refresh the page or contact support if this keeps happening.")
 
   const { data, error } = await supabase
     .from('parts')
@@ -78,7 +78,7 @@ export async function createPart(formData: {
     .select('*')
     .single()
 
-  if (error) throw new Error('Failed to create part')
+  if (error) throw new Error("Couldn't create the part. Check the form and try again.")
   revalidatePath('/settings/parts')
   return data
 }
@@ -98,7 +98,7 @@ export async function updatePart(id: string, formData: {
     .from('parts')
     .update(formData)
     .eq('id', id)
-  if (error) throw new Error('Failed to update part')
+  if (error) throw new Error("Couldn't save changes to the part. Try again or refresh the page.")
   revalidatePath('/settings/parts')
 }
 
@@ -108,7 +108,7 @@ export async function deletePart(id: string): Promise<void> {
     .from('parts')
     .update({ is_active: false })
     .eq('id', id)
-  if (error) throw new Error('Failed to delete part')
+  if (error) throw new Error("Couldn't delete the part. It may be linked to products or jobs — remove those first, then try again.")
   revalidatePath('/settings/parts')
 }
 
@@ -125,7 +125,7 @@ export async function bulkUpdateParts(
     .from('parts')
     .update(updates)
     .in('id', ids)
-  if (error) throw new Error('Failed to bulk update parts')
+  if (error) throw new Error("Couldn't bulk-update the parts. Try again or refresh the page.")
   revalidatePath('/settings/parts')
 }
 
@@ -170,14 +170,14 @@ export async function getSimilarPartNames(query: string): Promise<string[]> {
 export async function migrateOldMaterialsToParts(): Promise<number> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: profile } = await supabase
     .from('users')
     .select('company_id')
     .eq('id', user.id)
     .single()
-  if (!profile?.company_id) throw new Error('Company not found')
+  if (!profile?.company_id) throw new Error("We couldn't find your company. Refresh the page or contact support if this keeps happening.")
 
   const { data: materials } = await supabase
     .from('materials')
@@ -199,7 +199,7 @@ export async function migrateOldMaterialsToParts(): Promise<number> {
   }))
 
   const { error } = await supabase.from('parts').insert(rows)
-  if (error) throw new Error('Failed to migrate materials to parts')
+  if (error) throw new Error("Couldn't import materials to parts. Try again or refresh the page.")
 
   revalidatePath('/settings/parts')
   return rows.length

@@ -8,14 +8,14 @@ import type { ScheduleEvent } from '@/lib/services/schedule'
 async function getProfile() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: profile } = await supabase
     .from('users')
     .select('company_id, role')
     .eq('id', user.id)
     .single()
-  if (!profile?.company_id) throw new Error('Company not found')
+  if (!profile?.company_id) throw new Error("We couldn't find your company. Refresh the page or contact support if this keeps happening.")
 
   return { supabase, userId: user.id, ...profile }
 }
@@ -28,7 +28,7 @@ function generateToken(): string {
 
 export async function rescheduleJob(jobId: string, start: string, end: string): Promise<void> {
   const { supabase, role } = await getProfile()
-  if (role !== 'admin' && role !== 'manager') throw new Error('Admin or manager only')
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only admins or managers can change the schedule. Ask your account owner if you need access.")
 
   const startDate = new Date(start)
   const endDate = new Date(end)
@@ -71,7 +71,7 @@ export async function reassignJobToWorker(
   toUserId: string,
 ): Promise<void> {
   const { supabase, role, company_id } = await getProfile()
-  if (role !== 'admin' && role !== 'manager') throw new Error('Admin or manager only')
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only admins or managers can change the schedule. Ask your account owner if you need access.")
 
   if (fromUserId === toUserId) return
 
@@ -117,7 +117,7 @@ interface QuickCreateInput {
 
 export async function createScheduledJob(input: QuickCreateInput): Promise<ScheduleEvent> {
   const { supabase, userId, role, company_id } = await getProfile()
-  if (role !== 'admin' && role !== 'manager') throw new Error('Admin or manager only')
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only admins or managers can change the schedule. Ask your account owner if you need access.")
 
   if (!input.title?.trim()) throw new Error('Title is required')
   if (!input.customer_id) throw new Error('Customer is required')

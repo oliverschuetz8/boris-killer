@@ -12,7 +12,7 @@ export default function DeleteCustomerButton({ id, name }: { id: string, name: s
       await deleteCustomer(id)
       router.refresh()
     } catch {
-      alert('Failed to delete customer.')
+      alert("Couldn't delete this customer. They may have linked jobs or invoices — cancel those first, then try again.")
     }
   }
 

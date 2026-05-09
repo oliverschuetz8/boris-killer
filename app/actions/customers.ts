@@ -7,7 +7,7 @@ export async function getCustomers() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: userProfile } = await supabase
     .from('users')
@@ -21,7 +21,7 @@ export async function getCustomers() {
     .eq('company_id', userProfile?.company_id)
     .order('name')
 
-  if (error) throw new Error('Failed to fetch customers')
+  if (error) throw new Error("Couldn't load customers. Refresh the page or check your connection.")
   return data || []
 }
 
@@ -42,7 +42,7 @@ export async function createCustomer(formData: FormData) {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: userProfile } = await supabase
     .from('users')
@@ -50,7 +50,7 @@ export async function createCustomer(formData: FormData) {
     .eq('id', user.id)
     .single()
 
-  if (!userProfile?.company_id) throw new Error('Company not found')
+  if (!userProfile?.company_id) throw new Error("We couldn't find your company. Refresh the page or contact support if this keeps happening.")
 
 const customerData = {
     company_id: userProfile.company_id,
@@ -72,7 +72,7 @@ const customerData = {
 
   if (error) {
     console.error('Error creating customer:', error)
-    throw new Error('Failed to create customer')
+    throw new Error("Couldn't create the customer. Check the form and try again.")
   }
 
   // Create site if address provided
@@ -114,7 +114,7 @@ const updates = {
     .update(updates)
     .eq('id', id)
 
-  if (error) throw new Error('Failed to update customer')
+  if (error) throw new Error("Couldn't save changes to this customer. Try again or refresh the page.")
 
   revalidatePath('/customers')
   revalidatePath(`/customers/${id}`)
@@ -128,7 +128,7 @@ export async function deleteCustomer(id: string) {
     .delete()
     .eq('id', id)
 
-  if (error) throw new Error('Failed to delete customer')
+  if (error) throw new Error("Couldn't delete this customer. They may have linked jobs or invoices — cancel those first, then try again.")
 
   revalidatePath('/customers')
 }
@@ -145,7 +145,7 @@ export async function createSite(customerId: string, formData: {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: userProfile } = await supabase
     .from('users')
@@ -169,7 +169,7 @@ export async function createSite(customerId: string, formData: {
     .select()
     .single()
 
-  if (error) throw new Error('Failed to create site')
+  if (error) throw new Error("Couldn't create the site. Check the form and try again.")
   revalidatePath('/customers')
   return data
 }
@@ -198,7 +198,7 @@ export async function updateSite(siteId: string, customerId: string, formData: {
     })
     .eq('id', siteId)
 
-  if (error) throw new Error('Failed to update site')
+  if (error) throw new Error("Couldn't save changes to this site. Try again or refresh the page.")
   revalidatePath(`/customers/${customerId}`)
 }
 
@@ -210,6 +210,6 @@ export async function deleteSite(siteId: string, customerId: string) {
     .delete()
     .eq('id', siteId)
 
-  if (error) throw new Error('Failed to delete site')
+  if (error) throw new Error("Couldn't delete this site. It may have linked jobs — cancel those first, then try again.")
   revalidatePath(`/customers/${customerId}`)
 }

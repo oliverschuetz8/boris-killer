@@ -207,7 +207,7 @@ export function JobsList({ initialJobs }: JobsListProps) {
         job.id === id ? { ...job, status: newStatus } : job
       ))
     } catch (error) {
-      alert('Failed to update status')
+      alert("Couldn't update the status. Try again or refresh the page.")
     }
   }
 

@@ -205,7 +205,7 @@ export default function PenetrationForm({
         onSaved()
       }, 900)
     } catch {
-      setError('Failed to save. Please try again.')
+      setError("Couldn't save the penetration. Check your connection and try again.")
     } finally {
       setSaving(false)
     }

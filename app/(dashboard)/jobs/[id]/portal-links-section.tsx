@@ -26,7 +26,7 @@ export default function PortalLinksSection({ jobId, companyId, initialLinks }: P
       const link = await generatePortalLink(jobId, companyId)
       setLinks(prev => [link, ...prev])
     } catch (err) {
-      alert('Failed to generate portal link')
+      alert("Couldn't generate the portal link. Try again or refresh the page.")
     } finally {
       setGenerating(false)
     }
@@ -41,7 +41,7 @@ export default function PortalLinksSection({ jobId, companyId, initialLinks }: P
         prev.map(l => l.id === linkId ? { ...l, is_revoked: true } : l)
       )
     } catch {
-      alert('Failed to revoke link')
+      alert("Couldn't revoke the link. Try again or refresh the page.")
     } finally {
       setRevokingId(null)
     }

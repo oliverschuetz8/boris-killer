@@ -260,7 +260,7 @@ export default function DrawingsTab({ jobId, companyId, userRole, userId }: Prop
       }
     } catch (err) {
       console.error('Failed to upload drawing:', err)
-      alert('Failed to upload drawing. Please try again.')
+      alert("Couldn't upload the drawing. Check the file size and your internet, then try again.")
     } finally {
       setUploadingLevel(null)
       if (fileInputRef.current) fileInputRef.current.value = ''

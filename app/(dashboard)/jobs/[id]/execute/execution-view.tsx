@@ -216,7 +216,7 @@ export default function ExecutionView({
       setLocalStatus('in_progress')
       setStartedAt(new Date().toISOString())
     } catch {
-      setError('Failed to start job. Please try again.')
+      setError("Couldn't start the job. Check your connection and try again.")
     } finally {
       setLoading(null)
     }
@@ -227,7 +227,7 @@ export default function ExecutionView({
       await updatePenetrationPin(pinId, x, y)
       setLevelPins(prev => prev.map(p => p.id === pinId ? { ...p, x, y } : p))
     } catch {
-      alert('Failed to move pin')
+      alert("Couldn't move the pin. Try again or refresh the page.")
     }
   }
 
@@ -409,7 +409,6 @@ export default function ExecutionView({
           {/* ── Active location view ── */}
           {activeLocation && (
             <>
-              {/* Location label + New Penetration grouped in one card */}
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 bg-blue-50">
                   <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
@@ -450,7 +449,7 @@ export default function ExecutionView({
                         className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-colors"
                       >
                         <Plus className="w-4 h-4" />
-                        New Penetration
+                        New evidence
                       </button>
                       {floorPlanUrl && (
                         <button

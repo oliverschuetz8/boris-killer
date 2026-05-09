@@ -44,14 +44,14 @@ export interface CompanyCredential {
 async function getProfile() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: profile } = await supabase
     .from('users')
     .select('company_id, role')
     .eq('id', user.id)
     .single()
-  if (!profile?.company_id) throw new Error('Company not found')
+  if (!profile?.company_id) throw new Error("We couldn't find your company. Refresh the page or contact support if this keeps happening.")
 
   return { supabase, userId: user.id, ...profile }
 }
@@ -64,7 +64,7 @@ export async function getCompanySettings(): Promise<CompanySettings> {
   const { supabase, company_id, role } = await getProfile()
 
   if (role !== 'admin' && role !== 'manager') {
-    throw new Error('Admin or manager only')
+    throw new Error("Only admins or managers can change company settings. Ask your account owner if you need access.")
   }
 
   const { data, error } = await supabase
@@ -100,7 +100,7 @@ export async function updateCompanySettings(data: {
   email_show_logo?: boolean
 }): Promise<void> {
   const { supabase, company_id, role } = await getProfile()
-  if (role !== 'admin') throw new Error('Admin only')
+  if (role !== 'admin') throw new Error("Only admins can change this. Ask your account owner if you need access.")
 
   const { error } = await supabase
     .from('companies')
@@ -112,10 +112,10 @@ export async function updateCompanySettings(data: {
 
 export async function uploadCompanyLogo(formData: FormData): Promise<string> {
   const { supabase, company_id, role } = await getProfile()
-  if (role !== 'admin') throw new Error('Admin only')
+  if (role !== 'admin') throw new Error("Only admins can change this. Ask your account owner if you need access.")
 
   const file = formData.get('logo') as File
-  if (!file) throw new Error('No file provided')
+  if (!file) throw new Error("No file was selected. Choose a file and try again.")
 
   const path = `${company_id}/branding/logo.png`
 
@@ -137,7 +137,7 @@ export async function uploadCompanyLogo(formData: FormData): Promise<string> {
 
 export async function deleteCompanyLogo(): Promise<void> {
   const { supabase, company_id, role } = await getProfile()
-  if (role !== 'admin') throw new Error('Admin only')
+  if (role !== 'admin') throw new Error("Only admins can change this. Ask your account owner if you need access.")
 
   const { data: company } = await supabase
     .from('companies')
@@ -185,7 +185,7 @@ export async function getCompanyCredentials(): Promise<CompanyCredential[]> {
   const { supabase, company_id, role } = await getProfile()
 
   if (role !== 'admin' && role !== 'manager') {
-    throw new Error('Admin or manager only')
+    throw new Error("Only admins or managers can change company settings. Ask your account owner if you need access.")
   }
 
   const { data, error } = await supabase
@@ -200,7 +200,7 @@ export async function getCompanyCredentials(): Promise<CompanyCredential[]> {
 
 export async function addCompanyCredential(label: string, value: string): Promise<CompanyCredential> {
   const { supabase, company_id, role } = await getProfile()
-  if (role !== 'admin') throw new Error('Admin only')
+  if (role !== 'admin') throw new Error("Only admins can change this. Ask your account owner if you need access.")
 
   // Get next display_order
   const { data: existing } = await supabase
@@ -227,7 +227,7 @@ export async function updateCompanyCredential(
   updates: { label?: string; value?: string }
 ): Promise<void> {
   const { supabase, role } = await getProfile()
-  if (role !== 'admin') throw new Error('Admin only')
+  if (role !== 'admin') throw new Error("Only admins can change this. Ask your account owner if you need access.")
 
   const { error } = await supabase
     .from('company_credentials')
@@ -239,7 +239,7 @@ export async function updateCompanyCredential(
 
 export async function deleteCompanyCredential(id: string): Promise<void> {
   const { supabase, role } = await getProfile()
-  if (role !== 'admin') throw new Error('Admin only')
+  if (role !== 'admin') throw new Error("Only admins can change this. Ask your account owner if you need access.")
 
   const { error } = await supabase
     .from('company_credentials')

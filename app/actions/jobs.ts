@@ -21,7 +21,7 @@ export async function getJobs(): Promise<JobWithRelations[]> {
 
   if (error) {
     console.error('Error fetching jobs:', error)
-    throw new Error('Failed to fetch jobs')
+    throw new Error("Couldn't load jobs. Refresh the page or check your connection.")
   }
 
   // Then get assignments separately for each job
@@ -95,7 +95,7 @@ export async function createJob(formData: FormData) {
 
   // Get current user to get company_id
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: userProfile } = await supabase
     .from('users')
@@ -152,7 +152,7 @@ export async function createJob(formData: FormData) {
 
   if (error) {
     console.error('Error creating job:', error)
-    throw new Error('Failed to create job')
+    throw new Error("Couldn't create the job. Check the form and try again.")
   }
 
   // Fire webhook (non-blocking)
@@ -221,7 +221,7 @@ export async function updateJob(id: string, formData: FormData) {
 
   if (error) {
     console.error('Error updating job:', error)
-    throw new Error('Failed to update job')
+    throw new Error("Couldn't save changes to this job. Try again or refresh the page.")
   }
 
   revalidatePath('/jobs')
@@ -311,7 +311,7 @@ export async function updateJobStatus(id: string, status: string) {
 
   if (error) {
     console.error('Error updating job status:', error)
-    throw new Error('Failed to update job status')
+    throw new Error("Couldn't update the job status. Try again or refresh the page.")
   }
 
   // Fire webhooks + emails (non-blocking)
@@ -445,7 +445,7 @@ export async function getCustomers() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: userProfile } = await supabase
     .from('users')
@@ -459,6 +459,6 @@ export async function getCustomers() {
     .eq('company_id', userProfile?.company_id)
     .order('name')
 
-  if (error) throw new Error('Failed to fetch customers')
+  if (error) throw new Error("Couldn't load customers. Refresh the page or check your connection.")
   return data || []
 }

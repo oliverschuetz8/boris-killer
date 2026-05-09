@@ -44,14 +44,14 @@ export interface WebhookLog {
 async function getProfile() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   const { data: profile } = await supabase
     .from('users')
     .select('company_id, role')
     .eq('id', user.id)
     .single()
-  if (!profile?.company_id) throw new Error('Company not found')
+  if (!profile?.company_id) throw new Error("We couldn't find your company. Refresh the page or contact support if this keeps happening.")
 
   return { supabase, userId: user.id, ...profile }
 }
@@ -84,7 +84,7 @@ export async function createWebhook(
   description?: string
 ): Promise<Webhook> {
   const { supabase, company_id, role } = await getProfile()
-  if (role !== 'admin' && role !== 'manager') throw new Error('Admin or manager only')
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only admins or managers can manage webhooks. Ask your account owner if you need access.")
 
   const secret = generateSecret()
 
@@ -114,7 +114,7 @@ export async function updateWebhook(
   }
 ): Promise<void> {
   const { supabase, role } = await getProfile()
-  if (role !== 'admin' && role !== 'manager') throw new Error('Admin or manager only')
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only admins or managers can manage webhooks. Ask your account owner if you need access.")
 
   const { error } = await supabase
     .from('webhooks')
@@ -126,7 +126,7 @@ export async function updateWebhook(
 
 export async function deleteWebhook(id: string): Promise<void> {
   const { supabase, role } = await getProfile()
-  if (role !== 'admin' && role !== 'manager') throw new Error('Admin or manager only')
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only admins or managers can manage webhooks. Ask your account owner if you need access.")
 
   const { error } = await supabase
     .from('webhooks')

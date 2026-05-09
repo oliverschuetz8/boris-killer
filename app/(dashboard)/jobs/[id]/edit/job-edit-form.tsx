@@ -65,7 +65,7 @@ export default function JobEditForm({ job, customers }: Props) {
       router.push(`/jobs/${job.id}`)
       router.refresh()
     } catch {
-      setError('Failed to update job. Please try again.')
+      setError("Couldn't save changes to this job. Check your connection and try again.")
       setLoading(false)
     }
   }

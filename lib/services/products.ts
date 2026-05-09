@@ -44,7 +44,7 @@ export async function getProducts(): Promise<Product[]> {
     `)
     .eq('is_active', true)
     .order('name')
-  if (error) throw new Error('Failed to fetch products')
+  if (error) throw new Error("Couldn't load products. Refresh the page or check your connection.")
   return data || []
 }
 
@@ -94,7 +94,7 @@ export async function createProduct(formData: {
     .select('*')
     .single()
 
-  if (error) throw new Error('Failed to create product')
+  if (error) throw new Error("Couldn't create the product. Check the form and try again.")
   revalidatePath('/settings/products')
   return data
 }
@@ -111,7 +111,7 @@ export async function updateProduct(id: string, formData: {
     .from('products')
     .update(formData)
     .eq('id', id)
-  if (error) throw new Error('Failed to update product')
+  if (error) throw new Error("Couldn't save changes to the product. Try again or refresh the page.")
   revalidatePath('/settings/products')
 }
 
@@ -121,7 +121,7 @@ export async function deleteProduct(id: string): Promise<void> {
     .from('products')
     .update({ is_active: false })
     .eq('id', id)
-  if (error) throw new Error('Failed to delete product')
+  if (error) throw new Error("Couldn't delete the product. It may be linked to jobs — remove those first, then try again.")
   revalidatePath('/settings/products')
 }
 
@@ -136,7 +136,7 @@ export async function addProductPart(
     .insert({ product_id: productId, part_id: partId, quantity })
     .select('id, product_id, part_id, quantity')
     .single()
-  if (error) throw new Error('Failed to add part to product')
+  if (error) throw new Error("Couldn't add the part to this product. Try again or refresh the page.")
 
   await recalculateProductTotals(productId)
   revalidatePath('/settings/products')
@@ -153,7 +153,7 @@ export async function updateProductPartQuantity(
     .from('product_parts')
     .update({ quantity })
     .eq('id', id)
-  if (error) throw new Error('Failed to update part quantity')
+  if (error) throw new Error("Couldn't save the quantity. Try again or refresh the page.")
 
   await recalculateProductTotals(productId)
   revalidatePath('/settings/products')
@@ -165,7 +165,7 @@ export async function removeProductPart(id: string, productId: string): Promise<
     .from('product_parts')
     .delete()
     .eq('id', id)
-  if (error) throw new Error('Failed to remove part from product')
+  if (error) throw new Error("Couldn't remove the part. Try again or refresh the page.")
 
   await recalculateProductTotals(productId)
   revalidatePath('/settings/products')

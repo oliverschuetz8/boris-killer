@@ -322,7 +322,7 @@ function EvidenceFieldsSection({
       setFields(prev => [...prev, created])
       resetAddForm()
     } catch {
-      setError('Failed to add field')
+      setError("Couldn't add the field. Try again or refresh the page.")
     } finally {
       setSaving(false)
     }
@@ -338,7 +338,7 @@ function EvidenceFieldsSection({
         await reorderEvidenceFields(updated.map(f => ({ id: f.id, order_index: f.order_index })))
       }
     } catch {
-      alert('Failed to delete field')
+      alert("Couldn't delete this field. Try again or refresh the page.")
     }
   }
 
@@ -621,7 +621,7 @@ function MaterialDefaultsSection({
       setDefaults(prev => [...prev, created])
       resetAddForm()
     } catch {
-      setError('Failed to add item')
+      setError("Couldn't add the item. Try again or refresh the page.")
     } finally {
       setSaving(false)
     }
@@ -633,7 +633,7 @@ function MaterialDefaultsSection({
       await deleteJobMaterialDefault(id)
       setDefaults(prev => prev.filter((d: any) => d.id !== id))
     } catch {
-      alert('Failed to remove item')
+      alert("Couldn't remove this item. Try again or refresh the page.")
     }
   }
 

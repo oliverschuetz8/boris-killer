@@ -14,7 +14,7 @@ export async function startJob(jobId: string, userId: string) {
     })
     .eq('id', jobId)
 
-  if (error) throw new Error('Failed to start job')
+  if (error) throw new Error("Couldn't start the job. Check your connection and try again.")
 
   revalidatePath(`/jobs/${jobId}`)
   revalidatePath(`/jobs/${jobId}/execute`)
@@ -33,7 +33,7 @@ export async function completeJob(jobId: string, userId: string) {
     })
     .eq('id', jobId)
 
-  if (error) throw new Error('Failed to complete job')
+  if (error) throw new Error("Couldn't complete the job. Try again or refresh the page.")
 
   revalidatePath(`/jobs/${jobId}`)
   revalidatePath(`/jobs/${jobId}/execute`)

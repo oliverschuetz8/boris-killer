@@ -93,13 +93,16 @@ export default function PenetrationList({ jobId, roomId, evidenceFields, refresh
   }
 
   async function handleDeletePenetration(id: string) {
-    if (!confirm('Delete this penetration and all its photos?')) return
+    if (!confirm('Delete this entry and all its photos? This cannot be undone.')) return
     setDeleting(id)
     try {
       await deletePenetration(id)
       setPenetrations(prev => prev.filter(p => p.id !== id))
-    } catch {
-      alert('Failed to delete penetration')
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "Couldn't delete this entry. Refresh the page and try again, or contact support if it keeps happening."
+      alert(message)
     } finally {
       setDeleting(null)
     }
@@ -117,16 +120,16 @@ export default function PenetrationList({ jobId, roomId, evidenceFields, refresh
         )
       )
     } catch {
-      alert('Failed to delete photo')
+      alert("Couldn't delete this photo. Try again or refresh the page.")
     }
   }
 
   if (loading) return (
-    <div className="text-center text-xs text-slate-400 py-3">Loading penetrations…</div>
+    <div className="text-center text-xs text-slate-400 py-3">Loading evidence…</div>
   )
 
   if (penetrations.length === 0) return (
-    <div className="text-center text-xs text-slate-400 py-3">No penetrations logged here yet.</div>
+    <div className="text-center text-xs text-slate-400 py-3">No evidence logged here yet.</div>
   )
 
   return (
@@ -138,10 +141,9 @@ export default function PenetrationList({ jobId, roomId, evidenceFields, refresh
           const createdAt = new Date(pen.created_at).toLocaleTimeString('en-AU', {
             hour: '2-digit', minute: '2-digit',
           })
-          // Build summary: subcategory name + pin label (e.g. "Penetration 1.2", "Fire Door 1.3")
           const subName = pen.evidence_subcategory_id
-            ? subcategoryNames[pen.evidence_subcategory_id] || 'Penetration'
-            : 'Penetration'
+            ? subcategoryNames[pen.evidence_subcategory_id] || 'Entry'
+            : 'Entry'
           const pinLabel = pen.floorplan_label || String(index + 1)
           const summary = `${subName} ${pinLabel}`
 
@@ -201,7 +203,7 @@ export default function PenetrationList({ jobId, roomId, evidenceFields, refresh
                           <div key={photo.id} className="relative group rounded-lg overflow-hidden bg-slate-200 aspect-square">
                             {urls[photo.id] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={urls[photo.id]} alt="Penetration photo"
+                              <img src={urls[photo.id]} alt="Evidence photo"
                                 className="w-full h-full object-cover cursor-pointer"
                                 onClick={() => setLightbox(urls[photo.id])} />
                             ) : (

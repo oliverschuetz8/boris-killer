@@ -22,7 +22,7 @@ export default function NewCustomerPage() {
       router.push('/customers')
       router.refresh()
     } catch (err) {
-      setError('Failed to create customer. Please try again.')
+      setError("Couldn't create the customer. Check your connection and try again.")
       setLoading(false)
     }
   }

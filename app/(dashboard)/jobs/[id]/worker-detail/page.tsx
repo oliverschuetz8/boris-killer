@@ -87,7 +87,7 @@ export default async function WorkerDetailPage({
           isCompleted  ? 'bg-green-100 text-green-800'  :
                          'bg-blue-100 text-blue-800'
         }`}>
-          {isInProgress ? '● In Progress' : isCompleted ? '✓ Done' : '● Scheduled'}
+          {isInProgress ? 'In progress' : isCompleted ? 'Done' : 'Scheduled'}
         </span>
       </div>
 

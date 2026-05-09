@@ -130,7 +130,7 @@ async function refreshTokenIfNeeded(connection: XeroConnection): Promise<XeroCon
   })
 
   if (!res.ok) {
-    throw new Error('Failed to refresh Xero token — admin may need to reconnect')
+    throw new Error("Couldn't refresh the Xero connection. Ask an admin to reconnect Xero in Settings → Integrations.")
   }
 
   const tokens = await res.json()

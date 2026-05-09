@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 export async function generatePortalLink(jobId: string, companyId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   // Verify user is admin or manager
   const { data: profile } = await supabase
@@ -28,7 +28,7 @@ export async function generatePortalLink(jobId: string, companyId: string) {
 export async function revokePortalLinkAction(linkId: string, jobId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
 
   // Verify user is admin or manager
   const { data: profile } = await supabase

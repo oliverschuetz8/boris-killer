@@ -160,7 +160,7 @@ export default function MaterialLog({
     if (!confirm('Remove this material entry?')) return
     const supabase = createClient()
     const { error } = await supabase.from('room_materials').delete().eq('id', id)
-    if (error) { alert('Failed to delete'); return }
+    if (error) { alert("Couldn't delete the entry. Try again or refresh the page."); return }
     setLogged(prev => prev.filter(m => m.id !== id))
   }
 

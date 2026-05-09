@@ -45,7 +45,7 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
       await deleteInvoice(invoice.id)
       router.push('/invoices')
     } catch {
-      alert('Failed to delete invoice')
+      alert("Couldn't delete this invoice. If payments are linked, cancel the invoice instead.")
       setBusy(null)
     }
   }

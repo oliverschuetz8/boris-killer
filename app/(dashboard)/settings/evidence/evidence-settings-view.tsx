@@ -103,7 +103,7 @@ export default function EvidenceSettingsView({ companyId }: Props) {
       setNewCatName('')
       setShowAddCategory(false)
     } catch {
-      alert('Failed to add category')
+      alert("Couldn't add the category. Try again or refresh the page.")
     }
   }
 
@@ -114,7 +114,7 @@ export default function EvidenceSettingsView({ companyId }: Props) {
       setCategories(prev => prev.map(c => c.id === catId ? { ...c, name: editingCatName.trim() } : c))
       setEditingCatId(null)
     } catch {
-      alert('Failed to update category')
+      alert("Couldn't save changes to this category. Try again or refresh the page.")
     }
   }
 
@@ -124,7 +124,7 @@ export default function EvidenceSettingsView({ companyId }: Props) {
       await deleteEvidenceCategory(catId)
       setCategories(prev => prev.filter(c => c.id !== catId))
     } catch {
-      alert('Failed to delete category')
+      alert("Couldn't delete this category. It may have subcategories or jobs using it — remove those first, then try again.")
     }
   }
 
@@ -136,7 +136,7 @@ export default function EvidenceSettingsView({ companyId }: Props) {
       const created = await createEvidenceSubcategory(companyId, categoryId, name, subs.length)
       setSubcategories(prev => ({ ...prev, [categoryId]: [...(prev[categoryId] || []), created] }))
     } catch {
-      alert('Failed to add subcategory')
+      alert("Couldn't add the subcategory. Try again or refresh the page.")
     }
   }
 
@@ -152,7 +152,7 @@ export default function EvidenceSettingsView({ companyId }: Props) {
       setSubcategories(updated)
       setEditingSubId(null)
     } catch {
-      alert('Failed to update subcategory')
+      alert("Couldn't save changes to this subcategory. Try again or refresh the page.")
     }
   }
 
@@ -165,7 +165,7 @@ export default function EvidenceSettingsView({ companyId }: Props) {
         [categoryId]: (prev[categoryId] || []).filter(s => s.id !== subId),
       }))
     } catch {
-      alert('Failed to delete subcategory')
+      alert("Couldn't delete this subcategory. It may have jobs using it — remove those first, then try again.")
     }
   }
 
@@ -539,7 +539,7 @@ function TemplateFieldsEditor({
       onFieldsChange([...fields, created])
       resetForm()
     } catch {
-      setError('Failed to add field')
+      setError("Couldn't add the field. Try again or refresh the page.")
     } finally {
       setSaving(false)
     }
@@ -555,7 +555,7 @@ function TemplateFieldsEditor({
         await reorderTemplateFields(updated.map(f => ({ id: f.id, sort_order: f.sort_order })))
       }
     } catch {
-      alert('Failed to delete field')
+      alert("Couldn't delete this field. Try again or refresh the page.")
     }
   }
 

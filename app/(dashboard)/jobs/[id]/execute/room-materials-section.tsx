@@ -131,7 +131,7 @@ export default function RoomMaterialsSection({
       onMaterialAdded()
       resetForm()
     } catch {
-      setError('Failed to add material')
+      setError("Couldn't add the material. Try again or refresh the page.")
     } finally {
       setSaving(false)
     }
@@ -142,7 +142,7 @@ export default function RoomMaterialsSection({
       await deleteRoomMaterial(id)
       setMaterials(prev => prev.filter(m => m.id !== id))
     } catch {
-      alert('Failed to remove material')
+      alert("Couldn't remove this material. Try again or refresh the page.")
     }
   }
 
