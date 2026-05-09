@@ -17,6 +17,7 @@ import {
   assignWorker,
   unassignWorker,
 } from '@/lib/services/job-assignments'
+import { roleLabel } from '@/lib/utils'
 
 interface Material {
   id: string
@@ -148,7 +149,7 @@ function AssignmentsSection({
       }])
       setSelectedUserId('')
     } catch {
-      setError('Failed to assign worker')
+      setError("Couldn't assign tradie. Try again or refresh the page.")
     } finally {
       setAssigning(false)
     }
@@ -161,7 +162,7 @@ function AssignmentsSection({
       await unassignWorker(jobId, userId)
       setAssignments(prev => prev.filter(a => a.user.id !== userId))
     } catch {
-      setError('Failed to remove worker')
+      setError("Couldn't remove tradie. Try again or refresh the page.")
     } finally {
       setRemovingId(null)
     }
@@ -170,8 +171,8 @@ function AssignmentsSection({
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-100">
-        <h2 className="text-sm font-semibold text-slate-800">Worker Assignments</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Assign workers to this job. Changes save immediately.</p>
+        <h2 className="text-sm font-semibold text-slate-800">Tradie Assignments</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Assign tradies to this job. Changes save immediately.</p>
       </div>
 
       {assignments.length > 0 && (
@@ -187,8 +188,8 @@ function AssignmentsSection({
                 <p className="text-sm font-medium text-slate-800">{a.user.full_name}</p>
                 <p className="text-xs text-slate-500">{a.user.email}</p>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium capitalize">
-                {a.role || 'worker'}
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
+                {roleLabel(a.role)}
               </span>
               <button
                 onClick={() => handleUnassign(a.user.id)}
@@ -204,7 +205,7 @@ function AssignmentsSection({
 
       {availableWorkers.length === 0 && companyWorkers.length > 0 && (
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
-          <p className="text-xs text-slate-500 text-center">All workers have been assigned to this job.</p>
+          <p className="text-xs text-slate-500 text-center">All tradies have been assigned to this job.</p>
         </div>
       )}
       {availableWorkers.length > 0 && (
@@ -217,7 +218,7 @@ function AssignmentsSection({
                   onChange={e => setSelectedUserId(e.target.value)}
                   className="w-full px-3 h-10 pr-10 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select worker…</option>
+                  <option value="">Select tradie…</option>
                   {availableWorkers.map(w => (
                     <option key={w.id} value={w.id}>
                       {w.full_name || w.email}{w.trade ? ` — ${w.trade}` : ''}
@@ -356,7 +357,7 @@ function EvidenceFieldsSection({
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
         <div>
           <h2 className="text-sm font-semibold text-slate-800">Evidence Fields</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Add custom fields for workers. Template questions load automatically based on each penetration's subcategory.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Add custom fields for tradies. Default questions load automatically based on each penetration's subcategory.</p>
         </div>
         {!showAddForm && (
           <button onClick={() => setShowAddForm(true)}
@@ -416,7 +417,7 @@ function EvidenceFieldsSection({
       {fields.length === 0 && !showAddForm && (
         <div className="px-6 py-8 text-center">
           <p className="text-sm text-slate-500">No evidence fields configured yet.</p>
-          <p className="text-xs text-slate-400 mt-1">Add fields to define what workers fill in for each penetration.</p>
+          <p className="text-xs text-slate-400 mt-1">Add fields to define what tradies fill in for each penetration.</p>
         </div>
       )}
 
@@ -450,7 +451,7 @@ function EvidenceFieldsSection({
             </div>
             {newType === 'structure_level' && (
               <p className="text-xs text-purple-600 mt-1.5">
-                Workers will see the actual levels set up in the Structure tab.
+                Tradies will see the actual levels set up in the Structure tab.
               </p>
             )}
           </div>
@@ -519,12 +520,12 @@ function EvidenceFieldsSection({
                 type="text"
                 value={newDefaultValue}
                 onChange={e => setNewDefaultValue(e.target.value)}
-                placeholder="Pre-filled value for workers"
+                placeholder="Pre-filled value for tradies"
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : null}
             <p className="text-xs text-slate-400 mt-1">
-              Workers will see this value pre-filled but can change it.
+              Tradies will see this value pre-filled but can change it.
             </p>
           </div>
 
@@ -657,7 +658,7 @@ function MaterialDefaultsSection({
         <div>
           <h2 className="text-sm font-semibold text-slate-800">Job Materials Setup</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Pre-configure parts and products for this job. Workers pick from these during execution.
+            Pre-configure parts and products for this job. Tradies pick from these during execution.
           </p>
         </div>
         {!showAddForm && (
@@ -725,7 +726,7 @@ function MaterialDefaultsSection({
         <div className="px-6 py-8 text-center">
           <p className="text-sm text-slate-500">No materials configured for this job yet.</p>
           <p className="text-xs text-slate-400 mt-1">
-            Add parts or products from your catalogue. Workers will pick from these during execution.
+            Add parts or products from your catalogue. Tradies will pick from these during execution.
           </p>
         </div>
       )}

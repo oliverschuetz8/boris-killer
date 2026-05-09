@@ -93,3 +93,16 @@ export function truncate(str: string, length: number): string {
   if (str.length <= length) return str
   return str.slice(0, length) + '…'
 }
+
+// ─── User Role Display ──────────────────────────────────────────────────────
+// Maps DB role values to user-facing labels per CLAUDE_REFERENCE/brand.md §5.1.
+// DB values stay as 'worker' / 'admin' / 'manager'; UI shows 'Tradie' / 'Admin' / 'Manager'.
+export function roleLabel(role: string | null | undefined): string {
+  if (!role) return 'Tradie'
+  switch (role) {
+    case 'worker': return 'Tradie'
+    case 'admin': return 'Admin'
+    case 'manager': return 'Manager'
+    default: return role.charAt(0).toUpperCase() + role.slice(1)
+  }
+}

@@ -174,7 +174,7 @@ export default function PayRulesManager({ companyId, initialRules }: Props) {
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="text-sm font-semibold text-slate-800">Part A — Award Package</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Select the award that covers your workers.</p>
+            <p className="text-xs text-slate-500 mt-0.5">Select the award that covers your tradies.</p>
           </div>
           <div className="divide-y divide-slate-100">
             {PACKAGES.map(pkg => (

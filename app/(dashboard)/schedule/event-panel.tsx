@@ -131,14 +131,14 @@ function JobBody({ event }: { event: import('@/lib/services/schedule').ScheduleE
         <div className="flex items-start gap-3">
           <UserIcon className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="text-xs text-slate-500 mb-1">Assigned workers</div>
+            <div className="text-xs text-slate-500 mb-1">Assigned tradies</div>
             {event.assignments.length === 0 ? (
-              <div className="text-sm text-slate-500 italic">No workers assigned</div>
+              <div className="text-sm text-slate-500 italic">No tradies assigned</div>
             ) : (
               <ul className="space-y-1">
                 {event.assignments.map((a) => (
                   <li key={a.user_id} className="text-sm text-slate-900">
-                    {a.full_name || 'Unnamed worker'}
+                    {a.full_name || 'Unnamed tradie'}
                     {a.trade && <span className="text-xs text-slate-500 ml-1">· {a.trade}</span>}
                   </li>
                 ))}

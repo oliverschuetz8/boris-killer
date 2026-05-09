@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { CalendarSyncCard } from './calendar-sync-card'
+import { roleLabel } from '@/lib/utils'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -24,7 +25,7 @@ export default async function ProfilePage() {
           </div>
           <div>
             <p className="text-lg font-bold text-slate-900">{profile?.full_name}</p>
-            <p className="text-sm text-slate-500 capitalize">{profile?.role}</p>
+            <p className="text-sm text-slate-500">{roleLabel(profile?.role)}</p>
           </div>
         </div>
         <div className="divide-y divide-slate-100">

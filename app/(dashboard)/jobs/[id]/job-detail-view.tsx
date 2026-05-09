@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, MapPin, User, Calendar, Users, FileText, Camera, Package, Building2, DollarSign, ClipboardList, Settings, Map } from 'lucide-react'
+import { roleLabel } from '@/lib/utils'
 import MaterialLog from './execute/material-log'
 import JobCostSummary from './job-cost-summary'
 import BuildingStructure from './building-structure'
@@ -252,7 +253,7 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
                       <Users className="w-4 h-4 text-orange-600" />
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500 mb-1.5">Assigned Workers</p>
+                      <p className="text-xs font-medium text-slate-500 mb-1.5">Assigned Tradies</p>
                       <div className="space-y-1">
                         {job.assignments.map((a: any) => (
                           <div key={a.id} className="flex items-center gap-2">
@@ -263,7 +264,7 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
                             </div>
                             <span className="text-sm text-slate-700">{a.user.full_name}</span>
                             {a.role && (
-                              <span className="text-xs text-slate-400 capitalize">({a.role})</span>
+                              <span className="text-xs text-slate-400">({roleLabel(a.role)})</span>
                             )}
                           </div>
                         ))}

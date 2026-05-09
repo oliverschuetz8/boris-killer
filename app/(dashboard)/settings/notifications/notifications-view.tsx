@@ -11,6 +11,7 @@ import {
   upsertEmailPreference,
   sendTestEmail,
 } from '@/lib/services/email'
+import { roleLabel } from '@/lib/utils'
 import {
   createEmailGroup,
   updateEmailGroup,
@@ -459,7 +460,7 @@ function PeoplePicker({
           >
             <UserCircle className="w-3.5 h-3.5 text-slate-400" />
             <span className="font-medium">{u.full_name}</span>
-            <span className="text-slate-400 capitalize">· {u.role}</span>
+            <span className="text-slate-400">· {roleLabel(u.role)}</span>
             <button
               type="button"
               onClick={() => remove(u.id)}
@@ -509,7 +510,7 @@ function PeoplePicker({
                   <UserCircle className="w-5 h-5 text-slate-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-medium text-slate-800 truncate">{u.full_name}</div>
-                    <div className="text-[11px] text-slate-500 truncate">{u.email} · <span className="capitalize">{u.role}</span></div>
+                    <div className="text-[11px] text-slate-500 truncate">{u.email} · <span>{roleLabel(u.role)}</span></div>
                   </div>
                   <Plus className="w-3.5 h-3.5 text-slate-400" />
                 </button>
@@ -916,7 +917,7 @@ function GroupEditor({
               >
                 <UserCircle className="w-3.5 h-3.5 text-slate-400" />
                 {u.full_name}
-                <span className="text-slate-400 capitalize">· {u.role}</span>
+                <span className="text-slate-400">· {roleLabel(u.role)}</span>
                 <button
                   type="button"
                   onClick={() => toggleUser(u.id)}
@@ -956,7 +957,7 @@ function GroupEditor({
                   <UserCircle className="w-4 h-4 text-slate-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-medium text-slate-800 truncate">{u.full_name}</div>
-                    <div className="text-[11px] text-slate-500 truncate">{u.email} · <span className="capitalize">{u.role}</span></div>
+                    <div className="text-[11px] text-slate-500 truncate">{u.email} · <span>{roleLabel(u.role)}</span></div>
                   </div>
                   <Plus className="w-3.5 h-3.5 text-slate-400" />
                 </button>

@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { UserPlus, Mail, Shield, User, X, Check, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
+import { roleLabel } from '@/lib/utils'
 
 interface TeamMember {
   id: string
@@ -259,7 +260,7 @@ export default function TeamManager({
                 <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
                 <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
                   className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="worker">Worker</option>
+                  <option value="worker">Tradie</option>
                   <option value="manager">Manager</option>
                 </select>
               </div>
@@ -412,8 +413,8 @@ export default function TeamManager({
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium text-slate-800">{member.full_name}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${getRoleBadgeClass(member.role)}`}>
-                          {member.role}
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getRoleBadgeClass(member.role)}`}>
+                          {roleLabel(member.role)}
                         </span>
                         {member.trade && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">

@@ -115,7 +115,7 @@ function findOverlap(
     const conflicting = other.assignments.find(a => movedWorkerIds.has(a.user_id))
     if (conflicting) {
       return {
-        workerName: conflicting.full_name ?? 'A worker',
+        workerName: conflicting.full_name ?? 'A tradie',
         jobNumber: other.job_number,
       }
     }
@@ -406,10 +406,10 @@ export function ScheduleView({
                     }
                   }),
                 )
-                const newName = workers.find(w => w.id === toUserId)?.full_name ?? 'worker'
+                const newName = workers.find(w => w.id === toUserId)?.full_name ?? 'tradie'
                 pushToast('success', `Reassigned to ${newName}.`)
               } catch (err: any) {
-                pushToast('error', err?.message || 'Failed to reassign worker.')
+                pushToast('error', err?.message || "Couldn't reassign tradie. Try again or refresh the page.")
               }
             })
           }
@@ -535,7 +535,7 @@ export function ScheduleView({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50">
-                Workers
+                Tradies
                 {selectedWorkers.size > 0 && (
                   <span className="bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5 rounded-full">
                     {selectedWorkers.size}
@@ -545,10 +545,10 @@ export function ScheduleView({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56 max-h-72 overflow-y-auto">
-              <DropdownMenuLabel>Filter by worker</DropdownMenuLabel>
+              <DropdownMenuLabel>Filter by tradie</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {workers.length === 0 && (
-                <div className="px-2 py-3 text-xs text-slate-500">No workers yet</div>
+                <div className="px-2 py-3 text-xs text-slate-500">No tradies yet</div>
               )}
               {workers.map(w => (
                 <DropdownMenuCheckboxItem
@@ -641,7 +641,7 @@ export function ScheduleView({
                     : 'bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                By worker
+                By tradie
               </button>
             </div>
             <span className="text-xs text-slate-500">

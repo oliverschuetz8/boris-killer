@@ -711,7 +711,7 @@ function TemplateFieldsEditor({
               </div>
             ) : newType === 'text' ? (
               <input type="text" value={newDefaultValue} onChange={e => setNewDefaultValue(e.target.value)}
-                placeholder="Pre-filled value for workers"
+                placeholder="Pre-filled value for tradies"
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             ) : null}
           </div>

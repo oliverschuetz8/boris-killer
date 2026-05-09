@@ -68,7 +68,7 @@ export default function DashboardView({
       bg: 'bg-green-50',
     },
     {
-      label: 'Total Workers',
+      label: 'Total Tradies',
       value: stats.totalWorkers,
       icon: Users,
       href: '/settings/team',
@@ -76,7 +76,7 @@ export default function DashboardView({
       bg: 'bg-purple-50',
     },
     {
-      label: 'Workers On Site',
+      label: 'Tradies On Site',
       value: stats.workersOnSite,
       icon: HardHat,
       href: '/jobs',
@@ -235,13 +235,13 @@ export default function DashboardView({
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
             <UserCheck className="w-4 h-4 text-slate-400" />
-            <h2 className="text-sm font-semibold text-slate-800">Jobs Per Worker</h2>
+            <h2 className="text-sm font-semibold text-slate-800">Jobs Per Tradie</h2>
           </div>
-          <div className="px-6 py-4" aria-label="Jobs per worker horizontal bar chart">
+          <div className="px-6 py-4" aria-label="Jobs per tradie horizontal bar chart">
             {jobsPerWorker.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-[250px]">
                 <Users className="w-8 h-8 text-slate-200 mb-2" />
-                <p className="text-sm text-slate-400">No workers assigned yet</p>
+                <p className="text-sm text-slate-400">No tradies assigned yet</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={Math.max(250, jobsPerWorker.length * 40)}>
