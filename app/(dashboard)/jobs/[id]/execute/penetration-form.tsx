@@ -226,7 +226,7 @@ export default function PenetrationForm({
   return (
     <div className="bg-white rounded-xl border border-blue-200 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 bg-blue-50 border-b border-blue-100">
-        <p className="text-sm font-semibold text-blue-800">New Penetration</p>
+        <p className="text-sm font-semibold text-blue-800">New evidence</p>
         <button onClick={handleCancel}
           className="w-7 h-7 rounded-lg hover:bg-blue-100 flex items-center justify-center transition-colors">
           <X className="w-4 h-4 text-blue-600" />
@@ -360,12 +360,12 @@ export default function PenetrationForm({
             <button type="button"
               onClick={() => { if (cameraRef.current) { cameraRef.current.value = ''; cameraRef.current.click() } }}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-colors">
-              <Camera className="w-4 h-4" />Take Photo
+              <Camera className="w-4 h-4" />Take photo
             </button>
             <button type="button"
               onClick={() => { if (galleryRef.current) { galleryRef.current.value = ''; galleryRef.current.click() } }}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-300 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-colors">
-              <ImageIcon className="w-4 h-4" />From Gallery
+              <ImageIcon className="w-4 h-4" />From gallery
             </button>
           </div>
           <input ref={cameraRef} type="file" accept="image/*" capture="environment"
@@ -386,7 +386,7 @@ export default function PenetrationForm({
             className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-semibold text-sm rounded-xl transition-colors">
             {saving
               ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</>
-              : <><CheckCircle2 className="w-4 h-4" />Save Penetration</>
+              : <><CheckCircle2 className="w-4 h-4" />Save evidence</>
             }
           </button>
         )}

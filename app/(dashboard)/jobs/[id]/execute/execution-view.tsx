@@ -237,8 +237,11 @@ export default function ExecutionView({
       setLevelPins(prev => prev.filter(p => p.id !== pinId))
       setPenetrationRefresh(n => n + 1)
       setOverviewRefresh(n => n + 1)
-    } catch {
-      alert('Failed to delete penetration')
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "Couldn't delete this entry. Refresh the page and try again, or contact support if it keeps happening."
+      alert(message)
     }
   }
 
@@ -331,7 +334,7 @@ export default function ExecutionView({
               </div>
               <div className="p-4 space-y-3">
                 {loadingStructure ? (
-                  <p className="text-sm text-slate-400 text-center py-4">Loading structure...</p>
+                  <p className="text-sm text-slate-400 text-center py-4">Loading structure…</p>
                 ) : buildings.length === 0 ? (
                   <p className="text-sm text-slate-400 text-center py-4">
                     No structure set up for this job. Ask an admin to add levels and rooms.
@@ -347,7 +350,7 @@ export default function ExecutionView({
                           <select value={selectedBuildingId}
                             onChange={e => { setSelectedBuildingId(e.target.value); setSelectedLevelId(''); setSelectedRoomId('') }}
                             className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10">
-                            <option value="">Select structure...</option>
+                            <option value="">Select structure…</option>
                             {buildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -364,7 +367,7 @@ export default function ExecutionView({
                           onChange={e => { setSelectedLevelId(e.target.value); setSelectedRoomId('') }}
                           disabled={buildings.length >= 2 && !selectedBuildingId}
                           className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400 pr-10">
-                          <option value="">Select level...</option>
+                          <option value="">Select level…</option>
                           {(selectedBuilding?.levels ?? []).map(l => (
                             <option key={l.id} value={l.id}>{l.name}</option>
                           ))}
@@ -382,7 +385,7 @@ export default function ExecutionView({
                           onChange={e => setSelectedRoomId(e.target.value)}
                           disabled={!selectedLevelId}
                           className="w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-400 pr-10">
-                          <option value="">Select room...</option>
+                          <option value="">Select room…</option>
                           {roomOptions.map(r => (
                             <option key={r.id} value={r.id}>{r.name}</option>
                           ))}
@@ -463,11 +466,10 @@ export default function ExecutionView({
                 </div>
               </div>
 
-              {/* 1. Penetrations in this room */}
               <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
                   <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                    Penetrations in this room
+                    Evidence in this room
                   </p>
                 </div>
                 <div className="px-4 py-2">
@@ -511,7 +513,7 @@ export default function ExecutionView({
                 className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
               >
                 <LayoutList className="w-4 h-4" />
-                {showOverview ? 'Hide Overview' : 'View Full Overview'}
+                {showOverview ? 'Hide overview' : 'View full overview'}
               </button>
 
               {showOverview && (
@@ -539,7 +541,7 @@ export default function ExecutionView({
             <button onClick={handleStart} disabled={loading === 'start'}
               className="w-full flex items-center justify-center gap-3 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold text-lg rounded-xl transition-colors">
               <Play className="w-5 h-5" />
-              {loading === 'start' ? 'Starting...' : 'Start Job'}
+              {loading === 'start' ? 'Starting…' : 'Start job'}
             </button>
           </div>
         </div>

@@ -288,7 +288,7 @@ export default function JobEditForm({ job, customers }: Props) {
           <Button variant="outline" type="button">Cancel</Button>
         </Link>
         <Button type="submit" form="job-edit-form" disabled={loading}>
-          {loading ? 'Saving…' : 'Save Changes'}
+          {loading ? 'Saving…' : 'Save changes'}
         </Button>
       </div>
     </div>

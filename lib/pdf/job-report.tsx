@@ -763,11 +763,10 @@ export function JobReportDocument({
           </View>
         )}
 
-        {/* Penetrations summary count on page 1 */}
         {penetrations.length > 0 && (
           <View style={{ marginTop: 18 }}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Penetrations</Text>
+              <Text style={styles.sectionTitle}>Evidence</Text>
               <Text style={styles.sectionCount}>{penetrations.length} logged — detail on following pages</Text>
             </View>
           </View>

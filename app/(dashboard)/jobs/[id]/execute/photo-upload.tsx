@@ -327,13 +327,13 @@ export default function PhotoUpload({ jobId, onPhotoUploaded }: PhotoUploadProps
           {/* Work Type */}
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">
-              Work Type <span className="text-red-500">*</span>
+              Type <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <select value={photo.workType}
                 onChange={e => updatePhoto({ workType: e.target.value, workTypeCustom: '' })}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Select work type…</option>
+                <option value="">Select type…</option>
                 {workTypes.filter(t => t !== 'Other').map(opt => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
@@ -344,7 +344,7 @@ export default function PhotoUpload({ jobId, onPhotoUploaded }: PhotoUploadProps
             {photo.workType === 'Other' && (
               <input type="text" value={photo.workTypeCustom}
                 onChange={e => updatePhoto({ workTypeCustom: e.target.value })}
-                placeholder="Type work type…"
+                placeholder="Or enter your own…"
                 className="mt-2 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             )}
           </div>

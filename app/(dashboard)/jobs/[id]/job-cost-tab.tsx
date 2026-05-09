@@ -366,7 +366,7 @@ export default function JobCostTab({ jobId }: { jobId: string }) {
             ? <Loader2 className="w-4 h-4 animate-spin" />
             : <FileText className="w-4 h-4" />
           }
-          {generating ? 'Generating…' : 'Generate Full Invoice'}
+          {generating ? 'Generating…' : 'Generate full invoice'}
         </button>
       </div>
 

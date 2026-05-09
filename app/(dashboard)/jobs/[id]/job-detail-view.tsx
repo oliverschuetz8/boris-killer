@@ -122,14 +122,14 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
                     href={`/jobs/${job.id}/execute`}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                   >
-                    ▶ {job.status === 'in_progress' ? 'Continue Job' : 'Start Job'}
+                    ▶ {job.status === 'in_progress' ? 'Continue job' : 'Start job'}
                   </Link>
                 )}
                 <Link
                   href={`/jobs/${job.id}/edit`}
                   className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-900 transition-colors"
                 >
-                  Edit Job
+                  Edit job
                 </Link>
               </div>
             </div>
@@ -342,7 +342,7 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
               <h2 className="text-sm font-semibold text-slate-800">Evidence</h2>
               {canExecute && (
                 <Link href={`/jobs/${job.id}/execute`} className="text-xs text-blue-600 hover:underline">
-                  + Log penetrations →
+                  + Log evidence →
                 </Link>
               )}
             </div>

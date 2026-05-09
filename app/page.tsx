@@ -14,13 +14,13 @@ export default async function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-8">
       <div className="max-w-4xl text-center space-y-8">
-        <h1 className="text-5xl font-bold text-gray-900">
+        <h1 className="text-5xl font-bold text-slate-900">
           BORIS Killer
         </h1>
-        <p className="text-xl text-gray-600">
+        <p className="text-xl text-slate-600">
           Simple, modern construction job management
         </p>
-        <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+        <p className="text-lg text-slate-500 max-w-2xl mx-auto">
           Everything BORIS does, but 10x simpler. No complexity, no confusion, no expensive jumps.
         </p>
         
@@ -29,17 +29,17 @@ export default async function Home() {
             href="/signup"
             className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition"
           >
-            Start Free Trial
+            Start free trial
           </Link>
           <Link 
             href="/login"
             className="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg font-medium border-2 border-blue-600 hover:bg-blue-50 transition"
           >
-            Sign In
+            Sign in
           </Link>
         </div>
 
-        <div className="pt-8 text-sm text-gray-500">
+        <div className="pt-8 text-sm text-slate-500">
           30-day free trial • No credit card required
         </div>
       </div>

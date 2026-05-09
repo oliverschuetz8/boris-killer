@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { UserPlus, Mail, Shield, User, X, Check, Pencil } from 'lucide-react'
+import Link from 'next/link'
+import { UserPlus, Mail, Shield, User, X, Check, Pencil, ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
 import { roleLabel } from '@/lib/utils'
@@ -201,14 +202,23 @@ export default function TeamManager({
   }
 
   return (
-    <div className="w-full p-8">
+    <div className="w-full px-6 py-8">
+
+      {/* Back link */}
+      <Link
+        href="/settings"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Settings
+      </Link>
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Team</h1>
+          <h1 className="text-xl font-bold text-slate-900">Team</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Manage your team members and invite new workers.
+            Manage your team members and invite new tradies.
           </p>
         </div>
         <button
@@ -216,7 +226,7 @@ export default function TeamManager({
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
         >
           <UserPlus className="w-4 h-4" />
-          Invite Member
+          Invite member
         </button>
       </div>
 
@@ -295,7 +305,7 @@ export default function TeamManager({
                   ? <><Check className="w-4 h-4" />Invite sent!</>
                   : loading
                   ? 'Sending…'
-                  : <><Mail className="w-4 h-4" />Send Invite</>
+                  : <><Mail className="w-4 h-4" />Send invite</>
                 }
               </button>
               <button onClick={() => { setShowInvite(false); setError(null) }}

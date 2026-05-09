@@ -115,7 +115,7 @@ export default function IntegrationsView({
   const isConnected = !!xeroConnection
 
   return (
-    <div className="w-full px-8 py-8">
+    <div className="w-full px-6 py-8">
       {/* Back link */}
       <Link
         href="/settings"

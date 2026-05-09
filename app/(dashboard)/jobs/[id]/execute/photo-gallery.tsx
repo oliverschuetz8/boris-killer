@@ -428,7 +428,7 @@ function PhotoModal({ photo, url, siblings, canModify, deleting, onClose, onNavi
         <div className="p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             {photo.before_after && <MetaRow label="Stage" value={photo.before_after} />}
-            {photo.work_type && <MetaRow label="Work Type" value={photo.work_type} />}
+            {photo.work_type && <MetaRow label="Type" value={photo.work_type} />}
             {photo.level && <MetaRow label="Level" value={photo.level} />}
             {photo.space_type && photo.space_identifier && (
               <MetaRow label="Space" value={`${photo.space_type} ${photo.space_identifier}`} />
@@ -457,7 +457,7 @@ function PhotoModal({ photo, url, siblings, canModify, deleting, onClose, onNavi
             <button onClick={onDelete} disabled={deleting}
               className="w-full flex items-center justify-center gap-2 py-2.5 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors">
               <Trash2 className="w-4 h-4" />
-              {deleting ? 'Deleting…' : 'Delete Photo'}
+              {deleting ? 'Deleting…' : 'Delete photo'}
             </button>
           )}
         </div>

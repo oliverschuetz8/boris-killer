@@ -323,7 +323,7 @@ export default function MaterialLog({
                 disabled={saving}
                 className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                {saving ? 'Saving…' : 'Save Material'}
+                {saving ? 'Saving…' : 'Save material'}
               </button>
             )}
           </div>

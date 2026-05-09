@@ -219,7 +219,7 @@ export default function CompanySettingsView({ settings, logoUrl, credentials, us
   }
 
   return (
-    <div className="w-full px-8 py-8">
+    <div className="w-full px-6 py-8">
 
       {/* Back link */}
       <Link
@@ -388,7 +388,7 @@ export default function CompanySettingsView({ settings, logoUrl, credentials, us
               disabled={profileSaving}
               className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
             >
-              {profileSaving ? 'Saving…' : 'Save Profile'}
+              {profileSaving ? 'Saving…' : 'Save profile'}
             </button>
             {profileMsg && (
               <span className={`flex items-center gap-1.5 text-sm ${profileMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
@@ -689,7 +689,7 @@ export default function CompanySettingsView({ settings, logoUrl, credentials, us
               disabled={brandingSaving}
               className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
             >
-              {brandingSaving ? 'Saving…' : 'Save Colours'}
+              {brandingSaving ? 'Saving…' : 'Save colours'}
             </button>
             {brandingMsg && (
               <span className={`flex items-center gap-1.5 text-sm ${brandingMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
@@ -761,7 +761,7 @@ export default function CompanySettingsView({ settings, logoUrl, credentials, us
               disabled={emailBrandingSaving}
               className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
             >
-              {emailBrandingSaving ? 'Saving…' : 'Save Email Branding'}
+              {emailBrandingSaving ? 'Saving…' : 'Save email branding'}
             </button>
             {emailBrandingMsg && (
               <span className={`flex items-center gap-1.5 text-sm ${emailBrandingMsg.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>

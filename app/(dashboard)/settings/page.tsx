@@ -1,68 +1,70 @@
 import Link from 'next/link'
 import { Package, ChevronRight, Calculator, Layers, Plug, Webhook, Building2, ClipboardList, Mail } from 'lucide-react'
 
+// Pastel category palette per CLAUDE_REFERENCE/brand.md §6.1.
+// Parts+Products share Slate-blue (paired concept); Pay Rules+Integrations share Mint (admin/system grouping).
 const SETTINGS_SECTIONS = [
   {
     href: '/settings/company',
     icon: Building2,
-    iconBg: 'bg-purple-50',
-    iconColor: 'text-purple-600',
+    iconBg: '#ddd6fe', // Lavender
+    iconColor: '#8b5cf6',
     title: 'Company Profile',
     description: 'Company details, logo, ABN, and brand colours.',
   },
   {
     href: '/settings/evidence',
     icon: ClipboardList,
-    iconBg: 'bg-orange-50',
-    iconColor: 'text-orange-600',
+    iconBg: '#fed7aa', // Peach
+    iconColor: '#f97316',
     title: 'Evidence Categories',
     description: 'Configure job categories, subcategories, and default evidence questions.',
   },
   {
     href: '/settings/parts',
     icon: Package,
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-600',
+    iconBg: '#e0e7ff', // Slate-blue
+    iconColor: '#6366f1',
     title: 'Parts Catalogue',
     description: 'Manage individual parts — buy cost, sell price, margin, supplier.',
   },
   {
     href: '/settings/products',
     icon: Layers,
-    iconBg: 'bg-indigo-50',
-    iconColor: 'text-indigo-600',
+    iconBg: '#e0e7ff', // Slate-blue (paired with Parts)
+    iconColor: '#6366f1',
     title: 'Products',
     description: 'Create bundles of parts with auto-calculated costs and margins.',
   },
   {
     href: '/settings/pay-rules',
     icon: Calculator,
-    iconBg: 'bg-green-50',
-    iconColor: 'text-green-600',
+    iconBg: '#d1fae5', // Mint
+    iconColor: '#10b981',
     title: 'Pay Rules',
     description: 'Configure your award package and overtime calculation rules.',
   },
   {
     href: '/settings/integrations',
     icon: Plug,
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
+    iconBg: '#d1fae5', // Mint (paired with Pay Rules — admin/system)
+    iconColor: '#10b981',
     title: 'Integrations',
     description: 'Connect Xero for timesheets, invoices, and payroll sync.',
   },
   {
     href: '/settings/notifications',
     icon: Mail,
-    iconBg: 'bg-amber-50',
-    iconColor: 'text-amber-600',
+    iconBg: '#fef3c7', // Butter
+    iconColor: '#f59e0b',
     title: 'Email Notifications',
     description: 'Choose which events trigger emails and who receives them.',
   },
   {
     href: '/settings/webhooks',
     icon: Webhook,
-    iconBg: 'bg-yellow-50',
-    iconColor: 'text-yellow-700',
+    iconBg: '#fef9c3', // Lemon
+    iconColor: '#eab308',
     title: 'Webhooks & API',
     description: 'Send real-time events to n8n, Zapier, or Make and manage API keys.',
   },
@@ -85,8 +87,11 @@ export default function SettingsPage() {
               href={section.href}
               className="flex items-center gap-4 bg-white rounded-xl border border-slate-200 px-6 py-4 hover:border-slate-300 hover:shadow-sm transition-all group"
             >
-              <div className={`w-10 h-10 rounded-lg ${section.iconBg} flex items-center justify-center flex-shrink-0`}>
-                <Icon className={`w-5 h-5 ${section.iconColor}`} />
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: section.iconBg }}
+              >
+                <Icon className="w-5 h-5" style={{ color: section.iconColor }} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-800">{section.title}</p>

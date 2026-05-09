@@ -299,7 +299,7 @@ export default function RoomMaterialsSection({
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-              {saving ? 'Adding…' : 'Add Material'}
+              {saving ? 'Adding…' : 'Add material'}
             </button>
             <button onClick={resetForm}
               className="px-4 py-2 text-slate-500 text-sm hover:text-slate-700 transition-colors">
@@ -324,7 +324,7 @@ export default function RoomMaterialsSection({
         >
           {markingDone
             ? <><Loader2 className="w-4 h-4 animate-spin" />Marking done…</>
-            : <><CheckCircle2 className="w-4 h-4" />Mark Room Done</>
+            : <><CheckCircle2 className="w-4 h-4" />Mark room done</>
           }
         </button>
       </div>

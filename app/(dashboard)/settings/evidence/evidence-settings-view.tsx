@@ -171,12 +171,12 @@ export default function EvidenceSettingsView({ companyId }: Props) {
 
   if (loading) {
     return (
-      <div className="w-full">
+      <div className="w-full px-6 py-8">
+        <Link href="/settings" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5" /> Settings
+        </Link>
         <div className="mb-6">
-          <Link href="/settings" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
-            <ArrowLeft className="w-3.5 h-3.5" /> Settings
-          </Link>
-          <h1 className="text-2xl font-bold text-slate-900">Evidence Categories</h1>
+          <h1 className="text-xl font-bold text-slate-900">Evidence Categories</h1>
         </div>
         <div className="text-sm text-slate-400 py-12 text-center">Loading…</div>
       </div>
@@ -184,23 +184,23 @@ export default function EvidenceSettingsView({ companyId }: Props) {
   }
 
   return (
-    <div className="w-full">
-      <div className="flex items-start justify-between mb-6">
+    <div className="w-full px-6 py-8">
+      <Link href="/settings" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors">
+        <ArrowLeft className="w-3.5 h-3.5" /> Settings
+      </Link>
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <Link href="/settings" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4">
-            <ArrowLeft className="w-3.5 h-3.5" /> Settings
-          </Link>
-          <h1 className="text-2xl font-bold text-slate-900">Evidence Categories</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-xl font-bold text-slate-900">Evidence Categories</h1>
+          <p className="text-sm text-slate-500 mt-0.5">
             Configure job categories, subcategories, and default evidence questions.
           </p>
         </div>
         {!showAddCategory && (
           <button
             onClick={() => setShowAddCategory(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <Plus className="w-4 h-4" /> Add Category
+            <Plus className="w-4 h-4" /> Add category
           </button>
         )}
       </div>
@@ -721,7 +721,7 @@ function TemplateFieldsEditor({
           <div className="flex gap-2">
             <button type="button" onClick={handleAdd} disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-              {saving ? 'Adding…' : 'Add Field'}
+              {saving ? 'Adding…' : 'Add field'}
             </button>
             <button type="button" onClick={resetForm}
               className="px-4 py-2 text-slate-500 text-sm hover:text-slate-700 transition-colors">

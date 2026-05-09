@@ -229,7 +229,7 @@ export default function NewCustomerPage() {
             <Button variant="outline" type="button">Cancel</Button>
           </Link>
           <Button type="submit" disabled={loading}>
-            {loading ? 'Saving…' : 'Create Customer'}
+            {loading ? 'Saving…' : 'Create customer'}
           </Button>
         </div>
       </form>

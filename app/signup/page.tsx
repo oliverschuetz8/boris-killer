@@ -10,13 +10,13 @@ export default function SignupPage() {
   const [state, formAction] = useActionState(signup, initialState)
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="text-center text-3xl font-bold text-gray-900">
+          <h2 className="text-center text-3xl font-bold text-slate-900">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-slate-600">
             Start your 30-day free trial
           </p>
         </div>
@@ -24,7 +24,7 @@ export default function SignupPage() {
         <form action={formAction} className="mt-8 space-y-6">
           <div className="space-y-4 rounded-md">
             <div>
-              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="full_name" className="block text-sm font-medium text-slate-700">
                 Full Name
               </label>
               <input
@@ -32,13 +32,13 @@ export default function SignupPage() {
                 name="full_name"
                 type="text"
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="John Smith"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
                 Email address
               </label>
               <input
@@ -47,13 +47,13 @@ export default function SignupPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
                 Password
               </label>
               <input
@@ -63,14 +63,14 @@ export default function SignupPage() {
                 autoComplete="new-password"
                 required
                 minLength={6}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="••••••••"
               />
-              <p className="mt-1 text-xs text-gray-500">At least 6 characters</p>
+              <p className="mt-1 text-xs text-slate-500">At least 6 characters</p>
             </div>
 
             <div>
-              <label htmlFor="company_name" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="company_name" className="block text-sm font-medium text-slate-700">
                 Company Name
               </label>
               <input
@@ -78,17 +78,17 @@ export default function SignupPage() {
                 name="company_name"
                 type="text"
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Acme Construction Ltd"
               />
             </div>
 
             <div>
-              <label htmlFor="company_slug" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="company_slug" className="block text-sm font-medium text-slate-700">
                 Company URL
               </label>
               <div className="mt-1 flex rounded-md shadow-sm">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-slate-300 bg-slate-50 text-slate-500 text-sm">
                   app.com/
                 </span>
                 <input
@@ -96,11 +96,11 @@ export default function SignupPage() {
                   name="company_slug"
                   type="text"
                   required
-                  className="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-none rounded-r-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 lowercase"
+                  className="flex-1 block w-full px-3 py-2 border border-slate-300 rounded-none rounded-r-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 lowercase"
                   placeholder="acme-construction"
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">Lowercase letters, numbers, and hyphens only</p>
+              <p className="mt-1 text-xs text-slate-500">Lowercase letters, numbers, and hyphens only</p>
             </div>
           </div>
 
@@ -120,7 +120,7 @@ export default function SignupPage() {
           </div>
 
           <div className="text-center text-sm">
-            <span className="text-gray-600">Already have an account? </span>
+            <span className="text-slate-600">Already have an account? </span>
             <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
               Sign in
             </Link>

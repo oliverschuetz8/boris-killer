@@ -131,14 +131,14 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
                   <button onClick={() => handleStatus('sent')} disabled={busy !== null}
                     className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
                     {busy === 'sent' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    Mark Sent
+                    Mark sent
                   </button>
                 )}
                 {(invoice.status === 'sent' || invoice.status === 'overdue') && (
                   <button onClick={() => handleStatus('paid')} disabled={busy !== null}
                     className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50">
                     {busy === 'paid' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                    Mark Paid
+                    Mark paid
                   </button>
                 )}
                 {invoice.status !== 'cancelled' && invoice.status !== 'paid' && (

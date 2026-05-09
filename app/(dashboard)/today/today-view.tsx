@@ -224,7 +224,7 @@ function JobCard({ job }: { job: Job }) {
           }`}
         >
           <PlayCircle className="w-5 h-5" />
-          {isInProgress ? 'Continue Job' : 'Start Job'}
+          {isInProgress ? 'Continue job' : 'Start job'}
         </Link>
 
         {/* Secondary link */}

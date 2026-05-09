@@ -120,7 +120,7 @@ export default function AcceptInvitePage() {
             disabled={loading}
             className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-1"
           >
-            {loading ? 'Activating…' : 'Activate Account →'}
+            {loading ? 'Activating…' : 'Activate account →'}
           </button>
         </div>
       </div>

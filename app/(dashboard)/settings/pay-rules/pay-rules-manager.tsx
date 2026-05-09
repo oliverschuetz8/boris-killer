@@ -141,7 +141,7 @@ export default function PayRulesManager({ companyId, initialRules }: Props) {
             saved ? 'bg-green-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50'
           }`}>
           <Save className="w-4 h-4" />
-          {saved ? 'Saved!' : saving ? 'Saving…' : 'Save Rules'}
+          {saved ? 'Saved!' : saving ? 'Saving…' : 'Save rules'}
         </button>
       </div>
 

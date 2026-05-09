@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
 import DeleteCustomerButton from './delete-customer-button'
@@ -127,8 +128,12 @@ export default function CustomersList({ customers }: CustomersListProps) {
               : `${filtered.length} of ${customers.length}`}
           </p>
         </div>
-        <Link href="/customers/new">
-          <Button>+ New Customer</Button>
+        <Link
+          href="/customers/new"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          New customer
         </Link>
       </div>
 

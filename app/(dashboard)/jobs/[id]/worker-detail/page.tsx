@@ -205,7 +205,7 @@ export default async function WorkerDetailPage({
             }`}
           >
             <PlayCircle className="w-5 h-5" />
-            {isInProgress ? 'Continue Job' : 'Start Job'}
+            {isInProgress ? 'Continue job' : 'Start job'}
           </Link>
         </div>
       )}

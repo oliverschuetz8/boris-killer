@@ -235,7 +235,7 @@ export default function NewJobPage() {
             <Button variant="outline" type="button">Cancel</Button>
           </Link>
           <Button type="submit" disabled={loading}>
-            {loading ? 'Creating…' : 'Create Job'}
+            {loading ? 'Creating…' : 'Create job'}
           </Button>
         </div>
       </form>

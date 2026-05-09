@@ -632,7 +632,7 @@ function PinDetailCard({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={photoUrls[photo.id]}
-                    alt={photo.caption || 'Penetration photo'}
+                    alt={photo.caption || 'Evidence photo'}
                     className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                     onClick={() => onLightbox(photoUrls[photo.id])}
                   />

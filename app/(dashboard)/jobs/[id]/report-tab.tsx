@@ -14,7 +14,7 @@ interface Props {
 const EXPORTS: { id: ExportFormat; label: string; description: string; endpoint: string; filename: string; icon: typeof FileDown }[] = [
   {
     id: 'pdf',
-    label: 'Download PDF Report',
+    label: 'Download PDF report',
     description: 'Full branded report with photos, evidence data, and floor plan close-ups',
     endpoint: '',
     filename: '-report.pdf',
@@ -22,15 +22,15 @@ const EXPORTS: { id: ExportFormat; label: string; description: string; endpoint:
   },
   {
     id: 'spreadsheet',
-    label: 'Download Spreadsheet',
-    description: 'Excel file with one row per penetration — filterable by level, room, and fields',
+    label: 'Download spreadsheet',
+    description: 'Excel file with one row per evidence entry — filterable by level, room, and fields',
     endpoint: '/spreadsheet',
     filename: '-report.xlsx',
     icon: FileSpreadsheet,
   },
   {
     id: 'document',
-    label: 'Download Document',
+    label: 'Download document',
     description: 'Editable Word document — open in Google Docs or Microsoft Word',
     endpoint: '/document',
     filename: '-report.docx',
@@ -38,7 +38,7 @@ const EXPORTS: { id: ExportFormat; label: string; description: string; endpoint:
   },
   {
     id: 'drawings',
-    label: 'Download Interactive Drawings',
+    label: 'Download interactive drawings',
     description: 'Self-contained HTML file — full floor plans with clickable pins, opens in any browser offline',
     endpoint: '/drawings',
     filename: '-drawings.html',
@@ -95,8 +95,8 @@ export default function ReportTab({ jobId, jobNumber }: Props) {
   const includes = [
     'Company branding header & footer',
     'Job details & customer info',
-    '4 penetrations per page (2×2 grid)',
-    'Photo + evidence data per penetration',
+    '4 entries per page (2×2 grid)',
+    'Photo + evidence data per entry',
     'Cropped floor plan close-up with pin location',
     'Grouped by building › level › room',
     'Materials used table',

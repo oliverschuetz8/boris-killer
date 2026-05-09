@@ -333,7 +333,7 @@ export function FloorPlanPicker({
   }
 
   function handleDeleteAction(pinId: string) {
-    if (confirm('Delete this penetration and all its photos?')) {
+    if (confirm('Delete this entry and all its photos?')) {
       onPinDelete?.(pinId)
     }
     setActionMenu(null)
@@ -394,7 +394,7 @@ export function FloorPlanPicker({
           }`}
         >
           {hidePins ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-          {hidePins ? 'Show Pins' : 'Hide Pins'}
+          {hidePins ? 'Show pins' : 'Hide pins'}
         </button>
 
         <div className="flex items-center gap-0.5 ml-auto">
@@ -749,7 +749,7 @@ export function FloorPlanViewer({
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm('Delete this penetration and all its photos?')) {
+                  if (confirm('Delete this entry and all its photos?')) {
                     onPinDelete(actionMenu.pin.id)
                   }
                   setActionMenu(null)

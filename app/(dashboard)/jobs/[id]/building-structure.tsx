@@ -221,7 +221,7 @@ export default function BuildingStructure({
   }
 
   if (loading) return (
-    <div className="p-6 text-center text-sm text-slate-400">Loading structure...</div>
+    <div className="p-6 text-center text-sm text-slate-400">Loading structure…</div>
   )
 
   return (

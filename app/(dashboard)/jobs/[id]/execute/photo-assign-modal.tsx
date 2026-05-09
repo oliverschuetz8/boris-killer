@@ -171,11 +171,11 @@ export default function PhotoAssignModal({
 
         {/* Work Type */}
         <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1.5">Work Type</label>
+          <label className="block text-xs font-medium text-slate-600 mb-1.5">Type</label>
           <div className="relative">
             <select value={workType} onChange={e => setWorkType(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Select work type…</option>
+              <option value="">Select type…</option>
               {workTypes.filter(t => t !== 'Other').map(opt => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
@@ -186,7 +186,7 @@ export default function PhotoAssignModal({
           {workType === 'Other' && (
             <input type="text" value={workTypeCustom}
               onChange={e => setWorkTypeCustom(e.target.value)}
-              placeholder="Type work type…"
+              placeholder="Or enter your own…"
               className="mt-2 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           )}
         </div>
@@ -196,7 +196,7 @@ export default function PhotoAssignModal({
         <button onClick={handleSave} disabled={saving}
           className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-medium text-sm rounded-lg transition-colors">
           <Save className="w-4 h-4" />
-          {saving ? 'Saving…' : 'Save Location'}
+          {saving ? 'Saving…' : 'Save location'}
         </button>
       </div>
     </div>

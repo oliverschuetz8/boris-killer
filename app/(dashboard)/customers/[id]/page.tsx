@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { Pencil } from 'lucide-react'
 import { getCustomer } from '@/app/actions/customers'
-import { Button } from '@/components/ui/button'
 
 export default async function CustomerDetailPage({
   params,
@@ -26,8 +26,12 @@ export default async function CustomerDetailPage({
             <span className="text-sm text-slate-500 capitalize">{customer.customer_type}</span>
           )}
         </div>
-        <Link href={`/customers/${id}/edit`}>
-          <Button>Edit Customer</Button>
+        <Link
+          href={`/customers/${id}/edit`}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Pencil className="w-4 h-4" />
+          Edit customer
         </Link>
       </div>
 

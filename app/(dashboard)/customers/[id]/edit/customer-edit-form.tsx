@@ -135,7 +135,7 @@ export default function CustomerEditForm({ customer }: { customer: any }) {
             <Button variant="outline" type="button">Cancel</Button>
           </Link>
           <Button type="submit" disabled={loading}>
-            {loading ? 'Saving…' : 'Save Changes'}
+            {loading ? 'Saving…' : 'Save changes'}
           </Button>
         </div>
       </form>

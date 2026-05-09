@@ -148,11 +148,11 @@ export default function OnboardingPage() {
 
   if (step === 'setting-up') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h1 className="text-2xl font-bold text-gray-900">Setting up your account…</h1>
-          <p className="text-gray-600 mt-2">This will only take a moment</p>
+          <h1 className="text-2xl font-bold text-slate-900">Setting up your account…</h1>
+          <p className="text-slate-600 mt-2">This will only take a moment</p>
         </div>
       </div>
     )
@@ -160,19 +160,19 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">What's your primary trade?</h1>
-          <p className="text-gray-500 mt-2">
+          <h1 className="text-2xl font-bold text-slate-900">What's your primary trade?</h1>
+          <p className="text-slate-500 mt-2">
             This sets your default work types and photo fields. You can change it anytime in Settings.
           </p>
         </div>
@@ -196,7 +196,7 @@ export default function OnboardingPage() {
                 className={`text-left p-4 rounded-xl border-2 transition-all ${
                   isSelected
                     ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -207,15 +207,15 @@ export default function OnboardingPage() {
                     <meta.icon className="w-5 h-5" style={{ color: meta.iconColor }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`font-semibold text-sm ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>
+                    <p className={`font-semibold text-sm ${isSelected ? 'text-blue-700' : 'text-slate-900'}`}>
                       {pack.name}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                       {meta.description}
                     </p>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 mt-0.5 ${
-                    isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                    isSelected ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
                   }`}>
                     {isSelected && (
                       <div className="w-full h-full rounded-full flex items-center justify-center">
@@ -256,7 +256,7 @@ export default function OnboardingPage() {
           Continue →
         </button>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
+        <p className="text-center text-xs text-slate-400 mt-4">
           You can change your trade preset anytime in Settings
         </p>
       </div>

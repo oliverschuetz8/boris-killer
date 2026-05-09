@@ -137,7 +137,7 @@ export default function NotificationsView({
   }
 
   return (
-    <div className="w-full p-8">
+    <div className="w-full px-6 py-8">
       <Link
         href="/settings"
         className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors"
@@ -150,7 +150,7 @@ export default function NotificationsView({
         <div>
           <h1 className="text-xl font-bold text-slate-900">Email Notifications</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Choose which events trigger emails and who receives them. Branding for emails is configured under <Link href="/settings/company" className="text-amber-700 hover:underline">Company Profile</Link>.
+            Choose which events trigger emails and who receives them. Branding for emails is configured under <Link href="/settings/company" className="text-blue-700 hover:underline">Company Profile</Link>.
           </p>
         </div>
       </div>
@@ -167,13 +167,13 @@ export default function NotificationsView({
             value={testEmail}
             onChange={(e) => setTestEmail(e.target.value)}
             placeholder="you@example.com"
-            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
           />
           <button
             type="button"
             onClick={handleSendTest}
             disabled={testStatus === 'sending' || !testEmail.trim()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {testStatus === 'sending' ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -228,7 +228,7 @@ export default function NotificationsView({
                     onChange={(e) => update(def.event, { is_enabled: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
 
@@ -251,12 +251,12 @@ export default function NotificationsView({
                               onClick={() => toggleRole(def.event, role)}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border capitalize transition-colors ${
                                 active
-                                  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                                  ? 'bg-blue-50 border-blue-300 text-blue-800'
                                   : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400'
                               }`}
                             >
                               {role}
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded ${active ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{count}</span>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded ${active ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>{count}</span>
                             </button>
                           )
                         })}
@@ -300,7 +300,7 @@ export default function NotificationsView({
                       type="checkbox"
                       checked={pref.notify_customer}
                       onChange={(e) => update(def.event, { notify_customer: e.target.checked })}
-                      className="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+                      className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
                     <span className="text-xs text-slate-700">Also send a polite chase email to the customer</span>
                   </label>
@@ -490,7 +490,7 @@ function PeoplePicker({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name or email…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              className="w-full pl-9 pr-3 py-2 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               autoFocus
             />
           </div>
@@ -884,7 +884,7 @@ function GroupEditor({
   }
 
   return (
-    <div className="border border-amber-200 bg-amber-50/30 rounded-lg p-4 space-y-3">
+    <div className="border border-blue-200 bg-blue-50/30 rounded-lg p-4 space-y-3">
       <div>
         <label className="block text-xs font-medium text-slate-700 mb-1">Group name *</label>
         <input
@@ -892,7 +892,7 @@ function GroupEditor({
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="e.g. Leadership Team, Operations Managers"
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-white"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
         />
       </div>
       <div>
@@ -902,7 +902,7 @@ function GroupEditor({
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           placeholder="When should this group receive emails?"
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-white"
+          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
         />
       </div>
 
@@ -938,7 +938,7 @@ function GroupEditor({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search to add users…"
-              className="w-full pl-9 pr-3 py-2 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              className="w-full pl-9 pr-3 py-2 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <div className="max-h-44 overflow-y-auto">
@@ -973,7 +973,7 @@ function GroupEditor({
         label="Additional email addresses (people not in your team)"
       />
 
-      <div className="flex items-center justify-end gap-2 pt-2 border-t border-amber-100">
+      <div className="flex items-center justify-end gap-2 pt-2 border-t border-blue-100">
         <button
           type="button"
           onClick={onCancel}
@@ -1038,7 +1038,7 @@ function ExtraEmailsField({
             }
           }}
           placeholder="extra@example.com"
-          className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+          className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
         />
         <button
           type="button"

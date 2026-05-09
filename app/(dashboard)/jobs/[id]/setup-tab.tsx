@@ -357,7 +357,7 @@ function EvidenceFieldsSection({
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
         <div>
           <h2 className="text-sm font-semibold text-slate-800">Evidence Fields</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Add custom fields for tradies. Default questions load automatically based on each penetration's subcategory.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Add custom fields for tradies. Default questions load automatically based on each entry's type.</p>
         </div>
         {!showAddForm && (
           <button onClick={() => setShowAddForm(true)}
@@ -417,7 +417,7 @@ function EvidenceFieldsSection({
       {fields.length === 0 && !showAddForm && (
         <div className="px-6 py-8 text-center">
           <p className="text-sm text-slate-500">No evidence fields configured yet.</p>
-          <p className="text-xs text-slate-400 mt-1">Add fields to define what tradies fill in for each penetration.</p>
+          <p className="text-xs text-slate-400 mt-1">Add fields to define what tradies fill in for each entry.</p>
         </div>
       )}
 
@@ -534,7 +534,7 @@ function EvidenceFieldsSection({
           <div className="flex gap-2">
             <button type="button" onClick={handleAdd} disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-              {saving ? 'Adding…' : 'Add Field'}
+              {saving ? 'Adding…' : 'Add field'}
             </button>
             <button type="button" onClick={resetAddForm}
               className="px-4 py-2 text-slate-500 text-sm hover:text-slate-700 transition-colors">
@@ -882,7 +882,7 @@ function MaterialDefaultsSection({
           <div className="flex gap-2">
             <button type="button" onClick={handleAdd} disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-              {saving ? 'Adding…' : 'Add Item'}
+              {saving ? 'Adding…' : 'Add item'}
             </button>
             <button type="button" onClick={resetAddForm}
               className="px-4 py-2 text-slate-500 text-sm hover:text-slate-700 transition-colors">
