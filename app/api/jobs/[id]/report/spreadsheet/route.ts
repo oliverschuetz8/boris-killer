@@ -87,7 +87,7 @@ export async function GET(
   workbook.creator = job.job_number
   workbook.created = new Date()
 
-  const sheet = workbook.addWorksheet('Penetrations')
+  const sheet = workbook.addWorksheet('Evidence')
 
   // Columns: Pin Label, Building, Level, Room, [each evidence field], Photo Count, Created
   const columns: Partial<ExcelJS.Column>[] = [

@@ -214,8 +214,8 @@ export default function PortalView({ data, photoUrls, drawingUrls, companyLogoUr
               <div className="px-6 py-3 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
                 <Layers className="w-4 h-4 text-slate-400" />
                 <p className="text-xs text-slate-500">
-                  <span className="font-semibold text-slate-700">{penetrations.length}</span> penetrations ·{' '}
-                  <span className="font-semibold text-slate-700">{totalPhotos}</span> photos
+                  <span className="font-semibold text-slate-700">{penetrations.length}</span> {penetrations.length === 1 ? 'entry' : 'entries'} ·{' '}
+                  <span className="font-semibold text-slate-700">{totalPhotos}</span> {totalPhotos === 1 ? 'photo' : 'photos'}
                 </p>
               </div>
 

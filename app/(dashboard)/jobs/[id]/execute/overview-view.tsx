@@ -159,7 +159,7 @@ export default function OverviewView({ jobId, onClose, refreshTrigger }: Props) 
                                   {room.name}
                                 </span>
                                 <span className="text-xs text-slate-400">
-                                  {penCount} penetration{penCount !== 1 ? 's' : ''}
+                                  {penCount} {penCount === 1 ? 'entry' : 'entries'}
                                 </span>
                               </div>
                             )

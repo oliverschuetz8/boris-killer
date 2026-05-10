@@ -543,7 +543,7 @@ export function generateDrawingsHtml(data: DrawingsExportData): string {
 
 <div class="summary">
   <span><strong>${levelsWithDrawings.length}</strong> drawing${levelsWithDrawings.length === 1 ? '' : 's'}</span>
-  <span><strong>${totalPins}</strong> pinned penetration${totalPins === 1 ? '' : 's'}</span>
+  <span><strong>${totalPins}</strong> pinned ${totalPins === 1 ? 'entry' : 'entries'}</span>
   <span style="margin-left:auto;color:#94a3b8;">Click any pin to view details</span>
 </div>
 
@@ -583,7 +583,7 @@ ${levelsWithDrawings.length === 0
 <aside class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
   <div class="panel-head">
     <span class="pin-badge" id="panelPinBadge">·</span>
-    <h3 id="panelTitle">Penetration Details</h3>
+    <h3 id="panelTitle">Evidence details</h3>
     <button class="panel-close" id="panelClose" aria-label="Close">×</button>
   </div>
   <div class="panel-body" id="panelBody"></div>
@@ -642,7 +642,7 @@ ${levelsWithDrawings.length === 0
     panelBadge.textContent = pen.floorplan_label || '·';
     panelTitle.textContent = pen.floorplan_label
       ? 'Pin ' + pen.floorplan_label
-      : 'Penetration';
+      : 'Entry';
 
     var html = '';
     html += '<div class="badge-row">';
