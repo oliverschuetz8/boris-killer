@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 8 May 2026 (Job delete fix — pre-checks invoices/timesheets and surfaces actionable errors; new app-wide error-message standard locked into recurring-failures.md) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete, launch-ready feature set)
+Last Updated: 10 May 2026 (Brand consistency pass + actionable error sweep + AUTONYX email footer + emoji audit + Worker→Tradie terminology + Penetration→Evidence terminology sweep + Job Materials Setup polish — Legacy material option removed, Product button always shown, redundant fields hidden when Product picked) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete, launch-ready feature set)
 
 ---
 
@@ -352,6 +352,46 @@ Last Updated: 8 May 2026 (Job delete fix — pre-checks invoices/timesheets and 
 - Email Notifications page (`/settings/notifications`) header cleaned up to match the canonical sub-page pattern shared by Materials / Parts / Pay-Rules / Webhooks / Integrations / Company
 - Removed: amber rounded `Mail` icon block that previously sat between the back link and the title
 - Title now sits inline with the back link's left edge — `text-xl` (was `text-3xl`), arrow icon `w-3.5 h-3.5` (was `w-4 h-4`), back text "Settings" (was "Back to settings"), `mb-6` header gap (was `mb-8`), `transition-colors` on the back link
+
+### Brand Consistency Pass (May 2026)
+- Settings sub-pages aligned to canonical pattern (header sizes, back-link arrows, gap spacing) across Materials / Parts / Pay-Rules / Webhooks / Integrations / Company / Notifications / Evidence / Team
+- Admin list-page action buttons normalised (sentence case CTAs, consistent `+ Add X` placement with primary blue background)
+- Global `--primary` CSS var moved to brand blue (`#2563eb` / `blue-600`) so all primary surfaces inherit one source
+- Photo Type pill on penetration form upgraded to subtle slate-bg pill (no more "raw" rendering)
+- CTA sentence case sweep: every `Save X` / `Add X` / `Send X` button audited and brought to sentence case (brand spec section 7.1) — no more `Save Penetration` / `Add Field`
+- Worker → Tradie terminology sweep: every UI string referring to field staff converted to "tradie" (admin context) per brand vocab section 5.1; `roleLabel` helper added at `lib/utils.ts` so DB role `worker` displays as `Tradie` consistently across nav, settings team, badges, assignments
+- Onboarding overhaul: trade preset cards rebuilt with Lucide icons + pastel category palette (slate-blue/mint/peach/butter/lavender/pink), removed accidental "A" placeholder copy, trade preset terminology aligned ("trade preset" everywhere, no more "industry pack")
+- Brand leak fixes: removed `'AUTONYX'` fallback for company name from 5 surfaces (was leaking parent brand into customer-facing UI), root metadata updated, ASCII `...` normalised to Unicode `…` in placeholders
+
+### Actionable Error Pass + Email Footer + Emoji Audit (May 2026)
+- App-wide error message standard locked into [recurring-failures.md #21](recurring-failures.md): every user-facing error must say what failed + why + how to fix it (no more `Failed to delete X` / `An error occurred`)
+- Server actions retrofitted to pre-check known FK/business blockers and throw specific actionable errors (job delete, penetration delete, invoice delete, room materials delete)
+- UI handlers retrofitted to surface `error.message` via `error instanceof Error ? error.message : <fallback>` — fallbacks themselves follow what/why/how
+- Email footer pattern locked: subtle muted line above company contact block reads `[App Name] is part of AUTONYX.` — pattern matches Stripe/Atlas, Linear/ARC, Notion/Notion Labs (per brand spec section 8.2)
+- Emoji audit: removed all hype emoji (🎉 🚀 ✨) from app surfaces; only allowed emoji is single 👋 in worker mobile greeting (intentional, per brand spec section 6.3)
+
+### Penetration → Evidence Terminology Sweep
+- "Penetration" replaced with "evidence" / "entry" across 15 files / ~30 user-facing strings on both admin + worker surfaces
+- Reasoning: while "Penetration" is correct trade jargon for the actual physical thing, it's wrong as the umbrella term — the `evidence_subcategories` already include Fire Door, Fire Collar, etc. Brand doc section 5.2 already names "Evidence" as the umbrella concept
+- **Generic CTAs / buttons / list headings**: `+ Log penetrations` → `+ Log evidence`, `+ New Penetration` → `+ New evidence`, `Save penetration` → `Save evidence`, `PENETRATIONS IN THIS ROOM` → `EVIDENCE IN THIS ROOM`, empty state `No penetrations logged yet` → `No evidence logged yet`
+- **Counts**: switched from grammatically-broken `1 penetrations` to proper singular/plural `1 entry` / `12 entries` (because "evidence" is uncountable)
+- **Delete confirms** upgraded with the actionable-error standard at the same time
+- **Outputs**: PDF section heading "Penetrations" → "Evidence", Excel worksheet name "Penetrations" → "Evidence", standalone HTML drawing export panel `Penetration Details` → `Evidence details`, customer portal counts updated
+- **Form heading dynamic per subcategory**: per-row labels still render as "Fire Door 1.3", "Penetration 1.2" etc. when subcategory is set (preserves earned trade jargon per brand doc section 3.1)
+- **What stayed "Penetration"**: onboarding fire-trade preset description ("Firestopping, penetration seals, fire doors" — accurate), all `lib/services/penetrations.ts` and DB queries (internal naming), invoice scope-label placeholder example
+- DB tables stay `penetrations` / `penetration_photos` — internal naming unchanged
+
+### Job Materials Setup Polish
+- "Legacy Material" type button removed from the Add Item form on the job Setup tab — the legacy `materials` table is no longer pickable when configuring a new job
+- Type selector now shows three buttons: **Part** · **Product** · **+ Manual**
+- Product button now always visible (previously hidden when company had zero products); when no products exist it renders disabled with hover tooltip "Add products in Settings to use this option" so admins know where to go
+- When **Product** is selected, the redundant **Manufacturer** and **System / Product** free-text fields are hidden — a Product (catalogue bundle) already encapsulates that information by name. **Seal ID** stays visible (per-install batch info, varies every time)
+- Helper text under the Product dropdown reads *"This product's parts and pricing are pulled in automatically."*
+- Smart default for the type selector: opens on `'part'` if the company has parts, falls back to `'product'` if only products exist, then `'manual'` — previously always opened on `'part'` even when invisible
+- Pre-existing legacy entries on jobs continue to render correctly (display branch in `getItemType` returns `'legacy'` for the `(legacy)` pill); orphaned rows whose source material was deleted now show *"Material no longer in catalogue"* instead of the old "Unknown" fallback
+- Empty-state link below the form updated to mention products too: `Add parts` or `add products` in Settings
+- Zero DB changes — `material_id` columns and joins kept intact for existing data
+- Worker execution flow ([room-materials-section.tsx](app/(dashboard)/jobs/[id]/execute/room-materials-section.tsx)) untouched — workers picking from materialDefaults still see pre-existing legacy entries
 
 ---
 

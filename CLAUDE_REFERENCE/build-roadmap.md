@@ -1,6 +1,6 @@
 # AUTONYX — What We're Building Next
 
-> Last updated: 8 May 2026 (In-app messaging & notifications parked — not building pre-launch; revisit only on customer demand post-launch)
+> Last updated: 10 May 2026 (Brand consistency pass + Worker→Tradie + Penetration→Evidence terminology sweeps + Job Materials Setup polish — Legacy material option removed)
 > This document covers the full build order from current state through launch and beyond.
 
 ---
@@ -42,6 +42,10 @@
 - Unified Search & Filter UX on admin list pages (single reusable `<SearchFilter>` component with search bar + filter icon popover wired into Customers, Jobs, Team, Parts, Products with contextual per-page filters — City/Sites for Customers; Status/Priority/Customer/Scheduled bucket for Jobs with old status pill row replaced; Role/Trade for Team; Subcategory/Supplier for Parts; Parts/Pricing for Products; client-side filtering on already-fetched data, no extra DB queries; result counts on every page; standard appearance-none + ChevronDown pattern on all selects)
 - Settings sub-page header consistency fix (Email Notifications page header brought in line with Materials/Parts/Pay-Rules/Webhooks/Integrations/Company — amber Mail icon block removed, smaller `text-xl` title aligned with back link, arrow `w-3.5 h-3.5`, "Settings" back text, `mb-6` gap)
 - Email Notifications system (Resend + branded templates for job.created, job.completed, invoice.sent/paid/overdue; daily overdue-invoice cron; per-company preferences at /settings/notifications with three additive recipient channels — role broadcast, specific-people picker with search, reusable distribution groups CRUD; customer chase opt-in for overdue; email branding fields on Company Profile — logo on/off, reply-to, signature; tables: email_preferences/email_logs/email_groups; pickers dismiss on outside click)
+- Brand consistency pass (May 2026): settings sub-pages aligned to canonical pattern, admin list-page CTAs normalised to sentence case + primary blue, global `--primary` CSS var unified, Worker→Tradie UI terminology sweep with `roleLabel` helper for display, onboarding trade preset cards rebuilt with Lucide + pastel palette, AUTONYX brand-leak fixes (5 fallback removals + root metadata + Unicode `…`)
+- Actionable error message sweep (May 2026): app-wide standard locked into `recurring-failures.md #21`, server actions retrofitted with pre-checks for known FK/business blockers, UI handlers retrofitted to surface `error.message` with what/why/how fallbacks; AUTONYX email footer pattern locked (subtle muted line above contacts); emoji audit removed all hype emoji (only 👋 in worker greeting allowed)
+- Penetration → Evidence terminology sweep (10 May 2026): "Penetration" replaced with "evidence" / "entry" across 15 files / ~30 user-facing strings on both admin + worker surfaces; counts switched from broken `1 penetrations` to proper `1 entry` / `12 entries`; PDF/Excel/HTML export titles updated; per-row labels still render subcategory-specific names (`Fire Door 1.3`); DB tables `penetrations`/`penetration_photos` unchanged; onboarding fire-trade copy intentionally kept "penetration" (accurate trade jargon)
+- Job Materials Setup polish (10 May 2026): "Legacy Material" type button removed from job Setup tab; Product button now always visible (disabled with hover hint when no products exist); Manufacturer + System/Product fields hidden when Product selected (the catalogue product encapsulates that info); Seal ID stays as per-install field; orphaned legacy rows now display "Material no longer in catalogue" instead of "Unknown"; smart-default opens type selector on `'part'`/`'product'`/`'manual'` based on what the company actually has; zero DB changes
 
 ---
 
