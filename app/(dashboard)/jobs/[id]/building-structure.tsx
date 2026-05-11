@@ -6,10 +6,12 @@ import {
   CheckCircle2, Circle, Layers, Pencil,
 } from 'lucide-react'
 import {
-  getBuildings, createBuilding, deleteBuilding,
-  createLevel, deleteLevel, updateLevelPrefix,
-  createRoom, markRoomDone, markRoomUndone, deleteRoom,
+  getBuildings, createBuilding, deleteBuilding, updateBuildingName,
+  createLevel, deleteLevel, updateLevelPrefix, updateLevelName,
+  createRoom, markRoomDone, markRoomUndone, deleteRoom, updateRoomName,
 } from '@/lib/services/building-structure'
+
+type EditTarget = { kind: 'building' | 'level' | 'room'; id: string } | null
 
 interface Room {
   id: string
@@ -67,6 +69,9 @@ export default function BuildingStructure({
   // Tracks which level is currently editing its prefix (only one at a time)
   const [editingPrefixId, setEditingPrefixId] = useState<string | null>(null)
   const [editingPrefixValue, setEditingPrefixValue] = useState('')
+  // Tracks which building/level/room is currently being renamed (only one at a time)
+  const [editingName, setEditingName] = useState<EditTarget>(null)
+  const [editingNameValue, setEditingNameValue] = useState('')
 
   const isAdmin = userRole === 'admin' || userRole === 'manager'
 
@@ -167,6 +172,54 @@ export default function BuildingStructure({
     setEditingPrefixValue('')
   }
 
+  function startEditingName(target: NonNullable<EditTarget>, currentName: string) {
+    setEditingName(target)
+    setEditingNameValue(currentName)
+  }
+
+  function cancelEditingName() {
+    setEditingName(null)
+    setEditingNameValue('')
+  }
+
+  async function handleSaveName() {
+    if (!editingName) return
+    const trimmed = editingNameValue.trim()
+    if (!trimmed) {
+      alert('Name cannot be empty. Type a name or press Cancel.')
+      return
+    }
+    const { kind, id } = editingName
+    try {
+      if (kind === 'building') {
+        await updateBuildingName(id, trimmed)
+        setBuildings(prev => prev.map(b => b.id === id ? { ...b, name: trimmed } : b))
+      } else if (kind === 'level') {
+        await updateLevelName(id, trimmed)
+        setBuildings(prev => prev.map(b => ({
+          ...b,
+          levels: b.levels.map(l => l.id === id ? { ...l, name: trimmed } : l),
+        })))
+      } else {
+        await updateRoomName(id, trimmed)
+        setBuildings(prev => prev.map(b => ({
+          ...b,
+          levels: b.levels.map(l => ({
+            ...l,
+            rooms: l.rooms.map(r => r.id === id ? { ...r, name: trimmed } : r),
+          })),
+        })))
+      }
+      setEditingName(null)
+      setEditingNameValue('')
+    } catch (err) {
+      const message = err instanceof Error
+        ? err.message
+        : "Couldn't save the new name. Try again or refresh the page."
+      alert(message)
+    }
+  }
+
   async function handleAddRoom(levelId: string) {
     const name = newRoomName[levelId]?.trim()
     if (!name) return
@@ -238,8 +291,36 @@ export default function BuildingStructure({
         </div>
       )}
 
-      {buildings.map(building => (
+      {buildings.map(building => {
+        const isRenamingBuilding = editingName?.kind === 'building' && editingName.id === building.id
+        return (
         <div key={building.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          {isRenamingBuilding ? (
+            <div className="flex items-center gap-2 px-4 py-3">
+              <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={editingNameValue}
+                onChange={e => setEditingNameValue(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSaveName()
+                  if (e.key === 'Escape') cancelEditingName()
+                }}
+                onClick={e => e.stopPropagation()}
+                placeholder="Building name"
+                autoFocus
+                className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
+              />
+              <button onClick={handleSaveName}
+                className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                Save
+              </button>
+              <button onClick={cancelEditingName}
+                className="px-2 py-1.5 text-slate-400 text-xs hover:text-slate-600 transition-colors">
+                Cancel
+              </button>
+            </div>
+          ) : (
           <div
             className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors"
             onClick={() => toggleBuilding(building.id)}
@@ -250,17 +331,28 @@ export default function BuildingStructure({
               {building.levels.length} level{building.levels.length !== 1 ? 's' : ''}
             </span>
             {isAdmin && (
-              <button
-                onClick={e => { e.stopPropagation(); handleDeleteBuilding(building.id) }}
-                className="p-1 text-slate-300 hover:text-red-500 transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              <>
+                <button
+                  onClick={e => { e.stopPropagation(); startEditingName({ kind: 'building', id: building.id }, building.name) }}
+                  className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
+                  title="Rename building"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); handleDeleteBuilding(building.id) }}
+                  className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                  title="Delete building"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
             )}
             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
               expandedBuildings.has(building.id) ? 'rotate-0' : '-rotate-90'
               }`} />
           </div>
+          )}
 
           {expandedBuildings.has(building.id) && (
             <div className="border-t border-slate-100 divide-y divide-slate-100">
@@ -270,8 +362,37 @@ export default function BuildingStructure({
                 const isExpanded = expandedLevels.has(level.id)
                 const isEditingThisPrefix = editingPrefixId === level.id
 
+                const isRenamingLevel = editingName?.kind === 'level' && editingName.id === level.id
                 return (
                   <div key={level.id}>
+                    {isRenamingLevel ? (
+                      <div
+                        className="flex items-center gap-2 px-4 py-2.5"
+                        style={{ borderLeft: `3px solid ${colour}` }}
+                      >
+                        <input
+                          type="text"
+                          value={editingNameValue}
+                          onChange={e => setEditingNameValue(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') handleSaveName()
+                            if (e.key === 'Escape') cancelEditingName()
+                          }}
+                          onClick={e => e.stopPropagation()}
+                          placeholder="Level name"
+                          autoFocus
+                          className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        />
+                        <button onClick={handleSaveName}
+                          className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                          Save
+                        </button>
+                        <button onClick={cancelEditingName}
+                          className="px-2 py-1.5 text-slate-400 text-xs hover:text-slate-600 transition-colors">
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
                     <div
                       className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors"
                       style={{ borderLeft: `3px solid ${colour}` }}
@@ -289,16 +410,27 @@ export default function BuildingStructure({
                         {doneCount}/{level.rooms.length} rooms done
                       </span>
                       {isAdmin && (
-                        <button
-                          onClick={e => { e.stopPropagation(); handleDeleteLevel(building.id, level.id) }}
-                          className="p-1 text-slate-300 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <>
+                          <button
+                            onClick={e => { e.stopPropagation(); startEditingName({ kind: 'level', id: level.id }, level.name) }}
+                            className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
+                            title="Rename level"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); handleDeleteLevel(building.id, level.id) }}
+                            className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                            title="Delete level"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
                       )}
                       <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'
                         }`} />
                     </div>
+                    )}
 
                     {isExpanded && (
                       <div className="bg-slate-50 px-4 pb-3 pt-2 space-y-3"
@@ -362,7 +494,9 @@ export default function BuildingStructure({
                           {level.rooms.length === 0 && (
                             <p className="text-xs text-slate-400 py-1 pl-1">No rooms added yet.</p>
                           )}
-                          {level.rooms.map(room => (
+                          {level.rooms.map(room => {
+                            const isRenamingRoom = editingName?.kind === 'room' && editingName.id === room.id
+                            return (
                             <div key={room.id} className="flex items-center gap-2.5 group py-0.5">
                               <button
                                 onClick={() => handleToggleRoom(level.id, room)}
@@ -373,19 +507,57 @@ export default function BuildingStructure({
                                   : <Circle className="w-4 h-4" />
                                 }
                               </button>
-                              <span className={`flex-1 text-sm ${room.is_done ? 'line-through text-slate-400' : 'text-slate-700'}`}>
-                                {room.name}
-                              </span>
-                              {isAdmin && (
-                                <button
-                                  onClick={() => handleDeleteRoom(level.id, room.id)}
-                                  className="p-1 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
+                              {isRenamingRoom ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    value={editingNameValue}
+                                    onChange={e => setEditingNameValue(e.target.value)}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') handleSaveName()
+                                      if (e.key === 'Escape') cancelEditingName()
+                                    }}
+                                    placeholder="Room name"
+                                    autoFocus
+                                    className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                  />
+                                  <button onClick={handleSaveName}
+                                    className="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition-colors">
+                                    Save
+                                  </button>
+                                  <button onClick={cancelEditingName}
+                                    className="px-2 py-1 text-slate-400 text-xs hover:text-slate-600 transition-colors">
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <span className={`flex-1 text-sm ${room.is_done ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                                    {room.name}
+                                  </span>
+                                  {isAdmin && (
+                                    <>
+                                      <button
+                                        onClick={() => startEditingName({ kind: 'room', id: room.id }, room.name)}
+                                        className="p-1 text-slate-200 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100"
+                                        title="Rename room"
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteRoom(level.id, room.id)}
+                                        className="p-1 text-slate-200 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                        title="Delete room"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </>
+                                  )}
+                                </>
                               )}
                             </div>
-                          ))}
+                            )
+                          })}
 
                           {isAdmin && (
                             showNewRoom[level.id] ? (
@@ -476,7 +648,8 @@ export default function BuildingStructure({
             </div>
           )}
         </div>
-      ))}
+        )
+      })}
 
       {isAdmin && (
         <div>

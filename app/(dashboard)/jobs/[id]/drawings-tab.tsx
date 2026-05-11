@@ -3,8 +3,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import {
   Building2, ChevronDown, Upload, FileImage, Trash2, X, Layers, Map,
-  ImageIcon,
+  ImageIcon, Pencil,
 } from 'lucide-react'
+import PenetrationEditModal from './penetration-edit-modal'
 import { getBuildings } from '@/lib/services/building-structure'
 import {
   getDrawingsForJob, uploadLevelDrawing, deleteLevelDrawing, getDrawingUrl,
@@ -70,6 +71,7 @@ interface Props {
   companyId: string
   userRole: string
   userId: string
+  evidenceCategoryId?: string | null
 }
 
 const LEVEL_COLOURS = [
@@ -81,7 +83,7 @@ const LEVEL_COLOURS = [
   '#22d3ee',
 ]
 
-export default function DrawingsTab({ jobId, companyId, userRole, userId }: Props) {
+export default function DrawingsTab({ jobId, companyId, userRole, userId, evidenceCategoryId = null }: Props) {
   const [buildings, setBuildings] = useState<Building[]>([])
   const [drawingsMap, setDrawingsMap] = useState<Record<string, LevelDrawing[]>>({})
   const [drawingUrls, setDrawingUrls] = useState<Record<string, string>>({})
@@ -99,6 +101,7 @@ export default function DrawingsTab({ jobId, companyId, userRole, userId }: Prop
   const [previewDrawing, setPreviewDrawing] = useState<string | null>(null)
   const [activePinId, setActivePinId] = useState<string | null>(null)
   const [lightbox, setLightbox] = useState<string | null>(null)
+  const [editingPen, setEditingPen] = useState<PenetrationDetail | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadLevelRef = useRef<string | null>(null)
 
@@ -502,12 +505,23 @@ export default function DrawingsTab({ jobId, companyId, userRole, userId }: Prop
                                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                       Pin {selectedPenetration.floorplan_label || '?'} — Penetration Details
                                     </p>
-                                    <button
-                                      onClick={() => setActivePinId(null)}
-                                      className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors"
-                                    >
-                                      <X className="w-3 h-3" /> Close
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                      {isAdmin && (
+                                        <button
+                                          onClick={() => setEditingPen(selectedPenetration)}
+                                          className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
+                                          title="Edit entry"
+                                        >
+                                          <Pencil className="w-3 h-3" /> Edit
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={() => setActivePinId(null)}
+                                        className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors"
+                                      >
+                                        <X className="w-3 h-3" /> Close
+                                      </button>
+                                    </div>
                                   </div>
                                   <PinDetailCard
                                     pen={selectedPenetration}
@@ -550,6 +564,17 @@ export default function DrawingsTab({ jobId, companyId, userRole, userId }: Prop
           <img src={lightbox} alt="Full size"
             className="max-w-full max-h-full object-contain rounded-lg" />
         </div>
+      )}
+
+      {/* Edit modal */}
+      {editingPen && (
+        <PenetrationEditModal
+          jobId={jobId}
+          penetration={editingPen}
+          evidenceCategoryId={evidenceCategoryId}
+          onClose={() => setEditingPen(null)}
+          onSaved={load}
+        />
       )}
     </div>
   )

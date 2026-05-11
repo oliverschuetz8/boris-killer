@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Package, ChevronRight, Calculator, Layers, Plug, Webhook, Building2, ClipboardList, Mail } from 'lucide-react'
+import { requireAdminOrManager } from '@/lib/auth/require-role'
 
 // Pastel category palette per CLAUDE_REFERENCE/brand.md §6.1.
 // Parts+Products share Slate-blue (paired concept); Pay Rules+Integrations share Mint (admin/system grouping).
@@ -70,7 +71,8 @@ const SETTINGS_SECTIONS = [
   },
 ]
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await requireAdminOrManager()
   return (
     <div className="w-full p-8">
       <div className="mb-8">

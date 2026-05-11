@@ -167,6 +167,33 @@ export async function updatePenetrationFields(
   if (error) throw error
 }
 
+export async function updatePenetration(
+  id: string,
+  updates: {
+    field_values?: Record<string, string>
+    floorplan_label?: string | null
+    evidence_subcategory_id?: string | null
+    room_id?: string | null
+    level_id?: string | null
+  }
+): Promise<void> {
+  const supabase = createClient()
+  const payload: Record<string, unknown> = {}
+  if (updates.field_values !== undefined) payload.field_values = updates.field_values
+  if (updates.floorplan_label !== undefined) payload.floorplan_label = updates.floorplan_label
+  if (updates.evidence_subcategory_id !== undefined) {
+    payload.evidence_subcategory_id = updates.evidence_subcategory_id
+  }
+  if (updates.room_id !== undefined) payload.room_id = updates.room_id
+  if (updates.level_id !== undefined) payload.level_id = updates.level_id
+
+  const { error } = await supabase
+    .from('penetrations')
+    .update(payload)
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function deletePenetration(id: string): Promise<void> {
   const supabase = createClient()
   const { error } = await supabase.from('penetrations').delete().eq('id', id)

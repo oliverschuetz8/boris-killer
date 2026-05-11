@@ -2,12 +2,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Pencil } from 'lucide-react'
 import { getCustomer } from '@/app/actions/customers'
+import { requireAdminOrManager } from '@/lib/auth/require-role'
 
 export default async function CustomerDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
+  await requireAdminOrManager()
   const { id } = await params
   const customer = await getCustomer(id)
 

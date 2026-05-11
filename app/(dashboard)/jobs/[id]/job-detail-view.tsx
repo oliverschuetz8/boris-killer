@@ -125,12 +125,14 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
                     ▶ {job.status === 'in_progress' ? 'Continue job' : 'Start job'}
                   </Link>
                 )}
-                <Link
-                  href={`/jobs/${job.id}/edit`}
-                  className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-900 transition-colors"
-                >
-                  Edit job
-                </Link>
+                {isAdminOrManager && (
+                  <Link
+                    href={`/jobs/${job.id}/edit`}
+                    className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-900 transition-colors"
+                  >
+                    Edit job
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -323,7 +325,7 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
                   )}
                 </div>
               )}
-              <JobCostSummary jobId={job.id} compact />
+              {isAdminOrManager && <JobCostSummary jobId={job.id} compact />}
               {isAdminOrManager && (
                 <PortalLinksSection
                   jobId={job.id}
@@ -346,7 +348,7 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
                 </Link>
               )}
             </div>
-            <EvidenceTab jobId={job.id} userRole={userRole} />
+            <EvidenceTab jobId={job.id} userRole={userRole} evidenceCategoryId={job.evidence_category_id} />
           </div>
         )}
 
@@ -364,7 +366,7 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
               </div>
               <MaterialLog jobId={job.id} userRole={userRole} />
             </div>
-            <JobCostSummary jobId={job.id} />
+            {isAdminOrManager && <JobCostSummary jobId={job.id} />}
           </div>
         )}
 
@@ -388,6 +390,7 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
               companyId={job.company_id}
               userRole={userRole}
               userId={userId}
+              evidenceCategoryId={job.evidence_category_id}
             />
           </div>
         )}

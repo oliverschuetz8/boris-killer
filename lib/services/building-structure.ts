@@ -36,6 +36,15 @@ export async function deleteBuilding(id: string) {
   await supabase.from('buildings').delete().eq('id', id)
 }
 
+export async function updateBuildingName(id: string, name: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('buildings')
+    .update({ name })
+    .eq('id', id)
+  if (error) throw error
+}
+
 // ---- Levels ----
 
 export async function createLevel(buildingId: string, companyId: string, name: string, orderIndex: number, drawingPrefix?: string) {
@@ -81,6 +90,15 @@ export async function deleteLevel(id: string) {
   await supabase.from('levels').delete().eq('id', id)
 }
 
+export async function updateLevelName(id: string, name: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('levels')
+    .update({ name })
+    .eq('id', id)
+  if (error) throw error
+}
+
 // ---- Rooms ----
 
 export async function createRoom(levelId: string, companyId: string, name: string, plannedCount: number) {
@@ -107,6 +125,15 @@ export async function markRoomUndone(roomId: string): Promise<void> {
 export async function deleteRoom(id: string) {
   const supabase = createClient()
   await supabase.from('rooms').delete().eq('id', id)
+}
+
+export async function updateRoomName(id: string, name: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('rooms')
+    .update({ name })
+    .eq('id', id)
+  if (error) throw error
 }
 
 // ---- Flat room list for photo selector / location picker ----

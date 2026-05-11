@@ -5,10 +5,10 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import {
   Briefcase, MapPin, User as UserIcon, Calendar as CalendarIcon,
-  RotateCw, ExternalLink, Edit3, Trash2, Check, Phone, Video, Tag,
+  RotateCw, ExternalLink, Edit3, Trash2, Check, Phone, Video, Tag, X,
 } from 'lucide-react'
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose,
 } from '@/components/ui/sheet'
 import type { CalendarEvent } from '@/lib/services/calendar-events'
 import {
@@ -61,7 +61,11 @@ export function EventPanel({
 }: EventPanelProps) {
   return (
     <Sheet open={!!item} onOpenChange={(open) => { if (!open) onClose() }}>
-      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0">
+      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0" showCloseButton={false}>
+        <SheetClose className="absolute top-4 right-4 z-10 inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </SheetClose>
         {item?.kind === 'job' && <JobBody event={item.data} />}
         {item?.kind === 'event' && (
           <EventBody
@@ -81,25 +85,15 @@ export function EventPanel({
 function JobBody({ event }: { event: import('@/lib/services/schedule').ScheduleEvent }) {
   return (
     <div>
-      <SheetHeader className="px-6 pt-6 pb-4 border-b border-slate-200">
+      <SheetHeader className="px-6 pt-6 pb-4 border-b border-slate-200 pr-10">
         <SheetDescription className="sr-only">Job details</SheetDescription>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1">
-              <Briefcase className="w-3 h-3" />
-              <span>{event.job_number}</span>
-            </div>
-            <SheetTitle className="text-lg font-semibold text-slate-900 leading-tight">
-              {event.title}
-            </SheetTitle>
-          </div>
-          <span
-            className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold text-white flex-shrink-0"
-            style={{ backgroundColor: STATUS_BG[event.status] ?? STATUS_BG.scheduled }}
-          >
-            {STATUS_LABEL[event.status] ?? event.status}
-          </span>
+        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1">
+          <Briefcase className="w-3 h-3" />
+          <span>{event.job_number}</span>
         </div>
+        <SheetTitle className="text-lg font-semibold text-slate-900 leading-tight">
+          {event.title}
+        </SheetTitle>
       </SheetHeader>
 
       <div className="px-6 py-5 space-y-5">
@@ -148,6 +142,12 @@ function JobBody({ event }: { event: import('@/lib/services/schedule').ScheduleE
         </div>
 
         <div className="flex flex-wrap gap-2 pt-1">
+          <span
+            className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold text-white"
+            style={{ backgroundColor: STATUS_BG[event.status] ?? STATUS_BG.scheduled }}
+          >
+            {STATUS_LABEL[event.status] ?? event.status}
+          </span>
           {event.job_type && (
             <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700">
               {JOB_TYPE_LABEL[event.job_type] ?? event.job_type}
@@ -250,28 +250,19 @@ function EventBody({
 
   return (
     <div>
-      <SheetHeader className="px-6 pt-6 pb-4 border-b border-slate-200">
+      <SheetHeader className="px-6 pt-6 pb-4 border-b border-slate-200 pr-10">
         <SheetDescription className="sr-only">Event details</SheetDescription>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1">
-              <Icon className="w-3 h-3" />
-              <span>{itemTypeLabel({ kind: 'event', data: event })}</span>
-            </div>
-            <SheetTitle
-              className={`text-lg font-semibold leading-tight ${
-                completed ? 'text-slate-400 line-through' : 'text-slate-900'
-              }`}
-            >
-              {event.title}
-            </SheetTitle>
-          </div>
-          <span
-            className="inline-flex items-center w-2 h-2 rounded-full flex-shrink-0 mt-2"
-            style={{ backgroundColor: style.edge }}
-            aria-hidden
-          />
+        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1">
+          <Icon className="w-3 h-3" />
+          <span>{itemTypeLabel({ kind: 'event', data: event })}</span>
         </div>
+        <SheetTitle
+          className={`text-lg font-semibold leading-tight ${
+            completed ? 'text-slate-400 line-through' : 'text-slate-900'
+          }`}
+        >
+          {event.title}
+        </SheetTitle>
       </SheetHeader>
 
       <div className="px-6 py-5 space-y-5">

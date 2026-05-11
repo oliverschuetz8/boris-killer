@@ -75,6 +75,43 @@ export async function addRoomMaterial(params: {
   return data
 }
 
+export async function updateRoomMaterial(
+  id: string,
+  updates: {
+    quantity?: number
+    notes?: string | null
+    part_id?: string | null
+    product_id?: string | null
+    material_id?: string | null
+    material_name_override?: string | null
+  }
+): Promise<RoomMaterial> {
+  const supabase = createClient()
+  const payload: Record<string, unknown> = {}
+  if (updates.quantity !== undefined) payload.quantity = updates.quantity
+  if (updates.notes !== undefined) payload.notes = updates.notes || null
+  if (updates.part_id !== undefined) payload.part_id = updates.part_id
+  if (updates.product_id !== undefined) payload.product_id = updates.product_id
+  if (updates.material_id !== undefined) payload.material_id = updates.material_id
+  if (updates.material_name_override !== undefined) {
+    payload.material_name_override = updates.material_name_override || null
+  }
+
+  const { data, error } = await supabase
+    .from('room_materials')
+    .update(payload)
+    .eq('id', id)
+    .select(`
+      *,
+      material:materials(id, name, unit),
+      part:parts(id, name, unit),
+      product:products(id, name)
+    `)
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function deleteRoomMaterial(id: string): Promise<void> {
   const supabase = createClient()
   const { error } = await supabase.from('room_materials').delete().eq('id', id)

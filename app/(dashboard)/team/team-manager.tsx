@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
-import { UserPlus, Mail, Shield, User, X, Check, Pencil, ArrowLeft } from 'lucide-react'
+import { UserPlus, Mail, Shield, User, X, Check, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
 import { roleLabel } from '@/lib/utils'
@@ -202,22 +201,13 @@ export default function TeamManager({
   }
 
   return (
-    <div className="w-full px-6 py-8">
-
-      {/* Back link */}
-      <Link
-        href="/settings"
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        Settings
-      </Link>
+    <div className="w-full px-8 py-8">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Team</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-3xl font-bold text-slate-900">Team</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Manage your team members and invite new tradies.
           </p>
         </div>

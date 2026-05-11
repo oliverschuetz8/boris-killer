@@ -71,7 +71,7 @@ export default function DashboardView({
       label: 'Total Tradies',
       value: stats.totalWorkers,
       icon: Users,
-      href: '/settings/team',
+      href: '/team',
       color: 'text-purple-600',
       bg: 'bg-purple-50',
     },

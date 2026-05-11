@@ -13,8 +13,9 @@ import { getLevelDrawings, getDrawingUrl } from '@/lib/services/level-drawings'
 import { FloorPlanViewer } from '@/components/floor-plan-pin'
 import {
   Building2, ChevronDown, MapPin,
-  ImageIcon, X, Layers, Trash2, Map,
+  ImageIcon, X, Layers, Trash2, Map, Pencil,
 } from 'lucide-react'
+import PenetrationEditModal from './penetration-edit-modal'
 
 interface Photo {
   id: string
@@ -63,9 +64,10 @@ interface Building {
 interface Props {
   jobId: string
   userRole: string
+  evidenceCategoryId?: string | null
 }
 
-export default function EvidenceTab({ jobId, userRole }: Props) {
+export default function EvidenceTab({ jobId, userRole, evidenceCategoryId = null }: Props) {
   const [buildings, setBuildings] = useState<Building[]>([])
   const [penetrations, setPenetrations] = useState<Penetration[]>([])
   const [evidenceFields, setEvidenceFields] = useState<EvidenceField[]>([])
@@ -79,6 +81,7 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [deletingPen, setDeletingPen] = useState<string | null>(null)
   const [deletingPhoto, setDeletingPhoto] = useState<string | null>(null)
+  const [editingPen, setEditingPen] = useState<Penetration | null>(null)
   const [levelDrawingUrls, setLevelDrawingUrls] = useState<Record<string, string>>({})
   const [showFloorPlan, setShowFloorPlan] = useState<Record<string, boolean>>({})
   const [activePinId, setActivePinId] = useState<string | null>(null)
@@ -411,6 +414,7 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
                                           onDeletePen={handleDeletePenetration}
                                           onDeletePhoto={handleDeletePhoto}
                                           onLightbox={setLightbox}
+                                          onEdit={setEditingPen}
                                         />
                                       ))}
                                     </div>
@@ -460,6 +464,7 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
                     onDeletePen={handleDeletePenetration}
                     onDeletePhoto={handleDeletePhoto}
                     onLightbox={setLightbox}
+                    onEdit={setEditingPen}
                   />
                 ))}
               </div>
@@ -483,6 +488,17 @@ export default function EvidenceTab({ jobId, userRole }: Props) {
             className="max-w-full max-h-full object-contain rounded-lg" />
         </div>
       )}
+
+      {/* Edit modal */}
+      {editingPen && (
+        <PenetrationEditModal
+          jobId={jobId}
+          penetration={editingPen}
+          evidenceCategoryId={evidenceCategoryId}
+          onClose={() => setEditingPen(null)}
+          onSaved={load}
+        />
+      )}
     </>
   )
 }
@@ -500,6 +516,7 @@ function PenetrationCard({
   onDeletePen,
   onDeletePhoto,
   onLightbox,
+  onEdit,
 }: {
   pen: Penetration
   index: number
@@ -513,6 +530,7 @@ function PenetrationCard({
   onDeletePen: (id: string) => void
   onDeletePhoto: (penId: string, photoId: string, storagePath: string) => void
   onLightbox: (url: string) => void
+  onEdit?: (pen: Penetration) => void
 }) {
   const createdAt = new Date(pen.created_at).toLocaleString('en-AU', {
     day: 'numeric', month: 'short',
@@ -547,6 +565,15 @@ function PenetrationCard({
           </span>
         )}
         <p className="text-xs text-slate-500 flex-1">{createdAt}</p>
+        {isAdmin && onEdit && (
+          <button
+            onClick={() => onEdit(pen)}
+            className="p-1.5 text-slate-300 hover:text-blue-500 transition-colors flex-shrink-0"
+            title="Edit entry"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+        )}
         {isAdmin && (
           <button
             onClick={() => onDeletePen(pen.id)}

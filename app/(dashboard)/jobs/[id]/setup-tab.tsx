@@ -2,15 +2,17 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Plus, Trash2, ChevronUp, ChevronDown, UserPlus, X, Layers, Package } from 'lucide-react'
+import { Plus, Trash2, ChevronUp, ChevronDown, UserPlus, X, Layers, Package, Pencil } from 'lucide-react'
 import {
   createEvidenceField,
+  updateEvidenceField,
   deleteEvidenceField,
   reorderEvidenceFields,
   type EvidenceField,
 } from '@/lib/services/evidence-fields'
 import {
   upsertJobMaterialDefault,
+  updateJobMaterialDefault,
   deleteJobMaterialDefault,
 } from '@/lib/services/job-material-defaults'
 import {
@@ -276,6 +278,7 @@ function EvidenceFieldsSection({
 }) {
   const [fields, setFields] = useState<EvidenceField[]>(initialFields)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
   const [newLabel, setNewLabel] = useState('')
   const [newType, setNewType] = useState<'text' | 'dropdown' | 'structure_level'>('text')
   const [newOptions, setNewOptions] = useState<string[]>([])
@@ -293,6 +296,19 @@ function EvidenceFieldsSection({
     setNewRequired(false)
     setNewDefaultValue('')
     setShowAddForm(false)
+    setEditingFieldId(null)
+    setError(null)
+  }
+
+  function startEditingField(field: EvidenceField) {
+    setEditingFieldId(field.id)
+    setNewLabel(field.label)
+    setNewType(field.field_type)
+    setNewOptions(field.options || [])
+    setNewOptionInput('')
+    setNewRequired(field.required)
+    setNewDefaultValue(field.default_value || '')
+    setShowAddForm(true)
     setError(null)
   }
 
@@ -315,14 +331,39 @@ function EvidenceFieldsSection({
     setSaving(true)
     setError(null)
     try {
-      const created = await createEvidenceField(
-        jobId, companyId, newLabel.trim(), newType, newOptions, newRequired, fields.length,
-        newDefaultValue.trim() || null,
-      )
-      setFields(prev => [...prev, created])
+      if (editingFieldId) {
+        await updateEvidenceField(editingFieldId, {
+          label: newLabel.trim(),
+          field_type: newType,
+          options: newType === 'dropdown' ? newOptions : null,
+          required: newRequired,
+          default_value: newDefaultValue.trim() || null,
+        })
+        setFields(prev => prev.map(f =>
+          f.id === editingFieldId
+            ? {
+                ...f,
+                label: newLabel.trim(),
+                field_type: newType,
+                options: newType === 'dropdown' ? newOptions : null,
+                required: newRequired,
+                default_value: newDefaultValue.trim() || null,
+              }
+            : f
+        ))
+      } else {
+        const created = await createEvidenceField(
+          jobId, companyId, newLabel.trim(), newType, newOptions, newRequired, fields.length,
+          newDefaultValue.trim() || null,
+        )
+        setFields(prev => [...prev, created])
+      }
       resetAddForm()
     } catch {
-      setError("Couldn't add the field. Try again or refresh the page.")
+      setError(editingFieldId
+        ? "Couldn't save changes to this field. Try again or refresh the page."
+        : "Couldn't add the field. Try again or refresh the page."
+      )
     } finally {
       setSaving(false)
     }
@@ -404,8 +445,16 @@ function EvidenceFieldsSection({
                 {field.required && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600">Required</span>
                 )}
+                <button
+                  onClick={() => startEditingField(field)}
+                  className="p-1.5 text-slate-300 hover:text-blue-500 transition-colors"
+                  title="Edit field"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
                 <button onClick={() => handleDelete(field.id)}
-                  className="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
+                  className="p-1.5 text-slate-300 hover:text-red-500 transition-colors"
+                  title="Delete field">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -423,7 +472,9 @@ function EvidenceFieldsSection({
 
       {showAddForm && (
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 space-y-4">
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">New Field</p>
+          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            {editingFieldId ? 'Edit Field' : 'New Field'}
+          </p>
 
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">
@@ -534,7 +585,9 @@ function EvidenceFieldsSection({
           <div className="flex gap-2">
             <button type="button" onClick={handleAdd} disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-              {saving ? 'Adding…' : 'Add field'}
+              {saving
+                ? (editingFieldId ? 'Saving…' : 'Adding…')
+                : (editingFieldId ? 'Save changes' : 'Add field')}
             </button>
             <button type="button" onClick={resetAddForm}
               className="px-4 py-2 text-slate-500 text-sm hover:text-slate-700 transition-colors">
@@ -568,6 +621,7 @@ function MaterialDefaultsSection({
 }) {
   const [defaults, setDefaults] = useState<any[]>(initialDefaults)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingDefaultId, setEditingDefaultId] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<'part' | 'product' | 'manual'>(
     () => parts.length > 0 ? 'part' : products.length > 0 ? 'product' : 'manual'
   )
@@ -579,9 +633,16 @@ function MaterialDefaultsSection({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const usedPartIds = new Set(defaults.filter((d: any) => d.part_id).map((d: any) => d.part_id))
-  const usedProductIds = new Set(defaults.filter((d: any) => d.product_id).map((d: any) => d.product_id))
-  const usedMaterialIds = new Set(defaults.filter((d: any) => d.material_id).map((d: any) => d.material_id))
+  // Exclude the row currently being edited from "used" sets so its own part/product remains selectable
+  const usedPartIds = new Set(
+    defaults.filter((d: any) => d.part_id && d.id !== editingDefaultId).map((d: any) => d.part_id)
+  )
+  const usedProductIds = new Set(
+    defaults.filter((d: any) => d.product_id && d.id !== editingDefaultId).map((d: any) => d.product_id)
+  )
+  const usedMaterialIds = new Set(
+    defaults.filter((d: any) => d.material_id && d.id !== editingDefaultId).map((d: any) => d.material_id)
+  )
 
   const availableParts = parts.filter(p => !usedPartIds.has(p.id))
   const availableProducts = products.filter(p => !usedProductIds.has(p.id))
@@ -598,6 +659,27 @@ function MaterialDefaultsSection({
     setNewManufacturer('')
     setNewSystemProduct('')
     setShowAddForm(false)
+    setEditingDefaultId(null)
+    setError(null)
+  }
+
+  function startEditingDefault(d: any) {
+    setEditingDefaultId(d.id)
+    if (d.part_id) {
+      setSelectedType('part')
+      setSelectedId(d.part_id)
+    } else if (d.product_id) {
+      setSelectedType('product')
+      setSelectedId(d.product_id)
+    } else {
+      setSelectedType('manual')
+      setSelectedId('')
+      setNewManualName(d.material_name_override || '')
+    }
+    setNewSealId(d.seal_id || '')
+    setNewManufacturer(d.manufacturer || '')
+    setNewSystemProduct(d.system_product || '')
+    setShowAddForm(true)
     setError(null)
   }
 
@@ -613,17 +695,31 @@ function MaterialDefaultsSection({
       const nameOverride = selectedType === 'manual' ? newManualName.trim() : null
       const isProduct = selectedType === 'product'
 
-      const created = await upsertJobMaterialDefault(jobId, companyId, null, nameOverride, {
+      const detailsPayload = {
         seal_id: newSealId,
         manufacturer: isProduct ? '' : newManufacturer,
         system_product: isProduct ? '' : newSystemProduct,
         part_id: partId,
         product_id: productId,
-      })
-      setDefaults(prev => [...prev, created])
+      }
+
+      if (editingDefaultId) {
+        const updated = await updateJobMaterialDefault(
+          editingDefaultId,
+          nameOverride,
+          { ...detailsPayload, material_id: null },
+        )
+        setDefaults(prev => prev.map((d: any) => d.id === editingDefaultId ? updated : d))
+      } else {
+        const created = await upsertJobMaterialDefault(jobId, companyId, null, nameOverride, detailsPayload)
+        setDefaults(prev => [...prev, created])
+      }
       resetAddForm()
     } catch {
-      setError("Couldn't add the item. Try again or refresh the page.")
+      setError(editingDefaultId
+        ? "Couldn't save changes to this item. Try again or refresh the page."
+        : "Couldn't add the item. Try again or refresh the page."
+      )
     } finally {
       setSaving(false)
     }
@@ -715,8 +811,16 @@ function MaterialDefaultsSection({
                     )}
                   </div>
                 </div>
+                <button
+                  onClick={() => startEditingDefault(d)}
+                  className="p-1.5 text-slate-300 hover:text-blue-500 transition-colors flex-shrink-0 mt-0.5"
+                  title="Edit item"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
                 <button onClick={() => handleDelete(d.id)}
-                  className="p-1.5 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5">
+                  className="p-1.5 text-slate-300 hover:text-red-500 transition-colors flex-shrink-0 mt-0.5"
+                  title="Remove item">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -752,7 +856,9 @@ function MaterialDefaultsSection({
 
       {showAddForm && (
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 space-y-4">
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Add Item</p>
+          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            {editingDefaultId ? 'Edit Item' : 'Add Item'}
+          </p>
 
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">Type</label>
@@ -881,7 +987,9 @@ function MaterialDefaultsSection({
           <div className="flex gap-2">
             <button type="button" onClick={handleAdd} disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-slate-300 transition-colors">
-              {saving ? 'Adding…' : 'Add item'}
+              {saving
+                ? (editingDefaultId ? 'Saving…' : 'Adding…')
+                : (editingDefaultId ? 'Save changes' : 'Add item')}
             </button>
             <button type="button" onClick={resetAddForm}
               className="px-4 py-2 text-slate-500 text-sm hover:text-slate-700 transition-colors">

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Package, Plus, Trash2, ChevronDown, CheckCircle2, Layers } from 'lucide-react'
+import { Package, Plus, Trash2, ChevronDown, CheckCircle2, Layers, Pencil } from 'lucide-react'
+import { updateRoomMaterial } from '@/lib/services/room-materials'
 
 interface LoggedMaterial {
   id: string
@@ -37,6 +38,9 @@ export default function MaterialLog({
   const [logged, setLogged] = useState<LoggedMaterial[]>([])
   const [parts, setParts] = useState<CataloguePart[]>([])
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  // When editing a product/legacy entry, the item itself can't be swapped here — only qty/notes
+  const [editingLockedName, setEditingLockedName] = useState<string | null>(null)
   const [selectedPartId, setSelectedPartId] = useState('')
   const [manualName, setManualName] = useState('')
   const [quantity, setQuantity] = useState('1')
@@ -47,6 +51,8 @@ export default function MaterialLog({
 
   const isAdmin = userRole === 'admin' || userRole === 'manager'
   const isManual = selectedPartId === '__manual__'
+  const isEditing = editingId !== null
+  const isEditingLocked = editingLockedName !== null
 
   useEffect(() => {
     loadData()
@@ -109,16 +115,81 @@ export default function MaterialLog({
     return !!product?.name
   }
 
+  function resetForm() {
+    setEditingId(null)
+    setEditingLockedName(null)
+    setSelectedPartId('')
+    setManualName('')
+    setQuantity('1')
+    setNotes('')
+    setShowForm(false)
+    setError(null)
+  }
+
+  function startEditing(m: LoggedMaterial) {
+    setEditingId(m.id)
+    setQuantity(String(m.quantity))
+    setNotes(m.notes || '')
+    setError(null)
+
+    const part = Array.isArray(m.part) ? m.part[0] : m.part
+    const product = Array.isArray(m.product) ? m.product[0] : m.product
+    const material = Array.isArray(m.material) ? m.material[0] : m.material
+
+    if (part?.id) {
+      setEditingLockedName(null)
+      setSelectedPartId(part.id)
+      setManualName('')
+    } else if (product?.id || material?.id) {
+      // Products and legacy materials can't be swapped from this form — lock the name
+      setEditingLockedName(product?.name || material?.name || 'Item')
+      setSelectedPartId('')
+      setManualName('')
+    } else {
+      // Manual entry
+      setEditingLockedName(null)
+      setSelectedPartId('__manual__')
+      setManualName(m.material_name_override || '')
+    }
+    setShowForm(true)
+  }
+
   async function handleSave() {
-    if (!selectedPartId && !isManual) { setError('Select a part'); return }
-    if (isManual && !manualName.trim()) { setError('Enter a name'); return }
     const qty = parseFloat(quantity)
     if (isNaN(qty) || qty <= 0) { setError('Enter a valid quantity'); return }
+
+    if (!isEditing || !isEditingLocked) {
+      if (!selectedPartId && !isManual) { setError('Select a part'); return }
+      if (isManual && !manualName.trim()) { setError('Enter a name'); return }
+    }
 
     setSaving(true)
     setError(null)
 
     try {
+      if (isEditing) {
+        if (isEditingLocked) {
+          await updateRoomMaterial(editingId!, {
+            quantity: qty,
+            notes: notes.trim() || null,
+          })
+        } else {
+          await updateRoomMaterial(editingId!, {
+            quantity: qty,
+            notes: notes.trim() || null,
+            part_id: isManual ? null : selectedPartId,
+            product_id: null,
+            material_id: null,
+            material_name_override: isManual ? manualName.trim() : null,
+          })
+        }
+        await loadData()
+        resetForm()
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+        return
+      }
+
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
@@ -142,15 +213,16 @@ export default function MaterialLog({
       if (insertError) throw new Error(insertError.message)
 
       await loadData()
-      setSelectedPartId('')
-      setManualName('')
-      setQuantity('1')
-      setNotes('')
-      setShowForm(false)
+      resetForm()
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-    } catch (e: any) {
-      setError(e.message || 'Failed to save')
+    } catch (e) {
+      const message = e instanceof Error
+        ? e.message
+        : (isEditing
+            ? "Couldn't save changes to this entry. Try again or refresh the page."
+            : "Couldn't save the entry. Try again or refresh the page.")
+      setError(message)
     } finally {
       setSaving(false)
     }
@@ -223,12 +295,22 @@ export default function MaterialLog({
                   </p>
                 )}
                 {isAdmin && (
-                  <button
-                    onClick={() => handleDelete(mat.id)}
-                    className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center text-red-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <>
+                    <button
+                      onClick={() => startEditing(mat)}
+                      className="w-7 h-7 rounded-lg hover:bg-blue-50 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors"
+                      title="Edit entry"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(mat.id)}
+                      className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center text-red-400 hover:text-red-600 transition-colors"
+                      title="Remove entry"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
                 )}
               </div>
             )
@@ -244,9 +326,26 @@ export default function MaterialLog({
         </div>
       )}
 
-      {/* Add form */}
+      {/* Add / Edit form */}
       {showForm && (
         <div className="p-4 space-y-4 border-t border-slate-100">
+          {isEditing && (
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+              Edit entry
+            </p>
+          )}
+
+          {isEditingLocked ? (
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Item</label>
+              <div className="px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-700">
+                {editingLockedName}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Products and legacy materials can't be swapped here. Delete and re-add the entry to change the item.
+              </p>
+            </div>
+          ) : (
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">
               Part <span className="text-red-500">*</span>
@@ -280,6 +379,7 @@ export default function MaterialLog({
               />
             )}
           </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -307,7 +407,7 @@ export default function MaterialLog({
 
           <div className="flex gap-3">
             <button
-              onClick={() => { setShowForm(false); setError(null); setSelectedPartId(''); setManualName('') }}
+              onClick={resetForm}
               className="flex-1 py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
             >
               Cancel
@@ -323,7 +423,9 @@ export default function MaterialLog({
                 disabled={saving}
                 className="flex-1 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                {saving ? 'Saving…' : 'Save material'}
+                {saving
+                  ? 'Saving…'
+                  : (isEditing ? 'Save changes' : 'Save material')}
               </button>
             )}
           </div>

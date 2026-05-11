@@ -27,6 +27,7 @@ import {
   Building2,
   Target,
   Bell,
+  User,
 } from 'lucide-react'
 
 const adminNavLinks = [
@@ -36,7 +37,7 @@ const adminNavLinks = [
   { href: '/schedule', label: 'Schedule', icon: Calendar },
   { href: '/invoices', label: 'Invoices', icon: FileText },
   { href: '/leads', label: 'Leads', icon: Target },
-  { href: '/settings/team', label: 'Team', icon: Users },
+  { href: '/team', label: 'Team', icon: Users },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -154,10 +155,17 @@ export default function TopNav({ user, upcomingCount = 0 }: TopNavProps) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
-                    <Settings className="w-4 h-4" />
-                    Settings
-                  </Link>
+                  {isWorker ? (
+                    <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                      <User className="w-4 h-4" />
+                      Profile
+                    </Link>
+                  ) : (
+                    <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                      <Settings className="w-4 h-4" />
+                      Settings
+                    </Link>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

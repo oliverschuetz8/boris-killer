@@ -302,11 +302,13 @@ Workers must never see material unit prices or cost totals. This information is 
 
 ## Failure #14 — Two Nav Items Highlighted Simultaneously
 
-The Team and Settings nav items were both highlighted at the same time when on the Team page. This happens when the active state check uses `pathname.startsWith()` and both paths share a common prefix. `/settings` and `/settings/team` both start with `/settings`, so both match.
+The Team and Settings nav items were both highlighted at the same time when on the Team page. This happened when the active state check used `pathname.startsWith()` and both paths shared a common prefix. `/settings` and `/settings/team` both started with `/settings`, so both matched.
+
+**Original instance is resolved structurally:** Team has been moved from `/settings/team` to `/team`, so the URL collision no longer exists. The rule below still applies for any future case where two nav items share a prefix.
 
 **WRONG:**
 ```ts
-isActive = pathname.startsWith(item.href) // /settings matches /settings/team
+isActive = pathname.startsWith(item.href) // /settings would match /settings/team
 ```
 
 **CORRECT:**

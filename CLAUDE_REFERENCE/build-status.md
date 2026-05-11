@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 10 May 2026 (Brand consistency pass + actionable error sweep + AUTONYX email footer + emoji audit + Worker→Tradie terminology + Penetration→Evidence terminology sweep + Job Materials Setup polish — Legacy material option removed, Product button always shown, redundant fields hidden when Product picked) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete, launch-ready feature set)
+Last Updated: 11 May 2026 (Brand consistency pass + actionable error sweep + AUTONYX email footer + emoji audit + Worker→Tradie terminology + Penetration→Evidence terminology sweep + Job Materials Setup polish + Admin Edit Parity across Job Detail tabs — building/level/room renames, evidence field edit, job materials setup edit, materials log edit, full penetration edit modal launched from Evidence + Drawings tabs + Schedule EventPanel header polish — status pill moved out of header right corner where it collided with the close X + Worker view hardening — money + admin pages locked down + Team page promoted from settings sub-page to top-level `/team` route with proper top-level header + Schedule EventPanel close-button consistency — Job and Event panels now share one custom rounded-square close button so they look identical at rest) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete, launch-ready feature set)
 
 ---
 
@@ -130,7 +130,7 @@ Last Updated: 10 May 2026 (Brand consistency pass + actionable error sweep + AUT
 - Live rate preview table updates as you type base rate
 - Full overtime calculation engine in lib/services/pay-calculator.ts
 
-### Team Page (/settings/team)
+### Team Page (/team)
 - Invite team members, edit trade and base hourly rate
 - Dynamic role badge colours (deterministic hash for any role name)
 - Admin can update other users (RLS policy fixed)
@@ -282,6 +282,8 @@ Last Updated: 10 May 2026 (Brand consistency pass + actionable error sweep + AUT
 - **Inline toast system** (bottom-right): success/warning/error toasts auto-dismiss after 4.5s; used for reschedule confirmation, conflict warnings, create/update/delete feedback
 - **Custom CSS** in `app/(dashboard)/schedule/calendar-styles.css`: design-system overrides for react-big-calendar — slate/white palette, blue active button, blue-50 today highlight, soft hover (no transform), 22px chip min-height (20px in Month view)
 - **Tech stack**: react-big-calendar v1.x + react-dnd + react-dnd-html5-backend + date-fns; vanilla CSS overrides; no FullCalendar (commercial license issue with resource view)
+- **EventPanel header polish (May 2026)**: status pill (jobs) and type colour dot (events) used to sit in the header's top-right corner where the shadcn `<Sheet>` close X is rendered → visible collision. Status pill now lives in the existing pill row below the title alongside Type / Priority (matches job detail page pattern); type colour dot removed from EventBody header (the icon next to the type label already conveys the info); both headers got `pr-10` so a long title can't reach the X either. File: `app/(dashboard)/schedule/event-panel.tsx`
+- **EventPanel close-button consistency (11 May 2026)**: the default shadcn `<Sheet>` close X (a small `rounded-xs` icon with no visible border) only got a boxed look in its focus state, so Job and Event panels could look mismatched at rest. Now `<SheetContent>` is passed `showCloseButton={false}` and the panel renders one shared custom `<SheetClose>` button positioned top-right — 32×32, `rounded-md` with a slate border, white background, hover + focus ring — so the close button is visibly the same for jobs, events, and any future item kind. File: `app/(dashboard)/schedule/event-panel.tsx`
 
 ### Generic Calendar Events
 - New `calendar_events` table holds everything time-bound that isn't a job
@@ -341,7 +343,7 @@ Last Updated: 10 May 2026 (Brand consistency pass + actionable error sweep + AUT
 - Wired into 5 admin list pages with contextual per-page filters:
   - **Customers** — search across name / email / phone / city / billing address / all site cities & addresses; filters: City (dynamically built from billing city + every site city), Sites (Any / With sites / No sites yet); page split into client `customers-list.tsx` so server `page.tsx` only fetches and passes data
   - **Jobs** (admin view) — search across title / job number / customer / site city / site address / site manager; filters: Status, Priority, Customer (dynamic), Scheduled bucket (Today / This week / Upcoming / Past / Unscheduled); old status pill row removed in favour of one consistent filter mechanism
-  - **Team** (`/settings/team`) — search across full name / email / phone / trade / role; filters: Role (dynamic), Trade (dynamic)
+  - **Team** (`/team`) — search across full name / email / phone / trade / role; filters: Role (dynamic), Trade (dynamic)
   - **Parts** (`/settings/parts`) — search across name / SKU / supplier / subcategory (was name only); inline two-dropdown row replaced with the new popover (subcategory + supplier)
   - **Products** (`/settings/products`) — search across name + description (was name only); filters: Parts (Any / With parts / No parts yet), Pricing (Any / Has sell price / No sell price)
 - Filtering is client-side on already-fetched data — no service file changes, no extra DB queries, RLS untouched
@@ -353,8 +355,25 @@ Last Updated: 10 May 2026 (Brand consistency pass + actionable error sweep + AUT
 - Removed: amber rounded `Mail` icon block that previously sat between the back link and the title
 - Title now sits inline with the back link's left edge — `text-xl` (was `text-3xl`), arrow icon `w-3.5 h-3.5` (was `w-4 h-4`), back text "Settings" (was "Back to settings"), `mb-6` header gap (was `mb-8`), `transition-colors` on the back link
 
+### Worker View Hardening (May 2026)
+- Three-unit pass closing every place a worker could see admin-only / money information on the job detail page or by URL-typing
+- **Money leaks closed on job detail page**: both `JobCostSummary` instances on `app/(dashboard)/jobs/[id]/job-detail-view.tsx` (Overview-sidebar compact card and Materials-tab full version with per-worker hourly-rate breakdown) now wrapped in `isAdminOrManager &&`. "Edit job" button at top of job detail also wrapped in `isAdminOrManager &&`. `app/(dashboard)/jobs/[id]/edit/page.tsx` now redirects workers to `/today` so URL-typing workers can't bypass
+- **Admin pages locked down with one helper**: new `lib/auth/require-role.ts` exports `requireAdminOrManager()` server util — redirects unauthenticated → `/login`, workers → `/today`, returns `{ userId, role, companyId }` for the page to use. Applied to: `/settings/page.tsx` (was the only ungated settings page; sub-pages were already gated), `/customers/page.tsx`, `/customers/[id]/page.tsx`, `/customers/[id]/edit/page.tsx`. For client-component pages (`/customers/new`, `/jobs/new`) split into a tiny server `page.tsx` wrapper that runs the gate then renders a sibling client form file (`new-customer-form.tsx` / `new-job-form.tsx`) — minimal refactor, preserves existing form code
+- **Worker top-nav user menu cleaned up**: `components/layout/top-nav.tsx` now shows workers a "Profile" link → `/profile` (which they can access) instead of the dead-end "Settings" link → `/settings` (which would just bounce them back to `/today`). Admins still see "Settings"
+- **Already correctly gated, no changes needed** (logged for completeness): Setup / Cost / Report tabs on job detail; material prices in `MaterialLog` (failure #13); pencil + delete buttons on penetrations / structure / materials / fields (admin-only); Portal Links section on Overview sidebar; bell icon in top nav; admin-only top-nav links; `/dashboard`, `/schedule`, `/invoices`, `/leads` all already redirect workers to `/today`
+- **Skipped with rationale**: photo `caption` field (DB column exists but no UI surfaces it anywhere); worker-assignment `role` swap (role isn't surfaced anywhere in UI); no redirect from old `/settings/team` to `/team` because no external links to the old URL exist (the only references were inside this codebase, all updated)
+
+### Team Page Promoted to Top-Level Route (May 2026)
+- Team page is a TOP-LEVEL page (like Customers / Jobs / Invoices / Leads), NOT a settings sub-page. Future chats: do NOT group it with Materials / Parts / Pay-Rules / etc. when doing settings-wide passes
+- Route moved from `/settings/team` → `/team`. File moved from `app/(dashboard)/settings/team/` → `app/(dashboard)/team/` (via `git mv` — git history preserved)
+- Header upgraded from sub-page style (`text-xl` + `← Settings` back-link) to top-level style (`text-3xl font-bold text-slate-900` + no back-link, matching Customers / Jobs / Invoices / Leads exactly)
+- Wrapper padding bumped from `px-6 py-8` to `px-8 py-8` per the admin-page padding standard (recurring-failures.md #4)
+- Top-nav link updated (`top-nav.tsx` href now `/team`); Dashboard "Total Tradies" stat card updated (`dashboard-view.tsx` href now `/team`)
+- Why this happened: file structure under `app/(dashboard)/settings/team/` + back-link to `/settings` + small `text-xl` header all signalled "settings sub-page" to every chat that read the file tree. The May 2026 brand consistency pass that shrank settings sub-page headers caught Team in the same sweep — exactly the bug Oliver flagged
+- Recurring-failures #14 (Team and Settings nav items both highlighted because of `pathname.startsWith('/settings')` matching both) is now structurally impossible — `/team` and `/settings` share no prefix. Failure entry kept as a general rule for any future case where two nav items share a prefix
+
 ### Brand Consistency Pass (May 2026)
-- Settings sub-pages aligned to canonical pattern (header sizes, back-link arrows, gap spacing) across Materials / Parts / Pay-Rules / Webhooks / Integrations / Company / Notifications / Evidence / Team
+- Settings sub-pages aligned to canonical pattern (header sizes, back-link arrows, gap spacing) across Materials / Parts / Pay-Rules / Webhooks / Integrations / Company / Notifications / Evidence (Team is NOT a settings sub-page — it's a top-level page like Customers / Jobs / Invoices / Leads, and uses the `text-3xl` top-level header)
 - Admin list-page action buttons normalised (sentence case CTAs, consistent `+ Add X` placement with primary blue background)
 - Global `--primary` CSS var moved to brand blue (`#2563eb` / `blue-600`) so all primary surfaces inherit one source
 - Photo Type pill on penetration form upgraded to subtle slate-bg pill (no more "raw" rendering)
@@ -380,6 +399,17 @@ Last Updated: 10 May 2026 (Brand consistency pass + actionable error sweep + AUT
 - **Form heading dynamic per subcategory**: per-row labels still render as "Fire Door 1.3", "Penetration 1.2" etc. when subcategory is set (preserves earned trade jargon per brand doc section 3.1)
 - **What stayed "Penetration"**: onboarding fire-trade preset description ("Firestopping, penetration seals, fire doors" — accurate), all `lib/services/penetrations.ts` and DB queries (internal naming), invoice scope-label placeholder example
 - DB tables stay `penetrations` / `penetration_photos` — internal naming unchanged
+
+### Admin Edit Parity (Job Detail Page) — May 2026
+- Closed the gap where admin could only **add and delete** but not **edit** across multiple tabs of the job detail page. Same data sources, so edits propagate automatically to the customer portal, PDF / spreadsheet / document / standalone HTML drawing exports, and worker views — all read from the same Postgres rows
+- **Structure tab — building / level / room renames**: inline pencil-edit pattern matching the existing drawing-prefix pencil. Click pencil → row turns into input + Save / Cancel; Enter saves, Escape cancels; click stops row expand/collapse; empty name rejected with actionable message. Service: `updateBuildingName`, `updateLevelName`, `updateRoomName` in `lib/services/building-structure.ts`. Room pencil uses the same hover-only opacity pattern as the existing room delete button
+- **Setup tab — Evidence Fields edit**: pencil button next to delete on each field row → opens the existing "Add Field" form pre-filled with label / type / options / required / default value (form heading switches to "Edit Field", Save button label switches to "Save changes"). Service `updateEvidenceField` already existed — just wired the UI. Switching field type during edit (text↔dropdown) handled
+- **Setup tab — Job Materials Setup edit**: pencil button next to delete on each item → opens the existing "Add Item" form pre-filled with seal_id / manufacturer / system / part-or-product-or-manual selection (form heading switches to "Edit Item"). The currently-edited item's part/product is added back into the available-options set so admin can keep it or swap. New service: `updateJobMaterialDefault(id, nameOverride, details)` in `lib/services/job-material-defaults.ts`
+- **Materials tab (admin) — Materials Log edit**: pencil next to delete on each entry. For part-backed and manual entries: full edit (swap part / change to manual / quantity / notes). For product-backed and legacy-material entries: locked-name read-only header with explanatory note ("Products and legacy materials can't be swapped here. Delete and re-add the entry to change the item.") and quantity / notes editable. New service: `updateRoomMaterial(id, updates)` in `lib/services/room-materials.ts`
+- **Evidence tab + Drawings tab — full penetration edit modal**: new shared component at `app/(dashboard)/jobs/[id]/penetration-edit-modal.tsx` launched from a pencil button on each `PenetrationCard` in the Evidence tab AND from an "Edit" button in the Drawings-tab pin-detail panel. Modal fields: subcategory dropdown (scoped to job's evidence_category_id, dynamically loads template fields when changed), per-field inputs for both template fields and custom job_evidence_fields (text / dropdown / structure_level renderers), pin label, cascading Building → Level → Room dropdowns (also covers reassigning previously "Unassigned" entries). Pin position itself stays editable in the existing Drawings-tab Move flow — modal includes a hint pointing there. New service: unified `updatePenetration(id, updates)` in `lib/services/penetrations.ts` (accepts any subset of field_values / floorplan_label / evidence_subcategory_id / room_id / level_id)
+- **Plumbing**: `evidence_category_id` now passed from `job-detail-view.tsx` to both `EvidenceTab` and `DrawingsTab` so the modal can scope subcategories to the job's category. Both tabs re-fetch via the existing `load()` callback after a save, so all open client surfaces refresh
+- **What stayed unchanged**: pin photos already deletable (no edit needed for caption — field unused in UI), worker assignment role still unswappable (role isn't surfaced anywhere), photo caption still hidden everywhere
+- **Zero DB changes** — all 5 units used existing tables and columns
 
 ### Job Materials Setup Polish
 - "Legacy Material" type button removed from the Add Item form on the job Setup tab — the legacy `materials` table is no longer pickable when configuring a new job

@@ -84,6 +84,42 @@ export async function upsertJobMaterialDefault(
   return data
 }
 
+export async function updateJobMaterialDefault(
+  id: string,
+  materialNameOverride: string | null,
+  details: {
+    seal_id?: string
+    manufacturer?: string
+    system_product?: string
+    part_id?: string | null
+    product_id?: string | null
+    material_id?: string | null
+  }
+): Promise<JobMaterialDefault> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('job_material_defaults')
+    .update({
+      material_id: details.material_id ?? null,
+      part_id: details.part_id ?? null,
+      product_id: details.product_id ?? null,
+      material_name_override: materialNameOverride || null,
+      seal_id: details.seal_id || null,
+      manufacturer: details.manufacturer || null,
+      system_product: details.system_product || null,
+    })
+    .eq('id', id)
+    .select(`
+      *,
+      material:materials(id, name, unit, unit_price),
+      part:parts(id, name, unit, sell_price),
+      product:products(id, name, total_sell_price)
+    `)
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function deleteJobMaterialDefault(id: string): Promise<void> {
   const supabase = createClient()
   const { error } = await supabase
