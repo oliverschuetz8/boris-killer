@@ -241,29 +241,46 @@ export function generateDrawingsHtml(data: DrawingsExportData): string {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: high-quality;
   }
+  /* Pins — match in-app Lucide MapPin: red teardrop with white label pill above the bell */
   .pin {
     position: absolute;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -100%);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    color: #dc2626;
+    font-family: inherit;
+    line-height: 1;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));
+  }
+  .pin:hover { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
+  .pin:focus { outline: none; }
+  .pin:focus-visible { outline: 2px solid rgba(37,99,235,0.5); outline-offset: 2px; border-radius: 4px; }
+  .pin .pin-icon {
+    display: block;
     width: var(--pin-eff);
     height: var(--pin-eff);
-    border-radius: 50%;
-    background: ${accent};
-    color: white;
-    border: max(1px, calc(var(--pin-eff) / 14)) solid white;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-    display: flex;
+  }
+  .pin .pin-label {
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    font-size: max(4px, calc(var(--pin-eff) * 0.45));
+    font-weight: 700;
+    padding: 0 4px;
+    min-width: max(6px, calc(var(--pin-eff) * 0.7));
+    height: max(6px, calc(var(--pin-eff) * 0.7));
+    line-height: 1;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: max(4px, calc(var(--pin-eff) * 0.38));
-    font-weight: 700;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-    font-family: inherit;
-  }
-  .pin:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.45); }
-  .pin:focus { outline: 3px solid rgba(37,99,235,0.4); outline-offset: 2px; }
-  .pin .pin-text {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
     white-space: nowrap;
   }
 
@@ -564,7 +581,11 @@ ${levelsWithDrawings.length === 0
       <div class="zoom-stage" data-stage>
         <img class="drawing" src="${l.drawing_data_uri}" alt="${esc(l.name)} floor plan">
         ${l.pins.map(pin => `<button class="pin" type="button" data-pen-id="${esc(pin.id)}" style="left:${pin.x}%;top:${pin.y}%;" aria-label="Pin ${esc(pin.label || '')}">
-          <span class="pin-text">${esc(pin.label || '·')}</span>
+          <svg class="pin-icon" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          ${pin.label ? `<span class="pin-label">${esc(pin.label)}</span>` : ''}
         </button>`).join('')}
       </div>
       <div class="zoom-controls">

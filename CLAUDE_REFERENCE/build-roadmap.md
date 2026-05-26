@@ -1,6 +1,6 @@
 # AUTONYX — What We're Building Next
 
-> Last updated: 11 May 2026 (Brand consistency pass + Worker→Tradie + Penetration→Evidence terminology sweeps + Job Materials Setup polish + Admin Edit Parity across job detail page + Schedule EventPanel header polish + Worker view hardening — money + admin pages locked down, shared `requireAdminOrManager` helper + Team page promoted from `/settings/team` to top-level `/team` with proper top-level header)
+> Last updated: 11 May 2026 (Brand consistency pass + Worker→Tradie + Penetration→Evidence terminology sweeps + Job Materials Setup polish + Admin Edit Parity across job detail page + Schedule EventPanel header polish + Worker view hardening — money + admin pages locked down, shared `requireAdminOrManager` helper + Team page promoted from `/settings/team` to top-level `/team` with proper top-level header + HTML drawing export pin styling brought in line with in-app red Lucide MapPin)
 > This document covers the full build order from current state through launch and beyond.
 
 ---
