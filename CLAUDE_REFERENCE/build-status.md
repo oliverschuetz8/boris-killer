@@ -1,6 +1,6 @@
 # 05 — Current Project State
 
-Last Updated: 11 May 2026 (Brand consistency pass + actionable error sweep + AUTONYX email footer + emoji audit + Worker→Tradie terminology + Penetration→Evidence terminology sweep + Job Materials Setup polish + Admin Edit Parity across Job Detail tabs — building/level/room renames, evidence field edit, job materials setup edit, materials log edit, full penetration edit modal launched from Evidence + Drawings tabs + Schedule EventPanel header polish — status pill moved out of header right corner where it collided with the close X + Worker view hardening — money + admin pages locked down + Team page promoted from settings sub-page to top-level `/team` route with proper top-level header + Schedule EventPanel close-button consistency — Job and Event panels now share one custom rounded-square close button so they look identical at rest + HTML drawing export pin styling brought in line with the in-app red Lucide MapPin — pins on the standalone interactive HTML export now look identical to pins on the admin Drawings tab) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete, launch-ready feature set)
+Last Updated: 15 Jul 2026 (Customer CRM Hub — customer detail page rebuilt into a full-width 5-tab hub: Details / Jobs / People / Sites / Activity, with contacts carrying roles + capability flags, contact-to-job pinning, a light activity trail, and curated account fields; new tables customer_contacts / job_contacts / customer_activity) | previously 11 May 2026 (Brand consistency pass + actionable error sweep + AUTONYX email footer + emoji audit + Worker→Tradie terminology + Penetration→Evidence terminology sweep + Job Materials Setup polish + Admin Edit Parity across Job Detail tabs — building/level/room renames, evidence field edit, job materials setup edit, materials log edit, full penetration edit modal launched from Evidence + Drawings tabs + Schedule EventPanel header polish — status pill moved out of header right corner where it collided with the close X + Worker view hardening — money + admin pages locked down + Team page promoted from settings sub-page to top-level `/team` route with proper top-level header + Schedule EventPanel close-button consistency — Job and Event panels now share one custom rounded-square close button so they look identical at rest + HTML drawing export pin styling brought in line with the in-app red Lucide MapPin — pins on the standalone interactive HTML export now look identical to pins on the admin Drawings tab) | Project: AUTONYX (codename: BORIS Killer) | Status: Active MVP (~98% complete, launch-ready feature set)
 
 ---
 
@@ -424,6 +424,17 @@ Last Updated: 11 May 2026 (Brand consistency pass + actionable error sweep + AUT
 - Zero DB changes — `material_id` columns and joins kept intact for existing data
 - Worker execution flow ([room-materials-section.tsx](app/(dashboard)/jobs/[id]/execute/room-materials-section.tsx)) untouched — workers picking from materialDefaults still see pre-existing legacy entries
 
+### Customer CRM Hub (Jul 2026)
+- Customer detail page rebuilt from a bare 3-box view into a full-width admin **hub with 5 tabs**: Details · Jobs · People · Sites · Activity. Files: `app/(dashboard)/customers/[id]/page.tsx` (server fetch) + `customer-hub.tsx` (client). Jobs already linked to customers via `jobs.customer_id` (no app-structure change needed — the gap was purely that the customer page never surfaced the connections).
+- **Details tab**: Account / Primary contact / Billing / Relationship cards. Enriched edit form (`edit/customer-edit-form.tsx`) split into Account · Billing · Relationship sections — curated account fields (account_type, account_status, ABN, payment_terms, account-manager picker sourced from company users, accounts email/phone, next follow-up date). Deliberately curated (~8 fields), NOT the full 60-field CRM the boss's doc suggested.
+- **Jobs tab**: every job for the customer (number, title, status badge, scheduled date), each clickable to `/jobs/[id]`. Read-only display of existing data.
+- **People tab** ⭐: `customer_contacts` CRUD via modal — name, job title, role (Decision-maker/Site contact/Accounts/Compliance/etc.), email, phone, secondary phone, preferred contact method, notes. Capability **flags**: receives reports · receives quotes · approves work · site access · primary · active/inactive. Directly targets the researched fire-industry pain points (stale contacts, "who gets the report / who approves / who grants access").
+- **Job pinning** (the "richer" contacts option): pin any contact to specific jobs via `job_contacts` — chips on the contact card, add via a per-card job dropdown, unpin via ✕. Managed entirely from the People (customer) side so the in-progress jobs files stay untouched.
+- **Sites tab**: surfaces the previously-hidden `customer_sites` rows (name, address, site manager, access) read-only.
+- **Activity tab**: light trail. Manual log entries (`customer_activity`: Note/Call/Email/Meeting + optional "mark contacted today" → stamps `customers.last_contacted_at`) merged at render time with derived "job created" events. No writes to jobs actions.
+- Dates formatted via `Intl.DateTimeFormat(..., { timeZone: 'UTC' })` to avoid the server/client hydration mismatch that previously bit the jobs list.
+- Every mutation is an actionable-error server action gated to admin/manager; UI handlers surface `error.message`. All new tables use the RLS company-subquery pattern with 4 policies each.
+
 ---
 
 ## Database Tables (all with RLS enabled)
@@ -433,7 +444,10 @@ Last Updated: 11 May 2026 (Brand consistency pass + actionable error sweep + AUT
 | companies | Multi-tenant root |
 | users | All users — company_id, role, trade, hourly_rate |
 | jobs | Core job entity with full site details |
-| customers | Customer records |
+| customers | Customer records (+ CRM account fields: account_type, account_status, abn, payment_terms, account_manager_id, accounts_email/phone, last_contacted_at, next_followup_date) |
+| customer_contacts | People at a customer — role + capability flags (receives reports/quotes, approves work, site access, primary, active) |
+| job_contacts | Pins a customer_contact to specific jobs (many-to-many, unique job+contact) |
+| customer_activity | Light manual activity trail per customer (Note/Call/Email/Meeting) |
 | buildings | Job site buildings (site_id = job.id) |
 | levels | Levels within buildings (drawing_prefix for label prepending) |
 | rooms | Rooms within levels (is_done boolean) |

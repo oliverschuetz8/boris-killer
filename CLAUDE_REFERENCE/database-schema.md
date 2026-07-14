@@ -112,6 +112,8 @@ create index idx_customers_email on customers(email);
 - `business`: Company or organization
 - `government`: Government entity
 
+**CRM Hub columns (added Jul 2026):** `account_type` (builder/strata/facility_manager/owner/government/subcontractor/individual), `account_status` (prospect/active/dormant/inactive, default 'active'), `abn`, `payment_terms`, `account_manager_id` (→ users.id), `accounts_email`, `accounts_phone`, `last_contacted_at` (timestamptz), `next_followup_date` (date). All nullable/additive.
+
 ### 4. customer_sites
 Physical locations where jobs are performed.
 
@@ -142,6 +144,68 @@ create index idx_customer_sites_customer_id on customer_sites(customer_id);
 - One customer can have multiple sites
 - Jobs link to specific sites
 - `access_instructions`: Gate codes, parking info, etc.
+
+### 4a. customer_contacts (CRM Hub — Jul 2026)
+People at a customer, each with a role + capability flags. Surfaced on the customer detail "People" tab.
+
+```sql
+create table customer_contacts (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references companies(id),
+  customer_id uuid not null references customers(id) on delete cascade,
+  name text not null,
+  job_title text,
+  role text,                         -- Decision-maker / Site contact / Accounts / Compliance / etc.
+  email text,
+  phone text,
+  secondary_phone text,
+  preferred_contact_method text,     -- Phone / Email / SMS
+  receives_reports boolean default false,
+  receives_quotes boolean default false,
+  approves_work boolean default false,
+  site_access boolean default false,
+  is_primary boolean default false,
+  is_active boolean default true,
+  notes text,
+  created_at timestamptz not null default now(),
+  created_by uuid references users(id)
+);
+```
+RLS: standard company subquery isolation (4 policies). Indexes on company_id, customer_id.
+
+### 4b. job_contacts (CRM Hub — Jul 2026)
+Pins a `customer_contacts` person to specific `jobs` (many-to-many). Managed from the customer People tab.
+
+```sql
+create table job_contacts (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references companies(id),
+  job_id uuid not null references jobs(id) on delete cascade,
+  contact_id uuid not null references customer_contacts(id) on delete cascade,
+  role_on_job text,
+  created_at timestamptz not null default now(),
+  unique (job_id, contact_id)
+);
+```
+RLS: standard company subquery isolation (4 policies). Indexes on company_id, job_id, contact_id.
+
+### 4c. customer_activity (CRM Hub — Jul 2026)
+Light manual activity trail per customer (Note/Call/Email/Meeting). The Activity tab merges these with derived "job created" events at render time (job events are NOT stored here).
+
+```sql
+create table customer_activity (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references companies(id),
+  customer_id uuid not null references customers(id) on delete cascade,
+  activity_type text not null,       -- Note / Call / Email / Meeting
+  description text,
+  job_id uuid references jobs(id) on delete set null,
+  occurred_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  created_by uuid references users(id)
+);
+```
+RLS: standard company subquery isolation (4 policies). Indexes on company_id, customer_id. `logCustomerActivity(..., markContactedToday)` optionally stamps `customers.last_contacted_at`.
 
 ### 5. jobs
 The core entity - construction jobs/projects.
