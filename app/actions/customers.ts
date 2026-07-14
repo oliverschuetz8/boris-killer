@@ -107,6 +107,15 @@ const updates = {
     billing_state: formData.get('state') as string || null,
     billing_postcode: formData.get('postcode') as string || null,
     notes: formData.get('notes') as string || null,
+    // Account / relationship fields (CRM hub)
+    account_type: formData.get('account_type') as string || null,
+    account_status: formData.get('account_status') as string || null,
+    abn: formData.get('abn') as string || null,
+    payment_terms: formData.get('payment_terms') as string || null,
+    account_manager_id: formData.get('account_manager_id') as string || null,
+    accounts_email: formData.get('accounts_email') as string || null,
+    accounts_phone: formData.get('accounts_phone') as string || null,
+    next_followup_date: formData.get('next_followup_date') as string || null,
   }
 
   const { error } = await supabase
@@ -211,5 +220,259 @@ export async function deleteSite(siteId: string, customerId: string) {
     .eq('id', siteId)
 
   if (error) throw new Error("Couldn't delete this site. It may have linked jobs — cancel those first, then try again.")
+  revalidatePath(`/customers/${customerId}`)
+}
+
+// ===========================================================================
+// CRM HUB — company users, contacts (people), job pinning, jobs, activity
+// ===========================================================================
+
+// Shared: resolve the signed-in user + their company_id, or throw actionable errors.
+async function requireCompany() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Your session has expired. Refresh the page and sign in again.")
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('company_id, role')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.company_id) throw new Error("We couldn't find your company. Refresh the page or contact support if this keeps happening.")
+  return { supabase, userId: user.id, companyId: profile.company_id as string, role: profile.role as string }
+}
+
+// --- Company users (for the Account Manager picker) ------------------------
+export async function getCompanyUsers() {
+  const { supabase, companyId } = await requireCompany()
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, full_name, email, role')
+    .eq('company_id', companyId)
+    .order('full_name')
+  if (error) throw new Error("Couldn't load your team. Refresh the page or check your connection.")
+  return data || []
+}
+
+// --- Contacts (people) -----------------------------------------------------
+export async function getCustomerContacts(customerId: string) {
+  const { supabase } = await requireCompany()
+  const { data, error } = await supabase
+    .from('customer_contacts')
+    .select('*, job_contacts(id, job_id, role_on_job, jobs(id, job_number, title, status))')
+    .eq('customer_id', customerId)
+    .order('is_primary', { ascending: false })
+    .order('name')
+  if (error) throw new Error("Couldn't load this customer's people. Refresh the page or check your connection.")
+  return data || []
+}
+
+export async function createContact(customerId: string, data: {
+  name: string
+  job_title?: string
+  role?: string
+  email?: string
+  phone?: string
+  secondary_phone?: string
+  preferred_contact_method?: string
+  receives_reports?: boolean
+  receives_quotes?: boolean
+  approves_work?: boolean
+  site_access?: boolean
+  is_primary?: boolean
+  is_active?: boolean
+  notes?: string
+}) {
+  const { supabase, companyId, userId, role } = await requireCompany()
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only an admin or manager can add contacts. Ask your manager to make this change.")
+  if (!data.name?.trim()) throw new Error("A contact needs a name. Add a name and try again.")
+
+  const { data: contact, error } = await supabase
+    .from('customer_contacts')
+    .insert({
+      company_id: companyId,
+      customer_id: customerId,
+      created_by: userId,
+      name: data.name.trim(),
+      job_title: data.job_title || null,
+      role: data.role || null,
+      email: data.email || null,
+      phone: data.phone || null,
+      secondary_phone: data.secondary_phone || null,
+      preferred_contact_method: data.preferred_contact_method || null,
+      receives_reports: data.receives_reports ?? false,
+      receives_quotes: data.receives_quotes ?? false,
+      approves_work: data.approves_work ?? false,
+      site_access: data.site_access ?? false,
+      is_primary: data.is_primary ?? false,
+      is_active: data.is_active ?? true,
+      notes: data.notes || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw new Error("Couldn't save this contact. Check the form and try again.")
+  revalidatePath(`/customers/${customerId}`)
+  return contact
+}
+
+export async function updateContact(contactId: string, customerId: string, data: {
+  name: string
+  job_title?: string
+  role?: string
+  email?: string
+  phone?: string
+  secondary_phone?: string
+  preferred_contact_method?: string
+  receives_reports?: boolean
+  receives_quotes?: boolean
+  approves_work?: boolean
+  site_access?: boolean
+  is_primary?: boolean
+  is_active?: boolean
+  notes?: string
+}) {
+  const { supabase, role } = await requireCompany()
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only an admin or manager can edit contacts. Ask your manager to make this change.")
+  if (!data.name?.trim()) throw new Error("A contact needs a name. Add a name and try again.")
+
+  const { error } = await supabase
+    .from('customer_contacts')
+    .update({
+      name: data.name.trim(),
+      job_title: data.job_title || null,
+      role: data.role || null,
+      email: data.email || null,
+      phone: data.phone || null,
+      secondary_phone: data.secondary_phone || null,
+      preferred_contact_method: data.preferred_contact_method || null,
+      receives_reports: data.receives_reports ?? false,
+      receives_quotes: data.receives_quotes ?? false,
+      approves_work: data.approves_work ?? false,
+      site_access: data.site_access ?? false,
+      is_primary: data.is_primary ?? false,
+      is_active: data.is_active ?? true,
+      notes: data.notes || null,
+    })
+    .eq('id', contactId)
+
+  if (error) throw new Error("Couldn't save changes to this contact. Try again or refresh the page.")
+  revalidatePath(`/customers/${customerId}`)
+}
+
+export async function deleteContact(contactId: string, customerId: string) {
+  const { supabase, role } = await requireCompany()
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only an admin or manager can remove contacts. Ask your manager to make this change.")
+
+  const { error } = await supabase
+    .from('customer_contacts')
+    .delete()
+    .eq('id', contactId)
+
+  if (error) throw new Error("Couldn't remove this contact. Refresh the page and try again.")
+  revalidatePath(`/customers/${customerId}`)
+}
+
+// --- Job pinning (link a contact to specific jobs) -------------------------
+export async function pinContactToJob(contactId: string, jobId: string, customerId: string, roleOnJob?: string) {
+  const { supabase, companyId, role } = await requireCompany()
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only an admin or manager can pin contacts to jobs. Ask your manager to make this change.")
+
+  const { error } = await supabase
+    .from('job_contacts')
+    .insert({
+      company_id: companyId,
+      job_id: jobId,
+      contact_id: contactId,
+      role_on_job: roleOnJob || null,
+    })
+
+  if (error) {
+    // Unique (job_id, contact_id) violation → already pinned
+    if ((error as any).code === '23505') throw new Error("This person is already pinned to that job.")
+    throw new Error("Couldn't pin this person to the job. Refresh the page and try again.")
+  }
+  revalidatePath(`/customers/${customerId}`)
+}
+
+export async function unpinContactFromJob(jobContactId: string, customerId: string) {
+  const { supabase, role } = await requireCompany()
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only an admin or manager can change job contacts. Ask your manager to make this change.")
+
+  const { error } = await supabase
+    .from('job_contacts')
+    .delete()
+    .eq('id', jobContactId)
+
+  if (error) throw new Error("Couldn't unpin this person from the job. Refresh the page and try again.")
+  revalidatePath(`/customers/${customerId}`)
+}
+
+// --- Jobs for a customer ---------------------------------------------------
+export async function getCustomerJobs(customerId: string) {
+  const { supabase } = await requireCompany()
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('id, job_number, title, status, priority, scheduled_start, created_at')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error("Couldn't load this customer's jobs. Refresh the page or check your connection.")
+  return data || []
+}
+
+// --- Activity (manual notes; job events are derived on the page) -----------
+export async function getCustomerActivity(customerId: string) {
+  const { supabase } = await requireCompany()
+  const { data, error } = await supabase
+    .from('customer_activity')
+    .select('*')
+    .eq('customer_id', customerId)
+    .order('occurred_at', { ascending: false })
+  if (error) throw new Error("Couldn't load this customer's activity. Refresh the page or check your connection.")
+  return data || []
+}
+
+export async function logCustomerActivity(customerId: string, data: {
+  activity_type: string
+  description?: string
+  markContactedToday?: boolean
+}) {
+  const { supabase, companyId, userId, role } = await requireCompany()
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only an admin or manager can log activity. Ask your manager to make this change.")
+
+  const nowIso = new Date().toISOString()
+
+  const { error } = await supabase
+    .from('customer_activity')
+    .insert({
+      company_id: companyId,
+      customer_id: customerId,
+      created_by: userId,
+      activity_type: data.activity_type || 'note',
+      description: data.description || null,
+      occurred_at: nowIso,
+    })
+
+  if (error) throw new Error("Couldn't save this activity. Try again or refresh the page.")
+
+  // Optionally stamp the customer's last-contacted date
+  if (data.markContactedToday) {
+    await supabase.from('customers').update({ last_contacted_at: nowIso }).eq('id', customerId)
+  }
+
+  revalidatePath(`/customers/${customerId}`)
+}
+
+export async function deleteCustomerActivity(activityId: string, customerId: string) {
+  const { supabase, role } = await requireCompany()
+  if (role !== 'admin' && role !== 'manager') throw new Error("Only an admin or manager can remove activity. Ask your manager to make this change.")
+
+  const { error } = await supabase
+    .from('customer_activity')
+    .delete()
+    .eq('id', activityId)
+
+  if (error) throw new Error("Couldn't remove this activity entry. Refresh the page and try again.")
   revalidatePath(`/customers/${customerId}`)
 }
