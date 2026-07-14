@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getCustomer } from '@/app/actions/customers'
+import { getCustomer, getCompanyUsers } from '@/app/actions/customers'
 import { requireAdminOrManager } from '@/lib/auth/require-role'
 import CustomerEditForm from './customer-edit-form'
 
@@ -10,9 +10,12 @@ export default async function CustomerEditPage({
 }) {
   await requireAdminOrManager()
   const { id } = await params
-  const customer = await getCustomer(id)
+  const [customer, companyUsers] = await Promise.all([
+    getCustomer(id),
+    getCompanyUsers(),
+  ])
 
   if (!customer) notFound()
 
-  return <CustomerEditForm customer={customer} />
+  return <CustomerEditForm customer={customer} companyUsers={companyUsers} />
 }
