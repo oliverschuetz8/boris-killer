@@ -324,9 +324,9 @@ function EvidenceFieldsSection({
   }
 
   async function handleAdd() {
-    if (!newLabel.trim()) { setError('Field label is required'); return }
+    if (!newLabel.trim()) { setError('Type a label for this field before saving.'); return }
     if (newType === 'dropdown' && newOptions.length === 0) {
-      setError('Add at least one option for a dropdown field'); return
+      setError('Add at least one dropdown option before saving.'); return
     }
     setSaving(true)
     setError(null)
@@ -684,8 +684,8 @@ function MaterialDefaultsSection({
   }
 
   async function handleAdd() {
-    if (selectedType === 'manual' && !newManualName.trim()) { setError('Enter a name'); return }
-    if (selectedType !== 'manual' && !selectedId) { setError('Select an item'); return }
+    if (selectedType === 'manual' && !newManualName.trim()) { setError('Type a name for this material before saving.'); return }
+    if (selectedType !== 'manual' && !selectedId) { setError('Pick a part or product from the dropdown before saving.'); return }
 
     setSaving(true)
     setError(null)

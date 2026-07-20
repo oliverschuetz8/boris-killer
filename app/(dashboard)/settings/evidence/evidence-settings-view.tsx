@@ -527,8 +527,8 @@ function TemplateFieldsEditor({
   }
 
   async function handleAdd() {
-    if (!newLabel.trim()) { setError('Label is required'); return }
-    if (newType === 'dropdown' && newOptions.length === 0) { setError('Add at least one option'); return }
+    if (!newLabel.trim()) { setError('Type a label for this field before saving.'); return }
+    if (newType === 'dropdown' && newOptions.length === 0) { setError('Add at least one dropdown option before saving.'); return }
     setSaving(true)
     setError(null)
     try {

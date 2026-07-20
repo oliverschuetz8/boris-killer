@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/server'
 // Types
 // ---------------------------------------------------------------------------
 
+export type QuoteState = 'none' | 'draft' | 'sent' | 'accepted' | 'declined'
+
 export interface Lead {
   id: string
   company_id: string | null
@@ -20,6 +22,7 @@ export interface Lead {
   converted_at: string | null
   created_at: string
   updated_at: string
+  quote_state: QuoteState
 }
 
 export interface LeadStats {
@@ -65,7 +68,7 @@ export async function getLeads(filters?: {
 
   let query = supabase
     .from('leads')
-    .select('*')
+    .select('*, invoices!invoices_lead_id_fkey(status, created_at)')
     .order('created_at', { ascending: false })
 
   if (filters?.status) {
@@ -83,7 +86,29 @@ export async function getLeads(filters?: {
 
   const { data, error } = await query
   if (error) throw new Error(`Failed to fetch leads: ${error.message}`)
-  return data || []
+
+  return (data || []).map(row => {
+    const { invoices, ...lead } = row as any
+    return { ...lead, quote_state: deriveQuoteState(invoices) } as Lead
+  })
+}
+
+// Quote state is derived from the latest invoice linked to the lead.
+// 'overdue' invoices roll up to 'sent' for now — a quote-specific overdue
+// concept (past quote-validity date) needs its own field, deferred.
+function deriveQuoteState(invoices: Array<{ status: string; created_at: string }> | null): QuoteState {
+  if (!invoices || invoices.length === 0) return 'none'
+  const latest = [...invoices].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )[0]
+  switch (latest.status) {
+    case 'draft': return 'draft'
+    case 'sent': return 'sent'
+    case 'overdue': return 'sent'
+    case 'paid': return 'accepted'
+    case 'cancelled': return 'declined'
+    default: return 'none'
+  }
 }
 
 export async function getLeadStats(): Promise<LeadStats> {
@@ -144,7 +169,7 @@ export async function createLead(data: {
     .single()
 
   if (error) throw new Error(`Failed to create lead: ${error.message}`)
-  return lead
+  return { ...lead, quote_state: 'none' as QuoteState }
 }
 
 export async function updateLead(

@@ -16,6 +16,7 @@ import {
   type XeroConnection,
   type XeroTimeEntry,
 } from '@/lib/services/xero'
+import { friendlyError } from '@/lib/errors'
 
 interface Props {
   xeroConnection: XeroConnection | null
@@ -51,8 +52,8 @@ export default function IntegrationsView({
     try {
       await deleteXeroConnection()
       router.refresh()
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't disconnect Xero. Try again — if it keeps happening, contact support."))
     } finally {
       setBusy(null)
     }
@@ -65,8 +66,8 @@ export default function IntegrationsView({
       const result = await syncTimesheets()
       setSyncResult(result)
       router.refresh()
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't pull timesheets from Xero. Make sure Xero is still connected, then try again."))
     } finally {
       setBusy(null)
     }
@@ -78,8 +79,8 @@ export default function IntegrationsView({
       const result = await syncEmployeePayRates()
       alert(`Updated ${result.updated} employee pay rate(s) from Xero.`)
       router.refresh()
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't pull pay rates from Xero. Make sure Xero is still connected and your team members are linked, then try again."))
     } finally {
       setBusy(null)
     }
@@ -93,8 +94,8 @@ export default function IntegrationsView({
       setEntries(prev => prev.filter(e => e.id !== entryId))
       setAssigningId(null)
       setSelectedJobId('')
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't assign those hours to that job. Try again or refresh the page."))
     } finally {
       setBusy(null)
     }
@@ -105,8 +106,8 @@ export default function IntegrationsView({
     try {
       await ignoreTimeEntry(entryId)
       setEntries(prev => prev.filter(e => e.id !== entryId))
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't ignore those hours. Try again or refresh the page."))
     } finally {
       setBusy(null)
     }

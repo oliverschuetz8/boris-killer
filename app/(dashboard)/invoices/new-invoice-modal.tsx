@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { X, Search, ArrowLeft, Loader2, FileText, Briefcase, AlertTriangle } from 'lucide-react'
 import type { JobWithInvoiceTotals } from '@/lib/services/invoices'
 import { createInvoiceFromJob } from '@/lib/services/invoices'
+import { friendlyError } from '@/lib/errors'
 import PartialInvoiceForm from './partial-invoice-form'
 
 function currency(n: number) {
@@ -72,8 +73,8 @@ export default function NewInvoiceModal({ jobs, onClose, initialJobId }: NewInvo
       if (!id) throw new Error('No invoice ID returned')
       onClose()
       router.push(`/invoices/${id}`)
-    } catch (err: any) {
-      setError(err?.message || 'Failed to create invoice')
+    } catch (err) {
+      setError(friendlyError(err, "We couldn't create that invoice. Check the line items and totals, then try again."))
       setSubmitting(false)
     }
   }

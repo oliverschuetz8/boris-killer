@@ -8,6 +8,7 @@ import {
   getJobBillablesForPeriod,
   type PartialInvoiceContext,
 } from '@/lib/services/invoices'
+import { friendlyError } from '@/lib/errors'
 
 interface LineRow {
   id: string
@@ -144,8 +145,8 @@ export default function PartialInvoiceForm({
           `Pulled ${matCount} material${matCount !== 1 ? 's' : ''} and ${labCount} labour entr${labCount !== 1 ? 'ies' : 'y'} from ${formatDate(periodStart)} to ${formatDate(periodEnd)}.`
         )
       }
-    } catch (err: any) {
-      setError(err?.message || 'Failed to pull billables for this period')
+    } catch (err) {
+      setError(friendlyError(err, "We couldn't pull billable items for that date range. Check the dates and try again — if there's nothing logged in that period, the list will be empty."))
     } finally {
       setPulling(false)
     }
@@ -189,8 +190,8 @@ export default function PartialInvoiceForm({
       })
       if (!invoiceId) throw new Error('No invoice ID returned')
       onCreated(invoiceId)
-    } catch (err: any) {
-      setError(err?.message || 'Failed to create partial invoice')
+    } catch (err) {
+      setError(friendlyError(err, "We couldn't create that progress invoice. Check the scope label and line items, then try again."))
       setSubmitting(false)
     }
   }

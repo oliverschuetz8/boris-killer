@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Package, ChevronRight, Calculator, Layers, Plug, Webhook, Building2, ClipboardList, Mail } from 'lucide-react'
+import { Package, ChevronRight, Calculator, Layers, Plug, Webhook, Building2, ClipboardList, Mail, Clock } from 'lucide-react'
 import { requireAdminOrManager } from '@/lib/auth/require-role'
 
 // Pastel category palette per CLAUDE_REFERENCE/brand.md §6.1.
@@ -36,6 +36,14 @@ const SETTINGS_SECTIONS = [
     iconColor: '#6366f1',
     title: 'Products',
     description: 'Create bundles of parts with auto-calculated costs and margins.',
+  },
+  {
+    href: '/settings/time-tracking',
+    icon: Clock,
+    iconBg: '#dbeafe', // Sky-blue
+    iconColor: '#2563eb',
+    title: 'Time Tracking',
+    description: 'Choose how the app tracks payroll hours and attributes time to jobs.',
   },
   {
     href: '/settings/pay-rules',

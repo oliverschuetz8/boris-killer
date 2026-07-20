@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { friendlyError } from '@/lib/errors'
 import { ArrowLeft, Save, AlertTriangle, ChevronDown } from 'lucide-react'
 import {
   getPreviewRates,
@@ -110,7 +111,7 @@ export default function PayRulesManager({ companyId, initialRules }: Props) {
       .upsert(payload, { onConflict: 'company_id' })
 
     if (upsertError) {
-      setError(upsertError.message)
+      setError(friendlyError(upsertError, "We couldn't save your pay rules. Check the values, then try again."))
     } else {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)

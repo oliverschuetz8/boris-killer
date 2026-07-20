@@ -17,6 +17,7 @@ import {
   updateEmailGroup,
   deleteEmailGroup,
 } from '@/lib/services/email-groups'
+import { friendlyError } from '@/lib/errors'
 import {
   EMAIL_EVENTS,
   type EmailEvent,
@@ -670,8 +671,8 @@ function EmailGroupsManager({
       })
       setGroups([...groups, created])
       setCreating(false)
-    } catch (err: any) {
-      setError(err?.message || 'Failed to create group')
+    } catch (err) {
+      setError(friendlyError(err, "We couldn't create that distribution group. Check the name and members, then try again."))
     } finally {
       setBusy(null)
     }
@@ -689,8 +690,8 @@ function EmailGroupsManager({
       })
       setGroups(groups.map(g => g.id === id ? updated : g))
       setEditingId(null)
-    } catch (err: any) {
-      setError(err?.message || 'Failed to update group')
+    } catch (err) {
+      setError(friendlyError(err, "We couldn't save changes to that group. Try again or refresh the page."))
     } finally {
       setBusy(null)
     }
@@ -703,8 +704,8 @@ function EmailGroupsManager({
     try {
       await deleteEmailGroup(id)
       setGroups(groups.filter(g => g.id !== id))
-    } catch (err: any) {
-      setError(err?.message || 'Failed to delete group')
+    } catch (err) {
+      setError(friendlyError(err, "We couldn't delete that group. Try again or refresh the page."))
     } finally {
       setBusy(null)
     }

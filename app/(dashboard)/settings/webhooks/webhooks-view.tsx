@@ -28,6 +28,7 @@ const WEBHOOK_EVENTS = [
 import {
   createApiKey, deleteApiKey, type ApiKey,
 } from '@/lib/services/api-keys'
+import { friendlyError } from '@/lib/errors'
 
 interface Props {
   webhooks: WebhookType[]
@@ -82,8 +83,8 @@ export default function WebhooksView({
       setNewDescription('')
       setNewEvents([])
       setShowAddForm(false)
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't add that webhook. Check the URL and selected events, then try again."))
     } finally {
       setBusy(null)
     }
@@ -95,8 +96,8 @@ export default function WebhooksView({
     try {
       await deleteWebhook(id)
       setWebhooks(prev => prev.filter(w => w.id !== id))
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't delete that webhook. Try again or refresh the page."))
     } finally {
       setBusy(null)
     }
@@ -109,8 +110,8 @@ export default function WebhooksView({
       setWebhooks(prev =>
         prev.map(w => w.id === webhook.id ? { ...w, is_active: !w.is_active } : w)
       )
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't change that webhook's status. Try again or refresh the page."))
     } finally {
       setBusy(null)
     }
@@ -141,8 +142,8 @@ export default function WebhooksView({
         } : w)
       )
       setEditingId(null)
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't save changes to that webhook. Try again or refresh the page."))
     } finally {
       setBusy(null)
     }
@@ -157,8 +158,8 @@ export default function WebhooksView({
       })
       router.refresh()
       alert('Test event sent! Check your endpoint and the delivery log below.')
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't send the test event. Check that your endpoint is reachable, then try again."))
     } finally {
       setBusy(null)
     }
@@ -184,8 +185,8 @@ export default function WebhooksView({
       setApiKeys(prev => [key, ...prev])
       setGeneratedKey(rawKey)
       setNewKeyName('')
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't create that API key. Try again or refresh the page."))
     } finally {
       setBusy(null)
     }
@@ -197,8 +198,8 @@ export default function WebhooksView({
     try {
       await deleteApiKey(id)
       setApiKeys(prev => prev.filter(k => k.id !== id))
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't delete that API key. Try again or refresh the page."))
     } finally {
       setBusy(null)
     }

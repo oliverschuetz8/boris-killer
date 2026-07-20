@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { FileText, Plus } from 'lucide-react'
 import type { Invoice, JobWithInvoiceTotals } from '@/lib/services/invoices'
 import NewInvoiceModal from './new-invoice-modal'
+import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
 
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-600',
@@ -14,9 +15,79 @@ const STATUS_STYLES: Record<string, string> = {
   cancelled: 'bg-gray-100 text-gray-800',
 }
 
+const STATUSES = ['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const
+
 function currency(amount: number) {
   return `A$${Number(amount).toFixed(2)}`
 }
+
+function formatStatus(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+// ---------------------------------------------------------------------------
+// Issued-period buckets (AU financial year = Jul 1 – Jun 30)
+// All comparisons done as YYYY-MM-DD strings against the `issued_date` column,
+// which is a Postgres `date` (no time component) — lexicographic compare is
+// correct for date ranges.
+// ---------------------------------------------------------------------------
+
+const PERIOD_OPTIONS = [
+  { value: 'this_month',     label: 'This month' },
+  { value: 'last_month',     label: 'Last month' },
+  { value: 'this_quarter',   label: 'This quarter' },
+  { value: 'this_fy',        label: 'This FY (Jul–Jun)' },
+  { value: 'past_12_months', label: 'Past 12 months' },
+] as const
+
+function sydneyToday(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Australia/Sydney',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date())
+}
+
+function pad(n: number) {
+  return String(n).padStart(2, '0')
+}
+
+function getPeriodRange(bucket: string): { start: string; end: string } | null {
+  const today = sydneyToday()
+  const [y, m, d] = today.split('-').map(Number)
+
+  switch (bucket) {
+    case 'this_month': {
+      const lastDay = new Date(y, m, 0).getDate()
+      return { start: `${y}-${pad(m)}-01`, end: `${y}-${pad(m)}-${pad(lastDay)}` }
+    }
+    case 'last_month': {
+      const lm = m === 1 ? 12 : m - 1
+      const ly = m === 1 ? y - 1 : y
+      const lastDay = new Date(ly, lm, 0).getDate()
+      return { start: `${ly}-${pad(lm)}-01`, end: `${ly}-${pad(lm)}-${pad(lastDay)}` }
+    }
+    case 'this_quarter': {
+      const qStart = m <= 3 ? 1 : m <= 6 ? 4 : m <= 9 ? 7 : 10
+      const qEnd   = qStart + 2
+      const lastDay = new Date(y, qEnd, 0).getDate()
+      return { start: `${y}-${pad(qStart)}-01`, end: `${y}-${pad(qEnd)}-${pad(lastDay)}` }
+    }
+    case 'this_fy': {
+      // AU FY runs Jul 1 → Jun 30. Months 7–12 start this year's FY; 1–6 are still last year's.
+      const fyStart = m >= 7 ? y : y - 1
+      return { start: `${fyStart}-07-01`, end: `${fyStart + 1}-06-30` }
+    }
+    case 'past_12_months': {
+      return { start: `${y - 1}-${pad(m)}-${pad(d)}`, end: today }
+    }
+    default:
+      return null
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 interface InvoicesListProps {
   invoices: Invoice[]
@@ -25,26 +96,134 @@ interface InvoicesListProps {
 
 export default function InvoicesList({ invoices, jobs }: InvoicesListProps) {
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({
+    status: '',
+    customer: '',
+    job: '',
+    scope: '',
+    period: '',
+  })
   const [modalOpen, setModalOpen] = useState(false)
 
+  // -------------------------------------------------------------------------
+  // Dynamic filter options — built from already-loaded invoice data so the
+  // dropdown only shows customers/jobs that actually have invoices.
+  // -------------------------------------------------------------------------
+
+  const customerOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+    for (const inv of invoices) {
+      if (inv.customer_id && inv.customer?.name && !seen.has(inv.customer_id)) {
+        seen.set(inv.customer_id, inv.customer.name)
+      }
+    }
+    return [...seen.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([value, label]) => ({ value, label }))
+  }, [invoices])
+
+  const jobOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+    for (const inv of invoices) {
+      if (inv.job_id && inv.job && !seen.has(inv.job_id)) {
+        seen.set(inv.job_id, `${inv.job.job_number} — ${inv.job.title}`)
+      }
+    }
+    return [...seen.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([value, label]) => ({ value, label }))
+  }, [invoices])
+
+  const filterDefs: FilterDef[] = useMemo(() => [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: '', label: 'All statuses' },
+        ...STATUSES.map(s => ({ value: s, label: formatStatus(s) })),
+      ],
+    },
+    {
+      key: 'customer',
+      label: 'Customer',
+      options: [
+        { value: '', label: 'All customers' },
+        ...customerOptions,
+      ],
+    },
+    {
+      key: 'job',
+      label: 'Job',
+      options: [
+        { value: '', label: 'All jobs' },
+        ...jobOptions,
+      ],
+    },
+    {
+      key: 'scope',
+      label: 'Scope',
+      options: [
+        { value: '', label: 'All scopes' },
+        { value: 'full',     label: 'Full invoice' },
+        { value: 'progress', label: 'Progress (partial)' },
+      ],
+    },
+    {
+      key: 'period',
+      label: 'Issued period',
+      options: [
+        { value: '', label: 'All periods' },
+        ...PERIOD_OPTIONS.map(p => ({ value: p.value, label: p.label })),
+      ],
+    },
+  ], [customerOptions, jobOptions])
+
+  // -------------------------------------------------------------------------
+  // Filtering
+  // -------------------------------------------------------------------------
+
   const filtered = invoices.filter(inv => {
-    const matchesSearch =
-      !search ||
-      inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-      inv.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      inv.job?.title?.toLowerCase().includes(search.toLowerCase())
+    if (activeFilters.status && inv.status !== activeFilters.status) return false
+    if (activeFilters.customer && inv.customer_id !== activeFilters.customer) return false
+    if (activeFilters.job && inv.job_id !== activeFilters.job) return false
 
-    const matchesStatus = statusFilter === 'all' || inv.status === statusFilter
+    if (activeFilters.scope) {
+      const isPartial = !!inv.is_partial
+      if (activeFilters.scope === 'full' && isPartial) return false
+      if (activeFilters.scope === 'progress' && !isPartial) return false
+    }
 
-    return matchesSearch && matchesStatus
+    if (activeFilters.period) {
+      const range = getPeriodRange(activeFilters.period)
+      if (range) {
+        if (!inv.issued_date) return false
+        if (inv.issued_date < range.start || inv.issued_date > range.end) return false
+      }
+    }
+
+    if (search) {
+      const q = search.toLowerCase()
+      const matches =
+        inv.invoice_number.toLowerCase().includes(q) ||
+        (inv.customer?.name || '').toLowerCase().includes(q) ||
+        (inv.job?.title || '').toLowerCase().includes(q) ||
+        (inv.job?.job_number || '').toLowerCase().includes(q)
+      if (!matches) return false
+    }
+
+    return true
   })
 
+  // -------------------------------------------------------------------------
+  // Summary card totals — always reflect the full invoice set (not filtered),
+  // so the cards stay a stable "health of business" view.
+  // -------------------------------------------------------------------------
+
   const totals = {
-    draft: invoices.filter(i => i.status === 'draft').reduce((s, i) => s + Number(i.total), 0),
-    sent: invoices.filter(i => i.status === 'sent').reduce((s, i) => s + Number(i.total), 0),
+    draft:   invoices.filter(i => i.status === 'draft').reduce((s, i) => s + Number(i.total), 0),
+    sent:    invoices.filter(i => i.status === 'sent').reduce((s, i) => s + Number(i.total), 0),
     overdue: invoices.filter(i => i.status === 'overdue').reduce((s, i) => s + Number(i.total), 0),
-    paid: invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total), 0),
+    paid:    invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total), 0),
   }
 
   return (
@@ -62,13 +241,13 @@ export default function InvoicesList({ invoices, jobs }: InvoicesListProps) {
         </button>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Draft', value: totals.draft, color: 'text-slate-600' },
-          { label: 'Sent', value: totals.sent, color: 'text-blue-600' },
+          { label: 'Draft',   value: totals.draft,   color: 'text-slate-600' },
+          { label: 'Sent',    value: totals.sent,    color: 'text-blue-600' },
           { label: 'Overdue', value: totals.overdue, color: 'text-red-600' },
-          { label: 'Paid', value: totals.paid, color: 'text-green-600' },
+          { label: 'Paid',    value: totals.paid,    color: 'text-green-600' },
         ].map(card => (
           <div key={card.label} className="bg-white rounded-xl border border-slate-200 p-4">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{card.label}</p>
@@ -77,35 +256,20 @@ export default function InvoicesList({ invoices, jobs }: InvoicesListProps) {
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-3 mb-4">
+      {/* Search + filters (shared SearchFilter component) */}
+      <SearchFilter
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by invoice #, customer, or job…"
+        filters={filterDefs}
+        activeFilters={activeFilters}
+        onFilterChange={(key, value) => setActiveFilters(prev => ({ ...prev, [key]: value }))}
+      />
 
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search invoices…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ paddingLeft: '14px', textAlign: 'left' }}
-          className="flex-1 max-w-sm pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-        />
-
-        {/* Status filter */}
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          style={{ paddingLeft: '2px', textAlign: 'left' }}
-          className="pr-6 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-        >
-          <option value="all">All Statuses</option>
-          <option value="draft">Draft</option>
-          <option value="sent">Sent</option>
-          <option value="paid">Paid</option>
-          <option value="overdue">Overdue</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-
-      </div>
+      {/* Result count */}
+      <p className="text-xs text-slate-500 mt-3 mb-4">
+        {filtered.length} of {invoices.length} invoice{invoices.length !== 1 ? 's' : ''}
+      </p>
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -117,7 +281,7 @@ export default function InvoicesList({ invoices, jobs }: InvoicesListProps) {
             </p>
             {invoices.length === 0 && (
               <p className="text-xs text-slate-400 mt-1">
-                Click &ldquo;New Invoice&rdquo; above to create one.
+                Click &ldquo;New invoice&rdquo; above to create one.
               </p>
             )}
           </div>

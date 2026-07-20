@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { getJobLabour } from '@/lib/services/time-tracking'
 
 export interface MaterialCostItem {
   id: string
@@ -48,16 +49,8 @@ export async function getJobCostBreakdown(jobId: string): Promise<JobCostBreakdo
     .eq('job_id', jobId)
     .order('created_at', { ascending: false })
 
-  // Fetch time entries for labour (from Xero sync)
-  const { data: timeEntries } = await supabase
-    .from('job_time_entries')
-    .select(`
-      id, user_id, employee_name, date, hours, hourly_rate, cost,
-      user:users(id, full_name, trade)
-    `)
-    .eq('job_id', jobId)
-    .eq('status', 'assigned')
-    .order('date')
+  // Labour: source-aware (in-app worker clocks OR Xero timesheets per company setting)
+  const labourLines = await getJobLabour(supabase, jobId)
 
   const materialItems: MaterialCostItem[] = (roomMaterials || []).map((rm: any) => {
     const part = Array.isArray(rm.part) ? rm.part[0] : rm.part
@@ -99,21 +92,7 @@ export async function getJobCostBreakdown(jobId: string): Promise<JobCostBreakdo
     }
   })
 
-  const labourItems: LabourCostItem[] = (timeEntries || []).map((e: any) => {
-    const user = Array.isArray(e.user) ? e.user[0] : e.user
-    const hrs = Number(e.hours || 0)
-    const rate = Number(e.hourly_rate || 0)
-    return {
-      id: e.id,
-      user_id: e.user_id,
-      full_name: user?.full_name || e.employee_name || 'Unknown',
-      trade: user?.trade || null,
-      date: e.date,
-      hours: hrs,
-      hourly_rate: rate,
-      cost: e.cost != null ? Number(e.cost) : hrs * rate,
-    }
-  })
+  const labourItems: LabourCostItem[] = labourLines
 
   const materialSellTotal = materialItems.reduce((sum, m) => sum + m.total_sell, 0)
   const materialBuyTotal = materialItems.reduce((sum, m) => sum + m.total_buy, 0)

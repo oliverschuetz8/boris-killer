@@ -1,8 +1,28 @@
 # AUTONYX — Pricing Model
 
-> Document version: April 2026 | AUTONYX / BORIS Killer project
+> Document version: May 2026 (Option B — early-stage growth) | AUTONYX / BORIS Killer project
 
 AUTONYX is purpose-built for Australian fire protection and trades businesses. Unlike generic tools such as Tradify or Fergus, AUTONYX includes AS1851 compliance workflows, building/level/room job structure, Fair Work pay rules, Xero integration, and a customer portal — features that justify a premium price point while remaining 25–35% cheaper than the closest specialist competitor, AroFlo.
+
+---
+
+## Strategic context — feature distribution (Option B, May 2026)
+
+The original April 2026 plan (Option A) gated **customer portal** to Pro+ and **PDF/spreadsheet/Word reports** to Business+ — the textbook B2B SaaS playbook for higher ARPU and a clearer upgrade ladder.
+
+**We deliberately switched to Option B for the early-stage launch:** customer portal and report exports are now included on every tier, including Starter.
+
+**Why we made this switch:**
+- The customer portal and the PDF report are *the deliverable* — what a PFP contractor's customer (building owner / certifier) actually receives. Locking these to higher tiers makes Starter feel broken at the moment of truth and pushes evaluators back to Tradify or AroFlo.
+- We're in beachhead-conquest mode (PFP-only until ~50 clients per `expansion-strategy.md`). Generosity buys word-of-mouth in a tight industry where contractors talk to each other daily.
+- The real upgrade triggers — AS1851 compliance forms, floor plan pin mapping, photo evidence with metadata, building/level/room structure, webhooks/API, Xero Payroll sync — still gate Pro and Business effectively. A serious PFP company will hit Pro because they need AS1851, not because they need PDF generation.
+
+**When we may revisit (toward Option A):**
+- Once we hit ~50 paying PFP clients and shift focus to ARPU optimisation, this decision should be re-evaluated.
+- If churn analysis later shows Starter customers are using the deliverable features heavily without ever upgrading, gating can be reintroduced.
+- New tiers added during expansion (Active Fire Services, Asbestos packs) can take a different gating philosophy if needed — this isn't a one-way door.
+
+The original Option A gating scheme is preserved in the section below for reference.
 
 ---
 
@@ -18,13 +38,15 @@ AUTONYX is purpose-built for Australian fire protection and trades businesses. U
 
 ---
 
-## Features by Tier
+## Features by Tier — current (Option B, May 2026)
 
 ### All Tiers (Starter+)
 - Job scheduling & management
 - Quoting & invoicing
 - Customer management (CRM)
 - Mobile app (field workers)
+- Customer portal (magic link) — *moved from Pro+ in Option B switch*
+- PDF / spreadsheet (.xlsx) / Word (.docx) reports — *moved from Business+ in Option B switch*
 - Xero / MYOB integration
 - Email support
 
@@ -32,21 +54,65 @@ AUTONYX is purpose-built for Australian fire protection and trades businesses. U
 - Building → Level → Room structure
 - Compliance forms & checklists (AS1851)
 - Photo evidence with metadata
+- Floor plan pin mapping
 - Fair Work pay rules engine
-- Customer portal (magic link)
 - Job cost reporting
+- Schedule with drag-drop & calendar sync
+- Daily digest emails
+- Interactive HTML drawings export
 - Xero invoice sync
+- Branded reports & portal
 - Priority support
 
 ### Business+ Only
 - Webhook automation triggers
 - Public API + API keys
-- PDF completion reports
 - Xero Payroll timesheet pull
+- Email distribution groups
 - Included onboarding sessions (2 sessions)
 - Phone support
 
 ### Enterprise Only
+- Custom compliance form builder
+- Multi-branch / location support
+- Dedicated account manager
+- White-glove onboarding
+- Custom SLA & contract
+- Full setup onboarding
+
+---
+
+## Features by Tier — original Option A plan (preserved for reference)
+
+> This is the gating scheme we'd return to in a more mature, ARPU-focused phase. NOT what's currently shipped on the pricing page.
+
+### Option A — All Tiers (Starter+)
+- Job scheduling & management
+- Quoting & invoicing
+- Customer management (CRM)
+- Mobile app (field workers)
+- Xero / MYOB integration
+- Email support
+
+### Option A — Pro+ Only
+- Building → Level → Room structure
+- Compliance forms & checklists (AS1851)
+- Photo evidence with metadata
+- Fair Work pay rules engine
+- **Customer portal (magic link)** ← currently in All Tiers under Option B
+- Job cost reporting
+- Xero invoice sync
+- Priority support
+
+### Option A — Business+ Only
+- Webhook automation triggers
+- Public API + API keys
+- **PDF completion reports** ← currently in All Tiers under Option B
+- Xero Payroll timesheet pull
+- Included onboarding sessions (2 sessions)
+- Phone support
+
+### Option A — Enterprise Only
 - Custom compliance form builder
 - Multi-branch / location support
 - Dedicated account manager

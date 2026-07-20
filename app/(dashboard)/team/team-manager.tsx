@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { UserPlus, Mail, Shield, User, X, Check, Pencil } from 'lucide-react'
+import Link from 'next/link'
+import { UserPlus, Mail, Shield, User, X, Check, Pencil, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
 import { roleLabel } from '@/lib/utils'
@@ -142,7 +143,7 @@ export default function TeamManager({
 
   async function handleInvite() {
     if (!form.email || !form.full_name) {
-      setError('Email and full name are required')
+      setError('Add an email address and full name before sending the invite.')
       return
     }
     setLoading(true)
@@ -211,13 +212,22 @@ export default function TeamManager({
             Manage your team members and invite new tradies.
           </p>
         </div>
-        <button
-          onClick={() => setShowInvite(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <UserPlus className="w-4 h-4" />
-          Invite member
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/team/timesheets"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            <Clock className="w-4 h-4" />
+            Timesheets
+          </Link>
+          <button
+            onClick={() => setShowInvite(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <UserPlus className="w-4 h-4" />
+            Invite member
+          </button>
+        </div>
       </div>
 
       {/* Invite form */}

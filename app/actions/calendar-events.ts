@@ -89,8 +89,8 @@ export interface CalendarEventInput {
 export async function createCalendarEvent(input: CalendarEventInput): Promise<CalendarEvent> {
   const { supabase, userId, company_id } = await getProfile()
 
-  if (!input.title?.trim()) throw new Error('Title is required')
-  if (!input.start_time) throw new Error('Start time is required')
+  if (!input.title?.trim()) throw new Error('Give this event a title before saving.')
+  if (!input.start_time) throw new Error('Pick a start time for this event before saving.')
 
   const { data, error } = await supabase
     .from('calendar_events')
@@ -114,7 +114,10 @@ export async function createCalendarEvent(input: CalendarEventInput): Promise<Ca
     .select(SELECT_FRAGMENT)
     .single()
 
-  if (error || !data) throw new Error(`Failed to create event: ${error?.message ?? 'unknown'}`)
+  if (error || !data) {
+    console.error('Create calendar event error:', error)
+    throw new Error("We couldn't create that event. Check the title, date and time, then try again.")
+  }
 
   revalidatePath('/schedule')
   return rowToEvent(data)
@@ -151,7 +154,10 @@ export async function updateCalendarEvent(
     .select(SELECT_FRAGMENT)
     .single()
 
-  if (error || !data) throw new Error(`Failed to update event: ${error?.message ?? 'unknown'}`)
+  if (error || !data) {
+    console.error('Update calendar event error:', error)
+    throw new Error("We couldn't save changes to that event. Try again or refresh the page.")
+  }
 
   revalidatePath('/schedule')
   return rowToEvent(data)
@@ -165,12 +171,12 @@ export async function rescheduleCalendarEvent(
   const { supabase } = await getProfile()
 
   const startDate = new Date(start)
-  if (isNaN(startDate.getTime())) throw new Error('Invalid start')
+  if (isNaN(startDate.getTime())) throw new Error("The start time doesn't look right — pick a valid date and time.")
   let endIso: string | null = null
   if (end) {
     const endDate = new Date(end)
-    if (isNaN(endDate.getTime())) throw new Error('Invalid end')
-    if (endDate <= startDate) throw new Error('End must be after start')
+    if (isNaN(endDate.getTime())) throw new Error("The end time doesn't look right — pick a valid date and time.")
+    if (endDate <= startDate) throw new Error('The event has to end after it starts. Pick a later end time.')
     endIso = endDate.toISOString()
   }
 
@@ -183,7 +189,10 @@ export async function rescheduleCalendarEvent(
     })
     .eq('id', id)
 
-  if (error) throw new Error(`Failed to reschedule event: ${error.message}`)
+  if (error) {
+    console.error('Reschedule calendar event error:', error)
+    throw new Error("We couldn't reschedule that event. Try again or refresh the page.")
+  }
   revalidatePath('/schedule')
 }
 
@@ -193,13 +202,19 @@ export async function toggleCalendarEventComplete(id: string, isCompleted: boole
     .from('calendar_events')
     .update({ is_completed: isCompleted })
     .eq('id', id)
-  if (error) throw new Error(`Failed to update event: ${error.message}`)
+  if (error) {
+    console.error('Toggle calendar event error:', error)
+    throw new Error("We couldn't update that event. Try again or refresh the page.")
+  }
   revalidatePath('/schedule')
 }
 
 export async function deleteCalendarEvent(id: string): Promise<void> {
   const { supabase } = await getProfile()
   const { error } = await supabase.from('calendar_events').delete().eq('id', id)
-  if (error) throw new Error(`Failed to delete event: ${error.message}`)
+  if (error) {
+    console.error('Delete calendar event error:', error)
+    throw new Error("We couldn't delete that event. Try again or refresh the page.")
+  }
   revalidatePath('/schedule')
 }

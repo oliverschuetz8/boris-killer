@@ -20,6 +20,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react'
 import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
+import { friendlyError } from '@/lib/errors'
 
 const UNITS = ['each', 'box', 'tube', 'metre', 'litre', 'bag', 'roll', 'sheet', 'hour']
 
@@ -156,7 +157,7 @@ export default function PartsManager() {
 
   // ─── Add ──────────────────────────────────────────────
   async function handleAdd() {
-    if (!form.name.trim()) { setError('Name is required'); return }
+    if (!form.name.trim()) { setError('Give this part a name before saving.'); return }
     setSaving(true)
     setError(null)
     try {
@@ -174,8 +175,8 @@ export default function PartsManager() {
       setForm(emptyForm)
       setShowAdd(false)
       setNameSuggestions([])
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(friendlyError(e, "We couldn't add that part. Check the name and try again."))
     } finally {
       setSaving(false)
     }
@@ -198,7 +199,7 @@ export default function PartsManager() {
   }
 
   async function handleEdit(id: string) {
-    if (!editForm.name.trim()) { setError('Name is required'); return }
+    if (!editForm.name.trim()) { setError('Give this part a name before saving.'); return }
     setSaving(true)
     setError(null)
     try {
@@ -214,8 +215,8 @@ export default function PartsManager() {
       })
       await loadAll()
       setEditingId(null)
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(friendlyError(e, "We couldn't save changes to that part. Try again or refresh the page."))
     } finally {
       setSaving(false)
     }
@@ -228,8 +229,8 @@ export default function PartsManager() {
       await deletePart(id)
       setParts(prev => prev.filter(p => p.id !== id))
       setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n })
-    } catch (e: any) {
-      alert(e.message)
+    } catch (e) {
+      alert(friendlyError(e, "We couldn't remove that part. It may still be used on a product or job — try again or refresh the page."))
     }
   }
 
@@ -252,7 +253,7 @@ export default function PartsManager() {
 
   async function handleBulkUpdate() {
     if (selectedIds.size === 0) return
-    if (!bulkValue.trim()) { setError('Enter a value'); return }
+    if (!bulkValue.trim()) { setError('Type the new value before applying it.'); return }
     setBulkSaving(true)
     setError(null)
     try {
@@ -266,8 +267,8 @@ export default function PartsManager() {
       setSelectedIds(new Set())
       setShowBulkEdit(false)
       setBulkValue('')
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(friendlyError(e, "We couldn't apply the bulk update. Try again or refresh the page."))
     } finally {
       setBulkSaving(false)
     }

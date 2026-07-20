@@ -104,7 +104,7 @@ export async function createJob(formData: FormData) {
     .single()
 
   if (!userProfile?.company_id) {
-    throw new Error('User profile not found or company not set')
+    throw new Error("We couldn't find your profile. Sign out and back in — if it keeps happening, contact support.")
   }
 
   // Generate job number
@@ -271,7 +271,7 @@ export async function deleteJob(id: string) {
 
   if (error) {
     console.error('Error deleting job:', error)
-    throw new Error(`Couldn't delete this job: ${error.message}. If this keeps happening, contact support.`)
+    throw new Error("Couldn't delete this job. It may still have linked records — try refreshing the page, or contact support if it keeps happening.")
   }
 
   revalidatePath('/jobs')
@@ -425,7 +425,10 @@ async function spawnRecurringDraft(
     .select('id')
     .single()
 
-  if (error || !newJob) throw new Error(`Failed to insert recurring draft: ${error?.message}`)
+  if (error || !newJob) {
+    console.error('Recurring draft insert error:', error)
+    throw new Error("We marked the job complete, but couldn't schedule the next service. Open the job and trigger recurrence again, or schedule the next one manually.")
+  }
 
   await supabase
     .from('jobs')

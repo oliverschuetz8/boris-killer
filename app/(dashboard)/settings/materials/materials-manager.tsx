@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { getMaterials, createMaterial, updateMaterial, deleteMaterial } from '@/lib/services/materials'
+import { friendlyError } from '@/lib/errors'
 import { Package, Plus, Pencil, Trash2, Check, X, ChevronDown, ArrowLeft } from 'lucide-react'
 
 interface Material {
@@ -36,7 +37,7 @@ export default function MaterialsManager() {
 
   async function handleAdd() {
     if (!form.name.trim() || !form.unit_price) {
-      setError('Name and price are required.')
+      setError('Add a name and a price before saving.')
       return
     }
     setSaving(true)
@@ -51,8 +52,8 @@ export default function MaterialsManager() {
       setMaterials(updated)
       setForm(emptyForm)
       setShowAdd(false)
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(friendlyError(e, "We couldn't add that material. Check the name and price, then try again."))
     } finally {
       setSaving(false)
     }
@@ -60,7 +61,7 @@ export default function MaterialsManager() {
 
   async function handleEdit(id: string) {
     if (!editForm.name.trim() || !editForm.unit_price) {
-      setError('Name and price are required.')
+      setError('Add a name and a price before saving.')
       return
     }
     setSaving(true)
@@ -74,8 +75,8 @@ export default function MaterialsManager() {
       const updated = await getMaterials()
       setMaterials(updated)
       setEditingId(null)
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(friendlyError(e, "We couldn't save changes to that material. Try again or refresh the page."))
     } finally {
       setSaving(false)
     }
@@ -86,8 +87,8 @@ export default function MaterialsManager() {
     try {
       await deleteMaterial(id)
       setMaterials(prev => prev.filter(m => m.id !== id))
-    } catch (e: any) {
-      alert(e.message)
+    } catch (e) {
+      alert(friendlyError(e, "We couldn't remove that material. It may still be used on jobs — try again or refresh the page."))
     }
   }
 

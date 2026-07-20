@@ -7,7 +7,12 @@ import PenetrationList from './penetration-list'
 import RoomMaterialsSection from './room-materials-section'
 import OverviewView from './overview-view'
 import { startJob } from '@/lib/services/jobs'
-import { startTimeEntry } from '@/lib/services/time-entries'
+import {
+  startJobTimerAction,
+  endJobTimerAction,
+  getClockStateAction,
+} from '@/app/actions/time-tracking'
+import { formatDurationLive } from '@/lib/services/time-tracking'
 import { getRoomsForJob } from '@/lib/services/building-structure'
 import { getLevelDrawings, getDrawingUrl } from '@/lib/services/level-drawings'
 import { getPenetrationsByLevel, updatePenetrationPin, deletePenetration } from '@/lib/services/penetrations'
@@ -15,7 +20,7 @@ import { FloorPlanViewer, type PinData } from '@/components/floor-plan-pin'
 import {
   ArrowLeft, Play, Clock, MapPin, User,
   AlertTriangle, ClipboardList, ChevronDown,
-  LayoutList, Plus, CheckCircle2, Map, X,
+  LayoutList, Plus, CheckCircle2, Map, X, Square,
 } from 'lucide-react'
 
 interface Job {
@@ -107,9 +112,71 @@ export default function ExecutionView({
   const [levelPins, setLevelPins] = useState<PinData[]>([])
   const [showDrawingModal, setShowDrawingModal] = useState(false)
 
+  // Per-job clock state (refreshes every 30s so duration ticks live)
+  const [clockState, setClockState] = useState<Awaited<ReturnType<typeof getClockStateAction>> | null>(null)
+  const [clockBusy, setClockBusy] = useState(false)
+  const [, forceTick] = useState(0)
+
   const isNotStarted = localStatus === 'scheduled' || localStatus === 'draft'
   const isInProgress = localStatus === 'in_progress'
   const isCompleted = localStatus === 'completed'
+
+  const refreshClockState = useCallback(async () => {
+    try {
+      const s = await getClockStateAction()
+      setClockState(s)
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshClockState()
+    const refreshT = setInterval(refreshClockState, 60_000)
+    const tickT = setInterval(() => forceTick(n => n + 1), 30_000)
+    return () => {
+      clearInterval(refreshT)
+      clearInterval(tickT)
+    }
+  }, [refreshClockState])
+
+  const onThisJob = clockState?.activeJobEntry?.job_id === job.id
+  const otherJobNumber =
+    clockState?.activeJobEntry && clockState.activeJobEntry.job_id !== job.id
+      ? clockState.activeJobEntry.job?.job_number ?? null
+      : null
+
+  async function handleStartWorkOnThisJob() {
+    setClockBusy(true)
+    try {
+      await startJobTimerAction(job.id)
+      await refreshClockState()
+    } catch (err) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Couldn't start work on this job. Refresh the page and try again.",
+      )
+    } finally {
+      setClockBusy(false)
+    }
+  }
+
+  async function handleStopWorkOnThisJob() {
+    setClockBusy(true)
+    try {
+      await endJobTimerAction()
+      await refreshClockState()
+    } catch (err) {
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Couldn't stop the job timer. Refresh the page and try again.",
+      )
+    } finally {
+      setClockBusy(false)
+    }
+  }
 
   useEffect(() => {
     if (isInProgress || isCompleted) {
@@ -212,11 +279,16 @@ export default function ExecutionView({
     setError(null)
     try {
       await startJob(job.id, userId)
-      await startTimeEntry(job.id, userId, companyId)
+      // Also clocks the worker on this job; auto-starts the day shift if none active.
+      await startJobTimerAction(job.id)
       setLocalStatus('in_progress')
       setStartedAt(new Date().toISOString())
-    } catch {
-      setError("Couldn't start the job. Check your connection and try again.")
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Couldn't start the job. Check your connection and try again."
+      setError(message)
     } finally {
       setLoading(null)
     }
@@ -305,6 +377,50 @@ export default function ExecutionView({
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
           <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2">Notes</p>
           <p className="text-sm text-amber-800 whitespace-pre-wrap">{job.notes}</p>
+        </div>
+      )}
+
+      {/* ── Per-job clock control (in-progress only) ── */}
+      {isInProgress && clockState && (
+        <div className="mb-4">
+          {onThisJob ? (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 animate-pulse" />
+                <div className="min-w-0">
+                  <p className="text-xs text-blue-700 font-semibold uppercase tracking-wider">
+                    Working on this job
+                  </p>
+                  <p className="text-sm font-bold text-blue-900">
+                    {clockState.activeJobEntry
+                      ? formatDurationLive(clockState.activeJobEntry.started_at)
+                      : '—'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleStopWorkOnThisJob}
+                disabled={clockBusy}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-blue-300 hover:bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors flex-shrink-0"
+              >
+                <Square className="w-3.5 h-3.5 fill-current" />
+                Stop work
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleStartWorkOnThisJob}
+              disabled={clockBusy}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              <Play className="w-4 h-4" />
+              {clockBusy
+                ? 'Starting…'
+                : otherJobNumber
+                  ? `Switch to this job (currently on ${otherJobNumber})`
+                  : 'Start work on this job'}
+            </button>
+          )}
         </div>
       )}
 

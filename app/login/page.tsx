@@ -1,79 +1,96 @@
 'use client'
 
-import { useActionState } from 'react'
-import { login } from '@/app/actions/auth'
+import { useActionState, useRef, useState } from 'react'
 import Link from 'next/link'
+import { login } from '@/app/actions/auth'
+import { AuthShell } from '@/components/auth-shell'
 
 const initialState = { error: '' }
 
+const inputClass =
+  'mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20'
+
 export default function LoginPage() {
-  const [state, formAction] = useActionState(login, initialState)
+  const [state, formAction, isPending] = useActionState(login, initialState)
+  const formRef = useRef<HTMLFormElement>(null)
+  const [isValid, setIsValid] = useState(false)
+
+  const checkValidity = () => {
+    setIsValid(formRef.current?.checkValidity() ?? false)
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to your account."
+      footer={
+        <>
+          Don&apos;t have an account?{' '}
+          <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-700">
+            Start free trial
+          </Link>
+        </>
+      }
+    >
+      <form
+        ref={formRef}
+        action={formAction}
+        onInput={checkValidity}
+        onChange={checkValidity}
+        className="space-y-5"
+      >
         <div>
-          <h2 className="text-center text-3xl font-bold text-slate-900">
-            Sign in to your account
-          </h2>
+          <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+            Email address
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            className={inputClass}
+            placeholder="sarah@acmefire.com.au"
+          />
         </div>
 
-        <form action={formAction} className="mt-8 space-y-6">
-          <div className="space-y-4 rounded-md">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
-
-          {state?.error && (
-            <div className="bg-red-50 border border-red-200 rounded-md px-4 py-3 text-sm text-red-700">
-              {state.error}
-            </div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        <div>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-blue-600 hover:text-blue-700"
             >
-              Sign in
-            </button>
-          </div>
-
-          <div className="text-center text-sm">
-            <span className="text-slate-600">Don't have an account? </span>
-            <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
-              Sign up for free
+              Forgot password?
             </Link>
           </div>
-        </form>
-      </div>
-    </div>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            className={inputClass}
+            placeholder="••••••••"
+          />
+        </div>
+
+        {state?.error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {state.error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={!isValid || isPending}
+          className="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+        >
+          {isPending ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+    </AuthShell>
   )
 }

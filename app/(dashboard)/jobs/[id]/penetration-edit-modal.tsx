@@ -11,6 +11,7 @@ import {
 } from '@/lib/services/evidence-categories'
 import { getRoomsForJob } from '@/lib/services/building-structure'
 import { updatePenetration } from '@/lib/services/penetrations'
+import { friendlyError } from '@/lib/errors'
 
 interface JobEvidenceField {
   id: string
@@ -226,10 +227,7 @@ export default function PenetrationEditModal({
       onSaved()
       onClose()
     } catch (e) {
-      const message = e instanceof Error
-        ? e.message
-        : "Couldn't save changes to this entry. Try again or refresh the page."
-      setError(message)
+      setError(friendlyError(e, "We couldn't save changes to this entry. Try again or refresh the page."))
     } finally {
       setSaving(false)
     }

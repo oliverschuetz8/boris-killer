@@ -33,10 +33,10 @@ export async function rescheduleJob(jobId: string, start: string, end: string): 
   const startDate = new Date(start)
   const endDate = new Date(end)
   if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    throw new Error('Invalid start or end date')
+    throw new Error("The new dates don't look right — pick a valid start and end time, then try again.")
   }
   if (endDate <= startDate) {
-    throw new Error('End must be after start')
+    throw new Error('The job has to end after it starts. Pick a later end time.')
   }
 
   const { data: job, error } = await supabase
@@ -49,7 +49,10 @@ export async function rescheduleJob(jobId: string, start: string, end: string): 
     .select('id, company_id, job_number, title, status, scheduled_start, scheduled_end')
     .single()
 
-  if (error) throw new Error(`Failed to reschedule: ${error.message}`)
+  if (error) {
+    console.error('Reschedule job error:', error)
+    throw new Error("We couldn't reschedule that job. Try again or refresh the page.")
+  }
 
   fireWebhookEvent(job.company_id, 'job.rescheduled', {
     job_id: job.id,
@@ -80,7 +83,10 @@ export async function reassignJobToWorker(
     .delete()
     .eq('job_id', jobId)
     .eq('user_id', fromUserId)
-  if (deleteError) throw new Error(`Failed to remove assignment: ${deleteError.message}`)
+  if (deleteError) {
+    console.error('Remove assignment error:', deleteError)
+    throw new Error("We couldn't unassign that tradie. Try again or refresh the page.")
+  }
 
   const { data: existing } = await supabase
     .from('job_assignments')
@@ -98,7 +104,10 @@ export async function reassignJobToWorker(
         company_id,
         role: 'worker',
       })
-    if (insertError) throw new Error(`Failed to assign: ${insertError.message}`)
+    if (insertError) {
+      console.error('Assign tradie error:', insertError)
+      throw new Error("We couldn't assign that tradie to the job. Try again or refresh the page.")
+    }
   }
 
   revalidatePath('/schedule')
@@ -119,8 +128,8 @@ export async function createScheduledJob(input: QuickCreateInput): Promise<Sched
   const { supabase, userId, role, company_id } = await getProfile()
   if (role !== 'admin' && role !== 'manager') throw new Error("Only admins or managers can change the schedule. Ask your account owner if you need access.")
 
-  if (!input.title?.trim()) throw new Error('Title is required')
-  if (!input.customer_id) throw new Error('Customer is required')
+  if (!input.title?.trim()) throw new Error('Give this job a title before saving.')
+  if (!input.customer_id) throw new Error('Pick a customer for this job before saving.')
 
   const { count } = await supabase
     .from('jobs')
@@ -152,7 +161,10 @@ export async function createScheduledJob(input: QuickCreateInput): Promise<Sched
     `)
     .single()
 
-  if (error || !job) throw new Error(`Failed to create job: ${error?.message ?? 'unknown'}`)
+  if (error || !job) {
+    console.error('Create scheduled job error:', error)
+    throw new Error("We couldn't create that job. Check the title, customer, and times, then try again.")
+  }
 
   let assignments: ScheduleEvent['assignments'] = []
   if (input.worker_ids && input.worker_ids.length > 0) {
@@ -226,7 +238,10 @@ export async function enableCalendarSync(): Promise<{ token: string }> {
     .from('users')
     .update({ calendar_token: token })
     .eq('id', userId)
-  if (error) throw new Error(`Failed to enable sync: ${error.message}`)
+  if (error) {
+    console.error('Enable calendar sync error:', error)
+    throw new Error("We couldn't turn on calendar sync. Try again — if it keeps happening, contact support.")
+  }
 
   revalidatePath('/profile')
   return { token }
@@ -240,7 +255,10 @@ export async function regenerateCalendarToken(): Promise<{ token: string }> {
     .from('users')
     .update({ calendar_token: token })
     .eq('id', userId)
-  if (error) throw new Error(`Failed to regenerate token: ${error.message}`)
+  if (error) {
+    console.error('Regenerate calendar token error:', error)
+    throw new Error("We couldn't create a new calendar link. Your existing link still works — try again in a moment.")
+  }
 
   revalidatePath('/profile')
   return { token }
@@ -253,7 +271,10 @@ export async function disableCalendarSync(): Promise<void> {
     .from('users')
     .update({ calendar_token: null })
     .eq('id', userId)
-  if (error) throw new Error(`Failed to disable sync: ${error.message}`)
+  if (error) {
+    console.error('Disable calendar sync error:', error)
+    throw new Error("We couldn't turn off calendar sync. Try again — if it keeps happening, contact support.")
+  }
 
   revalidatePath('/profile')
 }

@@ -17,7 +17,7 @@ export async function generatePortalLink(jobId: string, companyId: string) {
     .single()
 
   if (!profile || (profile.role !== 'admin' && profile.role !== 'manager')) {
-    throw new Error('Only admins and managers can generate portal links')
+    throw new Error("You don't have permission to share a portal link. Ask your account admin if you need access.")
   }
 
   const link = await createPortalLink(jobId, companyId, user.id)
@@ -38,7 +38,7 @@ export async function revokePortalLinkAction(linkId: string, jobId: string) {
     .single()
 
   if (!profile || (profile.role !== 'admin' && profile.role !== 'manager')) {
-    throw new Error('Only admins and managers can revoke portal links')
+    throw new Error("You don't have permission to revoke a portal link. Ask your account admin if you need access.")
   }
 
   await revokePortalLink(linkId)

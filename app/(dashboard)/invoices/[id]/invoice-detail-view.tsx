@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { updateInvoiceStatus, deleteInvoice, type Invoice } from '@/lib/services/invoices'
 import { pushInvoiceToXero } from '@/lib/services/xero'
+import { friendlyError } from '@/lib/errors'
 
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-600',
@@ -31,8 +32,8 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
     try {
       await updateInvoiceStatus(invoice.id, status)
       router.refresh()
-    } catch {
-      alert(`Failed to update status`)
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't change this invoice's status. Try again — if it keeps happening, refresh the page."))
     } finally {
       setBusy(null)
     }
@@ -44,8 +45,8 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
     try {
       await deleteInvoice(invoice.id)
       router.push('/invoices')
-    } catch {
-      alert("Couldn't delete this invoice. If payments are linked, cancel the invoice instead.")
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't delete this invoice. If payments are linked, cancel the invoice instead."))
       setBusy(null)
     }
   }
@@ -56,8 +57,8 @@ export default function InvoiceDetailView({ invoice }: { invoice: Invoice }) {
       await pushInvoiceToXero(invoice.id)
       alert('Invoice pushed to Xero as draft.')
       router.refresh()
-    } catch (err: any) {
-      alert(err.message || 'Failed to push to Xero')
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't send this invoice to Xero. Check Settings → Integrations to make sure Xero is still connected, then try again."))
     } finally {
       setBusy(null)
     }

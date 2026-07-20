@@ -1,18 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Target, Plus, Trash2, Loader2, Search, X, ChevronDown,
+  Target, Plus, Trash2, Loader2, X, ChevronDown,
   Users, UserCheck, TrendingUp, AlertCircle, Percent,
 } from 'lucide-react'
 import {
   createLead, updateLead, deleteLead,
-  type Lead, type LeadStats,
+  type Lead, type LeadStats, type QuoteState,
 } from '@/lib/services/leads'
+import { friendlyError } from '@/lib/errors'
+import SearchFilter, { type FilterDef } from '@/components/ui/search-filter'
 
 // ---------------------------------------------------------------------------
-// Status & source badge config
+// Status, source & quote badge config
 // ---------------------------------------------------------------------------
 
 const STATUS_STYLES: Record<string, string> = {
@@ -33,6 +35,14 @@ const SOURCE_STYLES: Record<string, string> = {
 
 const STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'] as const
 const SOURCES = ['website', 'referral', 'manual', 'zapier', 'n8n'] as const
+
+const QUOTE_STATES: { value: QuoteState; label: string }[] = [
+  { value: 'none',     label: 'No quote' },
+  { value: 'draft',    label: 'Draft quote' },
+  { value: 'sent',     label: 'Quote sent' },
+  { value: 'accepted', label: 'Quote accepted' },
+  { value: 'declined', label: 'Quote declined' },
+]
 
 function formatStatus(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1)
@@ -63,10 +73,13 @@ export default function LeadsView({
   const [leads, setLeads] = useState(initialLeads)
   const [stats, setStats] = useState(initialStats)
 
-  // Filter state
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterSource, setFilterSource] = useState('')
+  // Filter state — single object keyed by filter id, matches <SearchFilter>'s contract
   const [search, setSearch] = useState('')
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({
+    status: '',
+    source: '',
+    quote: '',
+  })
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false)
@@ -90,17 +103,50 @@ export default function LeadsView({
   const [editMessage, setEditMessage] = useState('')
 
   // -------------------------------------------------------------------------
+  // Filter definitions (memoised so option arrays don't churn each render)
+  // -------------------------------------------------------------------------
+
+  const filterDefs: FilterDef[] = useMemo(() => [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: '', label: 'All statuses' },
+        ...STATUSES.map(s => ({ value: s, label: formatStatus(s) })),
+      ],
+    },
+    {
+      key: 'source',
+      label: 'Source',
+      options: [
+        { value: '', label: 'All sources' },
+        ...SOURCES.map(s => ({ value: s, label: formatStatus(s) })),
+      ],
+    },
+    {
+      key: 'quote',
+      label: 'Quote',
+      options: [
+        { value: '', label: 'All quote states' },
+        ...QUOTE_STATES.map(q => ({ value: q.value, label: q.label })),
+      ],
+    },
+  ], [])
+
+  // -------------------------------------------------------------------------
   // Filtering
   // -------------------------------------------------------------------------
 
   const filteredLeads = leads.filter(lead => {
-    if (filterStatus && lead.status !== filterStatus) return false
-    if (filterSource && lead.source !== filterSource) return false
+    if (activeFilters.status && lead.status !== activeFilters.status) return false
+    if (activeFilters.source && lead.source !== activeFilters.source) return false
+    if (activeFilters.quote && lead.quote_state !== activeFilters.quote) return false
     if (search) {
       const q = search.toLowerCase()
       if (
         !lead.name.toLowerCase().includes(q) &&
         !lead.email.toLowerCase().includes(q) &&
+        !(lead.phone || '').toLowerCase().includes(q) &&
         !(lead.company_name || '').toLowerCase().includes(q)
       ) return false
     }
@@ -140,8 +186,8 @@ export default function LeadsView({
       }))
       resetAddForm()
       setShowAddModal(false)
-    } catch (err: any) {
-      alert(err.message || 'Failed to add lead')
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't add that lead. Check the form and try again."))
     } finally {
       setBusy(false)
     }
@@ -180,11 +226,10 @@ export default function LeadsView({
             : l
         )
       )
-      // Refresh stats from server
       router.refresh()
       setEditingLead(null)
-    } catch (err: any) {
-      alert(err.message || 'Failed to update lead')
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't save changes to that lead. Try again or refresh the page."))
     } finally {
       setBusy(false)
     }
@@ -202,8 +247,8 @@ export default function LeadsView({
       setLeads(prev => prev.filter(l => l.id !== id))
       router.refresh()
       if (editingLead?.id === id) setEditingLead(null)
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete lead')
+    } catch (err) {
+      alert(friendlyError(err, "We couldn't delete that lead. Try again or refresh the page."))
     } finally {
       setBusy(false)
     }
@@ -252,59 +297,20 @@ export default function LeadsView({
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Search */}
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or company…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+      {/* Search + filters (shared SearchFilter component) */}
+      <SearchFilter
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name, email, phone, or company…"
+        filters={filterDefs}
+        activeFilters={activeFilters}
+        onFilterChange={(key, value) => setActiveFilters(prev => ({ ...prev, [key]: value }))}
+      />
 
-        {/* Status filter */}
-        <div className="relative">
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-            className="appearance-none pl-3 pr-10 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-          >
-            <option value="">All Statuses</option>
-            {STATUSES.map(s => (
-              <option key={s} value={s}>{formatStatus(s)}</option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-        </div>
-
-        {/* Source filter */}
-        <div className="relative">
-          <select
-            value={filterSource}
-            onChange={e => setFilterSource(e.target.value)}
-            className="appearance-none pl-3 pr-10 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-          >
-            <option value="">All Sources</option>
-            {SOURCES.map(s => (
-              <option key={s} value={s}>{formatStatus(s)}</option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-        </div>
-
-        {(filterStatus || filterSource || search) && (
-          <button
-            onClick={() => { setFilterStatus(''); setFilterSource(''); setSearch('') }}
-            className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"
-          >
-            <X className="w-3 h-3" /> Clear
-          </button>
-        )}
-      </div>
+      {/* Result count */}
+      <p className="text-xs text-slate-500 -mt-2">
+        {filteredLeads.length} of {leads.length} lead{leads.length !== 1 ? 's' : ''}
+      </p>
 
       {/* Leads table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -328,6 +334,7 @@ export default function LeadsView({
                   <th className="text-left px-6 py-3 font-medium text-slate-600">Company</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-600">Source</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-600">Status</th>
+                  <th className="text-left px-6 py-3 font-medium text-slate-600">Quote</th>
                   <th className="text-left px-6 py-3 font-medium text-slate-600">Created</th>
                   <th className="text-right px-6 py-3 font-medium text-slate-600">Actions</th>
                 </tr>
@@ -351,6 +358,9 @@ export default function LeadsView({
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[lead.status] || 'bg-slate-100 text-slate-600'}`}>
                         {formatStatus(lead.status)}
                       </span>
+                    </td>
+                    <td className="px-6 py-3 text-slate-500 text-xs">
+                      {QUOTE_STATES.find(q => q.value === lead.quote_state)?.label || '—'}
                     </td>
                     <td className="px-6 py-3 text-slate-500">{formatDate(lead.created_at)}</td>
                     <td className="px-6 py-3 text-right">
@@ -379,7 +389,7 @@ export default function LeadsView({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-xl w-full max-w-lg mx-4 shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Add Lead</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Add lead</h2>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
@@ -424,7 +434,7 @@ export default function LeadsView({
 
               {/* Company name */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Company name</label>
                 <input
                   type="text"
                   value={formCompany}
@@ -453,7 +463,7 @@ export default function LeadsView({
 
               {/* Message */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Message / Notes</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Message / notes</label>
                 <textarea
                   value={formMessage}
                   onChange={e => setFormMessage(e.target.value)}
@@ -477,7 +487,7 @@ export default function LeadsView({
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {busy && <Loader2 className="w-4 h-4 animate-spin" />}
-                Add Lead
+                Add lead
               </button>
             </div>
           </div>
@@ -491,7 +501,7 @@ export default function LeadsView({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-xl w-full max-w-lg mx-4 shadow-xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-900">Edit Lead</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Edit lead</h2>
               <button onClick={() => setEditingLead(null)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
@@ -550,7 +560,7 @@ export default function LeadsView({
 
               {/* Company name */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Company name</label>
                 <input
                   type="text"
                   value={editCompany}
@@ -561,7 +571,7 @@ export default function LeadsView({
 
               {/* Message */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Message / Notes</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Message / notes</label>
                 <textarea
                   value={editMessage}
                   onChange={e => setEditMessage(e.target.value)}
@@ -606,7 +616,7 @@ export default function LeadsView({
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {busy && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Save Changes
+                  Save changes
                 </button>
               </div>
             </div>

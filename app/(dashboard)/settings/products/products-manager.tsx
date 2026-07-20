@@ -14,6 +14,7 @@ import {
   type ProductPart,
 } from '@/lib/services/products'
 import { getParts, type Part } from '@/lib/services/parts'
+import { friendlyError } from '@/lib/errors'
 import {
   Layers, Plus, Pencil, Trash2, Check, X, ChevronDown,
   ArrowLeft, Loader2, Package,
@@ -116,7 +117,7 @@ export default function ProductsManager() {
 
   // ─── Create product ───────────────────────────────────
   async function handleCreate() {
-    if (!addName.trim()) { setError('Name is required'); return }
+    if (!addName.trim()) { setError('Give this product a name before saving.'); return }
     setSaving(true)
     setError(null)
     try {
@@ -129,8 +130,8 @@ export default function ProductsManager() {
       setAddName('')
       setAddDesc('')
       setExpandedId(created.id)
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(friendlyError(e, "We couldn't add that product. Check the name and try again."))
     } finally {
       setSaving(false)
     }
@@ -143,8 +144,8 @@ export default function ProductsManager() {
       await deleteProduct(id)
       setProducts(prev => prev.filter(p => p.id !== id))
       if (expandedId === id) setExpandedId(null)
-    } catch (e: any) {
-      alert(e.message)
+    } catch (e) {
+      alert(friendlyError(e, "We couldn't remove that product. It may still be used on jobs — try again or refresh the page."))
     }
   }
 
@@ -157,7 +158,7 @@ export default function ProductsManager() {
   }
 
   async function handleSaveEdit(id: string) {
-    if (!editName.trim()) { setError('Name is required'); return }
+    if (!editName.trim()) { setError('Give this product a name before saving.'); return }
     setSaving(true)
     setError(null)
     try {
@@ -168,8 +169,8 @@ export default function ProductsManager() {
       })
       await loadAll()
       setEditingId(null)
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(friendlyError(e, "We couldn't save changes to that product. Try again or refresh the page."))
     } finally {
       setSaving(false)
     }
@@ -186,8 +187,8 @@ export default function ProductsManager() {
       await loadAll()
       setAddPartId('')
       setAddPartQty('1')
-    } catch (e: any) {
-      alert(e.message)
+    } catch (e) {
+      alert(friendlyError(e, "We couldn't add that part to the product. Try again or refresh the page."))
     } finally {
       setAddingPart(false)
     }
@@ -200,8 +201,8 @@ export default function ProductsManager() {
     try {
       await updateProductPartQuantity(ppId, productId, qty)
       await loadAll()
-    } catch (e: any) {
-      alert(e.message)
+    } catch (e) {
+      alert(friendlyError(e, "We couldn't update that quantity. Try again or refresh the page."))
     }
   }
 
@@ -210,8 +211,8 @@ export default function ProductsManager() {
     try {
       await removeProductPart(ppId, productId)
       await loadAll()
-    } catch (e: any) {
-      alert(e.message)
+    } catch (e) {
+      alert(friendlyError(e, "We couldn't remove that part from the product. Try again or refresh the page."))
     }
   }
 

@@ -1,69 +1,98 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { AuthShell } from '@/components/auth-shell'
+import { friendlyAuthError, friendlyDbError } from '@/lib/errors'
+
+const inputClass =
+  'mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20'
+
+type InviteStatus = 'loading' | 'valid' | 'invalid'
 
 export default function AcceptInvitePage() {
   const router = useRouter()
   const supabase = createClient()
+
+  const [status, setStatus] = useState<InviteStatus>('loading')
+  const [firstName, setFirstName] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [name, setName] = useState('')
 
   useEffect(() => {
-    const hash = window.location.hash
-    const params = new URLSearchParams(hash.replace('#', ''))
-    const accessToken = params.get('access_token')
-    const refreshToken = params.get('refresh_token')
-  
-    if (accessToken && refreshToken) {
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      }).then(({ data: { session } }) => {
-        const user = session?.user
-        if (user?.user_metadata?.full_name) {
-          setName(user.user_metadata.full_name.split(' ')[0])
-        }
-      })
-    } else {
-      // Session may already be set via callback route
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user?.user_metadata?.full_name) {
-          setName(user.user_metadata.full_name.split(' ')[0])
-        }
-      })
-    }
-  }, [])
+    const init = async () => {
+      const hash = window.location.hash
+      const params = new URLSearchParams(hash.replace('#', ''))
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
 
-  async function handleSetPassword() {
-    if (!password || password.length < 8) {
-      setError('Password must be at least 8 characters')
-      return
-    }
-    if (password !== confirm) {
-      setError('Passwords do not match')
-      return
+      if (accessToken && refreshToken) {
+        const { data, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+
+        if (sessionError || !data.session) {
+          setStatus('invalid')
+          return
+        }
+
+        const fullName = data.session.user.user_metadata?.full_name as string | undefined
+        if (fullName) setFirstName(fullName.split(' ')[0])
+        setStatus('valid')
+        return
+      }
+
+      // Session may already be set via the auth callback route.
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const fullName = user.user_metadata?.full_name as string | undefined
+        if (fullName) setFirstName(fullName.split(' ')[0])
+        setStatus('valid')
+      } else {
+        setStatus('invalid')
+      }
     }
 
-    setLoading(true)
+    init()
+  }, [supabase])
+
+  const handleSubmit = async () => {
     setError(null)
 
-    const { data: { user }, error: updateError } = await supabase.auth.updateUser({ password })
-
-    if (updateError) {
-      setError(updateError.message)
-      setLoading(false)
+    if (password.length < 8) {
+      setError('Your password is shorter than 8 characters — pick a longer one.')
       return
     }
 
+    if (password !== confirm) {
+      setError("The two passwords don't match — check both fields and try again.")
+      return
+    }
+
+    setSubmitting(true)
+
+    const { data: updateData, error: updateError } = await supabase.auth.updateUser({ password })
+
+    if (updateError) {
+      setError(
+        friendlyAuthError(
+          updateError,
+          "We couldn't set your password. Try again — if it keeps happening, ask your admin to resend the invite.",
+        ),
+      )
+      setSubmitting(false)
+      return
+    }
+
+    const user = updateData.user
     if (user) {
       const meta = user.user_metadata
-      // Create users record
-      await supabase.from('users').upsert({
+      const { error: upsertError } = await supabase.from('users').upsert({
         id: user.id,
         company_id: meta.company_id,
         full_name: meta.full_name,
@@ -71,59 +100,130 @@ export default function AcceptInvitePage() {
         role: meta.role || 'worker',
         email: user.email,
       })
+
+      if (upsertError) {
+        console.error('Accept-invite upsert error:', upsertError)
+        setError(
+          friendlyDbError(
+            upsertError,
+            "We saved your password, but couldn't finish activating your account. Try signing in directly — if that doesn't work, ask your admin to resend the invite.",
+          ),
+        )
+        setSubmitting(false)
+        return
+      }
     }
 
     router.push('/today')
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-xl border border-slate-200 p-8 w-full max-w-sm">
-        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mb-5">
-          <span className="text-white font-bold text-lg">A</span>
+  if (status === 'loading') {
+    return (
+      <AuthShell title="Loading your invite…">
+        <div className="flex justify-center py-6">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
         </div>
+      </AuthShell>
+    )
+  }
 
-        <h1 className="text-xl font-bold text-slate-900 mb-1">
-          {name ? `Welcome, ${name}!` : 'Welcome!'}
-        </h1>
-        <p className="text-sm text-slate-500 mb-6">Set a password to activate your account.</p>
-
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Password</label>
-            <input
-              type="password"
-              placeholder="Min. 8 characters"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Confirm Password</label>
-            <input
-              type="password"
-              placeholder="Repeat password"
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSetPassword()}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {error && (
-            <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
-          )}
-
-          <button
-            onClick={handleSetPassword}
-            disabled={loading}
-            className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-1"
+  if (status === 'invalid') {
+    return (
+      <AuthShell
+        title="This invite link isn't valid"
+        subtitle="It may have expired, or it was opened in a different browser than the one that received the email."
+        footer={
+          <>
+            Already activated your account?{' '}
+            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+              Sign in instead
+            </Link>
+          </>
+        }
+      >
+        <div className="space-y-4 text-sm text-slate-600">
+          <p>
+            Ask your admin to send you a fresh invite, then open it from the same device and
+            browser where you receive your email.
+          </p>
+          <Link
+            href="/login"
+            className="block w-full rounded-full border border-slate-200 bg-white px-6 py-3 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
-            {loading ? 'Activating…' : 'Activate account →'}
-          </button>
+            Back to sign in
+          </Link>
         </div>
-      </div>
-    </div>
+      </AuthShell>
+    )
+  }
+
+  const isValid = password.length >= 8 && confirm.length >= 8 && password === confirm
+  const passwordMismatch = confirm.length > 0 && password !== confirm
+
+  return (
+    <AuthShell
+      title={firstName ? `Welcome, ${firstName}.` : 'Welcome.'}
+      subtitle="Set your password to activate your account."
+    >
+      <form
+        onSubmit={e => {
+          e.preventDefault()
+          handleSubmit()
+        }}
+        className="space-y-5"
+      >
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className={inputClass}
+            placeholder="••••••••"
+          />
+          <p className="mt-1.5 text-xs text-slate-500">8 characters or more.</p>
+        </div>
+
+        <div>
+          <label htmlFor="confirm" className="block text-sm font-medium text-slate-700">
+            Confirm password
+          </label>
+          <input
+            id="confirm"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={confirm}
+            onChange={e => setConfirm(e.target.value)}
+            className={inputClass}
+            placeholder="••••••••"
+          />
+          {passwordMismatch && (
+            <p className="mt-1.5 text-xs text-red-600">Passwords don&apos;t match.</p>
+          )}
+        </div>
+
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={!isValid || submitting}
+          className="w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+        >
+          {submitting ? 'Activating…' : 'Activate account'}
+        </button>
+      </form>
+    </AuthShell>
   )
 }

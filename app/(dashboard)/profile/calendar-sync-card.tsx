@@ -7,6 +7,7 @@ import {
   regenerateCalendarToken,
   disableCalendarSync,
 } from '@/app/actions/schedule'
+import { friendlyError } from '@/lib/errors'
 
 interface CalendarSyncCardProps {
   initialToken: string | null
@@ -29,8 +30,8 @@ export function CalendarSyncCard({ initialToken }: CalendarSyncCardProps) {
       try {
         const result = await enableCalendarSync()
         setToken(result.token)
-      } catch (err: any) {
-        setError(err?.message || 'Failed to enable calendar sync')
+      } catch (err) {
+        setError(friendlyError(err, "We couldn't turn on calendar sync. Try again — if it keeps happening, contact support."))
       }
     })
   }
@@ -42,8 +43,8 @@ export function CalendarSyncCard({ initialToken }: CalendarSyncCardProps) {
         const result = await regenerateCalendarToken()
         setToken(result.token)
         setCopied(false)
-      } catch (err: any) {
-        setError(err?.message || 'Failed to regenerate token')
+      } catch (err) {
+        setError(friendlyError(err, "We couldn't create a new calendar link. Your existing one still works — try again in a moment."))
       }
     })
   }
@@ -55,8 +56,8 @@ export function CalendarSyncCard({ initialToken }: CalendarSyncCardProps) {
       try {
         await disableCalendarSync()
         setToken(null)
-      } catch (err: any) {
-        setError(err?.message || 'Failed to disable calendar sync')
+      } catch (err) {
+        setError(friendlyError(err, "We couldn't turn off calendar sync. Try again — if it keeps happening, contact support."))
       }
     })
   }
