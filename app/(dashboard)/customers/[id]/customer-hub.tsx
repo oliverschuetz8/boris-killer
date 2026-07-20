@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Pencil, Plus, Star, Trash2, X, Phone, Mail, Briefcase, MapPin,
-  Clock, FileText, Building2, User, ChevronDown, Pin, Eye, Info,
+  Clock, FileText, Building2, User, ChevronDown, Pin, Eye, EyeOff, Info,
 } from 'lucide-react'
 import {
   createContact, updateContact, deleteContact,
@@ -331,6 +331,19 @@ const FLAG_LABELS: { key: string; label: string }[] = [
   { key: 'site_access', label: 'Site access' },
 ]
 
+// Explicit tradie-visibility state — same wording used on the job Key Contacts card.
+function VisibilityBadge({ on }: { on: boolean }) {
+  return on ? (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+      <Eye className="w-3 h-3" /> Tradies can see
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+      <EyeOff className="w-3 h-3" /> Office only
+    </span>
+  )
+}
+
 function PeopleTab({ customer, contacts, jobs, onChange }: { customer: AnyRec; contacts: AnyRec[]; jobs: AnyRec[]; onChange: () => void }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<AnyRec | null>(null)
@@ -469,21 +482,15 @@ function ContactCard({ contact, customerId, jobs, onEdit, onDelete, onChange }: 
         )}
       </div>
 
-      {/* Flags */}
-      {(FLAG_LABELS.some(f => contact[f.key]) || contact.worker_visible) && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {FLAG_LABELS.filter(f => contact[f.key]).map(f => (
-            <span key={f.key} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
-              {f.label}
-            </span>
-          ))}
-          {contact.worker_visible && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">
-              <Eye className="w-3 h-3" /> Tradies can see
-            </span>
-          )}
-        </div>
-      )}
+      {/* Flags + tradie visibility (visibility always shown so it never reads ambiguously) */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {FLAG_LABELS.filter(f => contact[f.key]).map(f => (
+          <span key={f.key} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+            {f.label}
+          </span>
+        ))}
+        <VisibilityBadge on={!!contact.worker_visible} />
+      </div>
 
       {contact.notes && (
         <p className="mt-3 text-xs text-slate-500 whitespace-pre-wrap border-t border-slate-100 pt-3">{contact.notes}</p>

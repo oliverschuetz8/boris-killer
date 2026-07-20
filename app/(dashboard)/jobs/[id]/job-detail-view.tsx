@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, MapPin, User, Calendar, Users, FileText, Camera, Package, Building2, DollarSign, ClipboardList, Settings, Map, Phone, Eye } from 'lucide-react'
+import { ArrowLeft, MapPin, User, Calendar, Users, FileText, Camera, Package, Building2, DollarSign, ClipboardList, Settings, Map, Phone, Eye, EyeOff } from 'lucide-react'
 import { roleLabel } from '@/lib/utils'
 import MaterialLog from './execute/material-log'
 import JobCostSummary from './job-cost-summary'
@@ -330,22 +330,26 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
                 <div className="bg-white rounded-xl border border-slate-200 p-4">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Key Contacts</p>
                   <div className="space-y-3">
-                    {jobContacts.map((c: any) => (
+                    {jobContacts.map((c: any) => {
+                      const roleLine = [c.role_on_job, c.job_title, c.role].filter(Boolean).join(' · ')
+                      return (
                       <div key={c.id} className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className="text-sm font-medium text-slate-800 truncate">{c.name}</p>
-                            {c.worker_visible && (
-                              <span title="Tradies can see this contact" className="text-green-600 shrink-0">
-                                <Eye className="w-3.5 h-3.5" />
+                          <p className="text-sm font-medium text-slate-800 truncate">{c.name}</p>
+                          {roleLine && <p className="text-xs text-slate-400">{roleLine}</p>}
+                          {c.phone && <p className="text-xs text-slate-500 mt-0.5">{c.phone}</p>}
+                          {c.email && <p className="text-xs text-slate-500 truncate">{c.email}</p>}
+                          <div className="mt-1.5">
+                            {c.worker_visible ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+                                <Eye className="w-3 h-3" /> Tradies can see
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                                <EyeOff className="w-3 h-3" /> Office only
                               </span>
                             )}
                           </div>
-                          {(c.role_on_job || c.role || c.job_title) && (
-                            <p className="text-xs text-slate-400">{c.role_on_job || c.role || c.job_title}</p>
-                          )}
-                          {c.phone && <p className="text-xs text-slate-500 mt-0.5">{c.phone}</p>}
-                          {c.email && <p className="text-xs text-slate-500 truncate">{c.email}</p>}
                         </div>
                         {c.phone && (
                           <a
@@ -357,9 +361,10 @@ export default function JobDetailView({ job, userId, userRole, setupData, portal
                           </a>
                         )}
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-3">Pinned from the customer's People tab. <span className="inline-flex items-center gap-0.5"><Eye className="w-3 h-3 text-green-600" /> = tradies can see</span></p>
+                  <p className="text-[11px] text-slate-400 mt-3">Pinned from the customer's People tab.</p>
                 </div>
               )}
               {isAdminOrManager && <JobCostSummary jobId={job.id} compact />}

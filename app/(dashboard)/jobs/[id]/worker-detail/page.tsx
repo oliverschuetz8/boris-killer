@@ -224,8 +224,8 @@ export default async function WorkerDetailPage({
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-800 truncate">{c.name}</p>
-                    {(c.role_on_job || c.role || c.job_title) && (
-                      <p className="text-xs text-slate-400">{c.role_on_job || c.role || c.job_title}</p>
+                    {[c.role_on_job, c.job_title, c.role].filter(Boolean).length > 0 && (
+                      <p className="text-xs text-slate-400">{[c.role_on_job, c.job_title, c.role].filter(Boolean).join(' · ')}</p>
                     )}
                     <p className="text-xs text-slate-500 mt-0.5">{c.phone}</p>
                   </div>
