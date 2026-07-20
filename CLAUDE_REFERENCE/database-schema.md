@@ -164,6 +164,7 @@ create table customer_contacts (
   receives_quotes boolean default false,
   approves_work boolean default false,
   site_access boolean default false,
+  worker_visible boolean default false,   -- tradies on a pinned job can see name + phone (default off = office-only)
   is_primary boolean default false,
   is_active boolean default true,
   notes text,

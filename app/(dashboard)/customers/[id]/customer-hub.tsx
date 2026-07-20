@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Pencil, Plus, Star, Trash2, X, Phone, Mail, Briefcase, MapPin,
-  Clock, FileText, Building2, User, ChevronDown, Pin,
+  Clock, FileText, Building2, User, ChevronDown, Pin, Eye, Info,
 } from 'lucide-react'
 import {
   createContact, updateContact, deleteContact,
@@ -176,6 +176,29 @@ function Field({ label, value }: { label: string; value?: React.ReactNode }) {
   )
 }
 
+// Small click-to-open info tooltip for labels that need a one-line explanation.
+function InfoTip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        onBlur={() => setOpen(false)}
+        className="text-slate-400 hover:text-slate-600"
+        aria-label="More info"
+      >
+        <Info className="w-3.5 h-3.5" />
+      </button>
+      {open && (
+        <span className="absolute left-0 top-6 z-20 w-56 rounded-lg bg-slate-900 text-white text-xs px-3 py-2 shadow-lg leading-snug">
+          {text}
+        </span>
+      )}
+    </span>
+  )
+}
+
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -222,7 +245,13 @@ function DetailsTab({ customer, accountManager }: { customer: AnyRec; accountMan
 
       <Card title="Relationship">
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Account manager" value={accountManager ? (accountManager.full_name || accountManager.email) : undefined} />
+          <div>
+            <p className="text-xs text-slate-500 mb-1 flex items-center gap-1">
+              Managed by
+              <InfoTip text="The person on your team responsible for this customer — your internal owner of the relationship." />
+            </p>
+            <p className="text-sm text-slate-900">{accountManager ? (accountManager.full_name || accountManager.email) : '—'}</p>
+          </div>
           <Field label="Last contacted" value={customer.last_contacted_at ? fmtDate(customer.last_contacted_at) : undefined} />
           <Field label="Next follow-up" value={customer.next_followup_date ? fmtDate(customer.next_followup_date) : undefined} />
         </div>
@@ -441,13 +470,18 @@ function ContactCard({ contact, customerId, jobs, onEdit, onDelete, onChange }: 
       </div>
 
       {/* Flags */}
-      {FLAG_LABELS.some(f => contact[f.key]) && (
+      {(FLAG_LABELS.some(f => contact[f.key]) || contact.worker_visible) && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {FLAG_LABELS.filter(f => contact[f.key]).map(f => (
             <span key={f.key} className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
               {f.label}
             </span>
           ))}
+          {contact.worker_visible && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+              <Eye className="w-3 h-3" /> Tradies can see
+            </span>
+          )}
         </div>
       )}
 
@@ -534,6 +568,7 @@ function ContactModal({ customerId, contact, onClose, onSaved }: {
     receives_quotes: contact?.receives_quotes ?? false,
     approves_work: contact?.approves_work ?? false,
     site_access: contact?.site_access ?? false,
+    worker_visible: contact?.worker_visible ?? false,
     is_primary: contact?.is_primary ?? false,
     is_active: contact?.is_active ?? true,
     notes: contact?.notes || '',
@@ -632,6 +667,20 @@ function ContactModal({ customerId, contact, onClose, onSaved }: {
               <Checkbox name="is_primary" label="Primary contact" checked={form.is_primary} onChange={v => set('is_primary', v)} />
               <Checkbox name="is_active" label="Active" checked={form.is_active} onChange={v => set('is_active', v)} />
             </div>
+          </div>
+
+          {/* Tradie visibility — separate because it controls what the field crew sees */}
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <Checkbox
+              name="worker_visible"
+              label="Tradies can see this contact"
+              checked={form.worker_visible}
+              onChange={v => set('worker_visible', v)}
+            />
+            <p className="text-xs text-slate-500 mt-1.5 ml-6">
+              On: tradies assigned to a job this contact is pinned to can see their name + phone (e.g. the electrician).
+              Off: office-only — the crew never sees them.
+            </p>
           </div>
 
           <div>

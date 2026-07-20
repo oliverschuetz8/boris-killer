@@ -39,6 +39,19 @@ export default async function WorkerDetailPage({
 
   if (!job) notFound()
 
+  // Contacts pinned to this job that the admin marked visible to tradies.
+  const { data: contactRows } = await supabase
+    .from('job_contacts')
+    .select('id, role_on_job, contact:customer_contacts(id, name, role, job_title, phone, worker_visible)')
+    .eq('job_id', id)
+
+  const jobContacts = (contactRows || [])
+    .map((r: any) => {
+      const c = Array.isArray(r.contact) ? r.contact[0] : r.contact
+      return c ? { ...c, role_on_job: r.role_on_job } : null
+    })
+    .filter((c: any) => c && c.worker_visible && c.phone)
+
   const customer = Array.isArray(job.customer) ? job.customer[0] : job.customer
 
   const siteAddress = job.site_address_line1
@@ -90,6 +103,9 @@ export default async function WorkerDetailPage({
           {isInProgress ? 'In progress' : isCompleted ? 'Done' : 'Scheduled'}
         </span>
       </div>
+
+      {/* Scrollable content region — keeps the action button pinned below */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
 
       {/* Site briefing card */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col flex-none mb-3">
@@ -192,6 +208,42 @@ export default async function WorkerDetailPage({
 
         </div>
       </div>
+
+      {/* Who to call — contacts the admin marked visible to tradies */}
+      {jobContacts.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-3">
+          <div className="bg-slate-900 px-4 py-3">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Who to Call</p>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {jobContacts.map((c: any) => (
+              <div key={c.id} className="flex items-start justify-between gap-2 px-4 py-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <User className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 truncate">{c.name}</p>
+                    {(c.role_on_job || c.role || c.job_title) && (
+                      <p className="text-xs text-slate-400">{c.role_on_job || c.role || c.job_title}</p>
+                    )}
+                    <p className="text-xs text-slate-500 mt-0.5">{c.phone}</p>
+                  </div>
+                </div>
+                <a
+                  href={`tel:${c.phone}`}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors flex-shrink-0"
+                >
+                  <Phone className="w-3 h-3" />
+                  Call
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      </div>{/* end scroll region */}
 
       {/* Action button */}
       {!isCompleted && (

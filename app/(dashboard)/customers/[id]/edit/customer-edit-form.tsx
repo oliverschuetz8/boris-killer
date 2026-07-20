@@ -163,7 +163,10 @@ export default function CustomerEditForm({ customer, companyUsers = [] }: { cust
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Account manager</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Managed by
+                <span className="block text-xs font-normal text-slate-400 mt-0.5">The person on your team responsible for this customer.</span>
+              </label>
               <Select name="account_manager_id" defaultValue={customer.account_manager_id || ''}>
                 <option value="">Unassigned</option>
                 {companyUsers.map(u => (

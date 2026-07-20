@@ -435,6 +435,14 @@ Last Updated: 15 Jul 2026 (Customer CRM Hub — customer detail page rebuilt int
 - Dates formatted via `Intl.DateTimeFormat(..., { timeZone: 'UTC' })` to avoid the server/client hydration mismatch that previously bit the jobs list.
 - Every mutation is an actionable-error server action gated to admin/manager; UI handlers surface `error.message`. All new tables use the RLS company-subquery pattern with 4 policies each.
 
+**Pinned contacts surfaced on jobs + tradie visibility (Jul 2026):**
+- `customer_contacts.worker_visible` (boolean, default **false** = office-only). Toggle in the contact modal: "Tradies can see this contact" — admin opts a contact in. Green "Tradies can see" chip + Eye icon show the state.
+- **Job detail page (admin)** — new "Key Contacts" sidebar card on the Overview tab lists everyone pinned to that job (name, role, phone, email, Call button); Eye icon marks the ones tradies can see. Fetched via `getJobContacts(jobId)` in `jobs/[id]/page.tsx`, passed to `job-detail-view.tsx` (admin/manager only).
+- **Worker/tradie job view** (`jobs/[id]/worker-detail/page.tsx`) — new "Who to Call" card showing ONLY `worker_visible` pinned contacts with a phone (name, role, tap-to-call). Briefing + this card wrapped in a scroll region so the Start/Continue button stays pinned. No money/admin info.
+- Service: `getJobContacts(jobId, { workerVisibleOnly })` in `app/actions/customers.ts`; `createContact`/`updateContact` persist `worker_visible`.
+- **Label change:** "Account manager" renamed to **"Managed by"** across the hub Details card (with a click-to-open ⓘ tooltip: "The person on your team responsible for this customer") and the edit form (with inline helper). It's an INTERNAL owner (one of your team), not a customer contact — the dropdown lists company users.
+- Note (consistent with existing app posture, failure #13): the tradie "Who to Call" filter is applied in the query/UI, not RLS — company users can technically read `customer_contacts` at the RLS layer, same as material prices are UI-gated not RLS-gated. Tighten later if needed.
+
 ---
 
 ## Database Tables (all with RLS enabled)

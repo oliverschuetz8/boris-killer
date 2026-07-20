@@ -5,6 +5,7 @@ import { getMaterials } from '@/lib/services/materials'
 import { getParts } from '@/lib/services/parts'
 import { getProducts } from '@/lib/services/products'
 import { getPortalLinksForJob } from '@/lib/services/portal'
+import { getJobContacts } from '@/app/actions/customers'
 import JobDetailView from './job-detail-view'
 
 export default async function JobDetailPage({
@@ -44,7 +45,9 @@ export default async function JobDetailPage({
   // Fetch setup data only for admin/manager (Setup tab)
   let setupData = undefined
   let portalLinks: any[] = []
+  let jobContacts: any[] = []
   if (isAdminOrManager) {
+    jobContacts = await getJobContacts(id)
     const [
       materials,
       parts,
@@ -107,6 +110,7 @@ export default async function JobDetailPage({
       setupData={setupData}
       portalLinks={portalLinks}
       categoryName={categoryName}
+      jobContacts={jobContacts}
     />
   )
 }

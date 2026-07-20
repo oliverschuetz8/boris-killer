@@ -280,6 +280,7 @@ export async function createContact(customerId: string, data: {
   receives_quotes?: boolean
   approves_work?: boolean
   site_access?: boolean
+  worker_visible?: boolean
   is_primary?: boolean
   is_active?: boolean
   notes?: string
@@ -305,6 +306,7 @@ export async function createContact(customerId: string, data: {
       receives_quotes: data.receives_quotes ?? false,
       approves_work: data.approves_work ?? false,
       site_access: data.site_access ?? false,
+      worker_visible: data.worker_visible ?? false,
       is_primary: data.is_primary ?? false,
       is_active: data.is_active ?? true,
       notes: data.notes || null,
@@ -329,6 +331,7 @@ export async function updateContact(contactId: string, customerId: string, data:
   receives_quotes?: boolean
   approves_work?: boolean
   site_access?: boolean
+  worker_visible?: boolean
   is_primary?: boolean
   is_active?: boolean
   notes?: string
@@ -351,6 +354,7 @@ export async function updateContact(contactId: string, customerId: string, data:
       receives_quotes: data.receives_quotes ?? false,
       approves_work: data.approves_work ?? false,
       site_access: data.site_access ?? false,
+      worker_visible: data.worker_visible ?? false,
       is_primary: data.is_primary ?? false,
       is_active: data.is_active ?? true,
       notes: data.notes || null,
@@ -407,6 +411,24 @@ export async function unpinContactFromJob(jobContactId: string, customerId: stri
 
   if (error) throw new Error("Couldn't unpin this person from the job. Refresh the page and try again.")
   revalidatePath(`/customers/${customerId}`)
+}
+
+// --- Contacts pinned to a job (for the job detail + worker views) ----------
+// Pass workerVisibleOnly=true for the tradie view so office-only contacts are hidden.
+export async function getJobContacts(jobId: string, opts?: { workerVisibleOnly?: boolean }) {
+  const { supabase } = await requireCompany()
+  const { data, error } = await supabase
+    .from('job_contacts')
+    .select('id, role_on_job, contact:customer_contacts(id, name, role, job_title, phone, secondary_phone, email, worker_visible)')
+    .eq('job_id', jobId)
+  if (error) throw new Error("Couldn't load the contacts for this job. Refresh the page or check your connection.")
+
+  const rows = (data || []).map((r: any) => {
+    const contact = Array.isArray(r.contact) ? r.contact[0] : r.contact
+    return { jobContactId: r.id, role_on_job: r.role_on_job, ...contact }
+  }).filter((c: any) => c && c.id)
+
+  return opts?.workerVisibleOnly ? rows.filter((c: any) => c.worker_visible) : rows
 }
 
 // --- Jobs for a customer ---------------------------------------------------
