@@ -218,6 +218,7 @@ Oliver says something like "prepare autonomous window for 6 AM" or "autonomous w
 ## Your specialist agents
 
 - `boris-killer-security-reviewer` — OWASP-focused security reviewer specific to BORIS Killer's threat model (Supabase RLS tenant isolation, Stripe webhook integrity, secrets exposure, API auth gaps, Privacy Act data-handling). Trigger BEFORE shipping any feature touching auth, payments, or customer data. Defaults to focused mode (5 highest-risk files); use `--full` for full scan. Operates at L1 (assisted) trust level. Memory at `.claude/agent-memory/boris-killer-security-reviewer/` (official Claude Code path). Case log at same directory.
+- `app-flow-tester` — Cross-project smoke tester that drives the running app via Playwright MCP browser tools. Walks 4 critical admin flows by default (login, job creation, job detail tabs, invoice list); use `--full` for 9 flows including worker role isolation and customer portal. Always confirms URL + environment before running. Never runs against production without explicit confirmation. User-level agent at `~/.claude/agents/app-flow-tester.md`. Memory at `~/.claude/agent-memory/app-flow-tester/`.
 
 ---
 
